@@ -1,19 +1,19 @@
 import React from "react";
-import { Routes, Route, Link } from "react-router-dom";
-import Home from "./pages/Home";
+import { Routes, Route } from "react-router-dom";
+import Home from "./pages/home";
+import Login from "./pages/login";
+import Register from "./pages/register";
+import Navbar from "./components/navbar";
 
 export default function App() {
   return (
-    <div>
-      <header>
-        <h1>MemoriaOMJ</h1>
-        <nav>
-          <Link to="/">Home</Link>
-        </nav>
-      </header>
-      <main>
+    <div className="app-shell">
+      <Navbar />
+      <main className="page-main">
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
         </Routes>
       </main>
     </div>

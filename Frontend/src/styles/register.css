@@ -1,0 +1,61 @@
+.auth-page {
+	min-height: calc(100vh - 6.2rem);
+	display: grid;
+	place-items: center;
+	padding: 1rem 0 2rem;
+}
+
+.auth-card {
+	width: min(480px, 100%);
+	padding: 1.35rem;
+	border-radius: var(--radius-lg);
+	border: 1px solid var(--border);
+	background: var(--surface);
+	box-shadow: var(--shadow);
+}
+
+.auth-card h1 {
+	margin: 0.58rem 0 0;
+	font-size: clamp(1.62rem, 4vw, 2.15rem);
+}
+
+.auth-copy {
+	margin: 0.7rem 0 1.2rem;
+	color: var(--text-muted);
+}
+
+.auth-form {
+	display: grid;
+	gap: 0.65rem;
+}
+
+.auth-form label {
+	font-size: 0.9rem;
+	font-weight: 600;
+}
+
+.auth-form input {
+	width: 100%;
+	border: 1px solid var(--border);
+	border-radius: var(--radius-sm);
+	background: var(--surface-soft);
+	color: var(--text);
+	padding: 0.7rem 0.8rem;
+	font-size: 0.95rem;
+	outline: none;
+}
+
+.auth-form input:focus {
+	border-color: var(--primary);
+	box-shadow: 0 0 0 3px rgba(15, 143, 78, 0.12);
+}
+
+.auth-footnote {
+	margin: 1rem 0 0;
+	color: var(--text-muted);
+}
+
+.auth-footnote a {
+	color: var(--primary-strong);
+	font-weight: 700;
+}

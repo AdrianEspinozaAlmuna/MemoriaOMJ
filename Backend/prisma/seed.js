@@ -1,16 +1,22 @@
 const { PrismaClient } = require("@prisma/client");
-const bcrypt = require("bcrypt");
 const prisma = new PrismaClient();
 
 async function main() {
-  const hashed = await bcrypt.hash("password123", 10);
-  await prisma.user.upsert({
-    where: { email: "test@example.com" },
-    update: {},
+  await prisma.usuario.upsert({
+    where: { mail: "test@example.com" },
+    update: {
+      nombre: "Usuario",
+      apellido: "Prueba",
+      rol: "participante",
+      estado: true
+    },
     create: {
-      name: "Usuario de Prueba",
-      email: "test@example.com",
-      password: hashed
+      rut: "12345678-9",
+      nombre: "Usuario",
+      apellido: "Prueba",
+      mail: "test@example.com",
+      telefono: "+56911112222",
+      rol: "participante"
     }
   });
   console.log("Seed completed");

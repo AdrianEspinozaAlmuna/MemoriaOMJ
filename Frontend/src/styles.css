@@ -1,0 +1,133 @@
+:root {
+	--bg: #f5faf7;
+	--surface: #ffffff;
+	--surface-soft: #eef7f1;
+	--text: #10261a;
+	--text-muted: #4a6658;
+	--primary: #0f8f4e;
+	--primary-strong: #0a6f3c;
+	--primary-soft: #d8f0e2;
+	--accent: #f2d742;
+	--border: #c7dfd0;
+	--shadow: 0 16px 36px -26px rgba(8, 46, 26, 0.5);
+	--radius-lg: 18px;
+	--radius-md: 12px;
+	--radius-sm: 10px;
+	--container: 1120px;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+	margin: 0;
+	min-height: 100%;
+}
+
+body {
+	font-family: "Segoe UI", "Trebuchet MS", "Helvetica Neue", sans-serif;
+	color: var(--text);
+	background:
+		radial-gradient(circle at 10% 5%, rgba(15, 143, 78, 0.12), transparent 35%),
+		radial-gradient(circle at 90% 15%, rgba(242, 215, 66, 0.18), transparent 34%),
+		var(--bg);
+	line-height: 1.5;
+}
+
+a {
+	color: inherit;
+	text-decoration: none;
+}
+
+.container {
+	width: min(var(--container), calc(100% - 2.4rem));
+	margin: 0 auto;
+}
+
+.app-shell {
+	min-height: 80vh;
+}
+
+.page-main {
+	padding-top: 5.5rem;
+}
+
+.btn {
+	border: none;
+	cursor: pointer;
+	border-radius: 999px;
+	padding: 0.72rem 1.2rem;
+	font-size: 0.95rem;
+	font-weight: 700;
+	transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.btn:hover {
+	transform: translateY(-1px);
+}
+
+.btn-primary {
+	color: var(--surface);
+	background: linear-gradient(135deg, var(--primary), var(--primary-strong));
+	box-shadow: var(--shadow);
+}
+
+.btn-primary:hover {
+	background: linear-gradient(135deg, var(--primary-strong), var(--primary));
+}
+
+.btn-ghost {
+	color: var(--primary-strong);
+	border: 1px solid var(--border);
+	background: var(--surface);
+}
+
+.btn-ghost:hover {
+	border-color: var(--primary);
+	background: var(--surface-soft);
+}
+
+.btn-inline {
+	padding: 0.58rem 1rem;
+}
+
+.btn-full {
+	width: 100%;
+}
+
+.eyebrow {
+	margin: 0;
+	font-weight: 700;
+	font-size: 0.88rem;
+	color: var(--primary-strong);
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+}
+
+.reveal-up {
+	animation: revealUp 0.7s ease both;
+}
+
+.reveal-up-delay {
+	animation: revealUp 0.9s ease 0.08s both;
+}
+
+@keyframes revealUp {
+	from {
+		opacity: 0;
+		transform: translateY(16px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@media (max-width: 640px) {
+	.page-main {
+		padding-top: 5.8rem;
+	}
+}
