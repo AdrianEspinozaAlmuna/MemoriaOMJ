@@ -1,0 +1,33 @@
+.activity-tile {
+  border-radius: 12px;
+  border: 1px solid #d5e2da;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fcfa 100%);
+  box-shadow: 0 10px 24px -26px rgba(9, 38, 23, 0.45);
+  padding: 0.95rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.activity-tile:hover {
+  border-color: #bfd5c8;
+  box-shadow: 0 14px 28px -24px rgba(9, 38, 23, 0.42);
+}
+
+.activity-tile h3 {
+  margin: 0;
+  font-size: 1.02rem;
+  color: #22392d;
+}
+
+.activity-tile-date,
+.activity-tile-place {
+  margin: 0.45rem 0 0;
+  color: #6f8177;
+  font-size: 0.88rem;
+}
+
+.activity-tile .btn {
+  margin-top: 0.78rem;
+  width: 100%;
+  border-radius: 8px;
+  font-size: 0.88rem;
+}

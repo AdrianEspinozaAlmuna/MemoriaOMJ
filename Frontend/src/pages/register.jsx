@@ -13,8 +13,20 @@ export default function Register() {
         </p>
 
         <form className="auth-form" onSubmit={event => event.preventDefault()}>
-          <label htmlFor="fullName">Nombre completo</label>
+          <label htmlFor="fullName">Nombre</label>
           <input id="fullName" name="fullName" type="text" placeholder="Tu nombre" required />
+
+          <label htmlFor="lastName">Apellido</label>
+          <input id="lastName" name="lastName" type="text" placeholder="Tu apellido" required />
+
+          <label htmlFor="rut">RUT</label>
+          <input
+            id="rut"
+            name="rut"
+            type="text"
+            placeholder="12.345.678-9"
+            required
+          />
 
           <label htmlFor="registerEmail">Correo electronico</label>
           <input
@@ -25,10 +37,28 @@ export default function Register() {
             required
           />
 
-          <label htmlFor="registerPassword">Contrasena</label>
+                  <label htmlFor="phone">Teléfono</label>
+          <input
+            id="phone"
+            name="phone"
+            type="text"
+            placeholder="987654321"
+            required
+          />
+
+          <label htmlFor="registerPassword">Contraseña</label>
           <input
             id="registerPassword"
             name="registerPassword"
+            type="password"
+            placeholder="Minimo 8 caracteres"
+            required
+          />
+
+          <label htmlFor="confirmPassword">Confirmar contraseña</label>
+          <input
+            id="confirmPassword"
+            name="confirmPassword"
             type="password"
             placeholder="Minimo 8 caracteres"
             required
