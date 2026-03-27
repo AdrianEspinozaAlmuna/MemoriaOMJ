@@ -2,24 +2,52 @@ const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
 async function main() {
-  await prisma.usuario.upsert({
-    where: { mail: "test@example.com" },
-    update: {
-      nombre: "Usuario",
-      apellido: "Prueba",
-      rol: "participante",
-      estado: true
+  const users = [
+    {
+      rut: "11111111-1",
+      nombre: "Admin",
+      apellido: "OMJ",
+      mail: "admin@omj.cl",
+      telefono: "+56990000001",
+      rol: "admin"
     },
-    create: {
-      rut: "12345678-9",
-      nombre: "Usuario",
-      apellido: "Prueba",
-      mail: "test@example.com",
-      telefono: "+56911112222",
+    {
+      rut: "22222222-2",
+      nombre: "Paula",
+      apellido: "Participante",
+      mail: "participante1@omj.cl",
+      telefono: "+56990000002",
+      rol: "participante"
+    },
+    {
+      rut: "33333333-3",
+      nombre: "Diego",
+      apellido: "Participante",
+      mail: "participante2@omj.cl",
+      telefono: "+56990000003",
       rol: "participante"
     }
-  });
-  console.log("Seed completed");
+  ];
+
+  for (const user of users) {
+    await prisma.usuario.upsert({
+      where: { mail: user.mail },
+      update: {
+        rut: user.rut,
+        nombre: user.nombre,
+        apellido: user.apellido,
+        telefono: user.telefono,
+        rol: user.rol,
+        estado: true
+      },
+      create: {
+        ...user,
+        estado: true
+      }
+    });
+  }
+
+  console.log("Seed completado: admin + participantes creados/actualizados");
 }
 
 main()

@@ -7,7 +7,8 @@ import UserDashboard from "./pages/userDashboard";
 import UserCalendar from "./pages/userCalendar";
 import MyActivities from "./pages/myActivities";
 import MyAttendance from "./pages/myAttendance";
-import Navbar from "./components/navbar";
+import Navbar from "./components/Navbar";
+import { ParticipantProtectedRoute, PublicOnlyRoute } from "./components/RouteGuards";
 
 export default function App() {
   const location = useLocation();
@@ -19,12 +20,18 @@ export default function App() {
       <main className="page-main">
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/user/dashboard" element={<UserDashboard />} />
-          <Route path="/user/calendario" element={<UserCalendar />} />
-          <Route path="/user/mis-actividades" element={<MyActivities />} />
-          <Route path="/user/asistencia" element={<MyAttendance />} />
+
+          <Route element={<PublicOnlyRoute />}>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+          </Route>
+
+          <Route element={<ParticipantProtectedRoute />}>
+            <Route path="/user/dashboard" element={<UserDashboard />} />
+            <Route path="/user/calendario" element={<UserCalendar />} />
+            <Route path="/user/mis-actividades" element={<MyActivities />} />
+            <Route path="/user/asistencia" element={<MyAttendance />} />
+          </Route>
         </Routes>
       </main>
     </div>
