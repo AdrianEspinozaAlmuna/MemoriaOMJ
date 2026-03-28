@@ -65,6 +65,7 @@
 }
 
 .navbar-mobile-title {
+	display: none;
 	margin: 0;
 	font-size: 0.82rem;
 	font-weight: 600;
@@ -342,19 +343,35 @@
 
 @media (max-width: 1120px) {
 	.navbar {
-		min-height: 4.2rem;
-		display: flex;
-		flex-wrap: wrap;
-		padding: 0.45rem 0;
-		gap: 0.8rem;
+		column-gap: 0.7rem;
+		grid-template-columns: auto minmax(0, 1fr) auto;
+	}
+
+	.brand-text {
+		max-width: 11.2rem;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		font-size: 0.92rem;
 	}
 
 	.navbar-links {
-		order: 3;
-		width: 100%;
+		min-width: 0;
+		width: auto;
+		max-width: 100%;
+		justify-content: flex-start;
+		flex-wrap: nowrap;
 		overflow-x: auto;
 		padding-bottom: 0.2rem;
 		scrollbar-width: thin;
+	}
+
+	.navbar-actions {
+		gap: 0.42rem;
+	}
+
+	.navbar-actions .btn {
+		padding: 0.5rem 0.72rem;
 	}
 }
 
@@ -382,6 +399,10 @@
 
 	.navbar-mobile-toggle {
 		display: inline-flex;
+	}
+
+	.navbar-mobile-title {
+		display: block;
 	}
 
 	.navbar-actions {
