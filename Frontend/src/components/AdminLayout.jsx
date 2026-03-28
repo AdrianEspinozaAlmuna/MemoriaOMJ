@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import "../styles/adminLayout.css";
 
 function decodeToken(token) {
@@ -70,10 +70,12 @@ function SidebarIcon({ name }) {
 export default function AdminLayout() {
 	const token = localStorage.getItem("token");
 	const user = decodeToken(token);
+	const location = useLocation();
 	const navigate = useNavigate();
 	const menuRef = useRef(null);
 	const [menuOpen, setMenuOpen] = useState(false);
 	const [notificationsOpen, setNotificationsOpen] = useState(false);
+	const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
 	const displayName = user?.nombre ? `${user.nombre} ${user.apellido || ""}`.trim() : "Admin Usuario";
 	const initials = useMemo(() => getInitials(displayName), [displayName]);
@@ -102,16 +104,38 @@ export default function AdminLayout() {
 		};
 	}, []);
 
+	useEffect(() => {
+		setMobileNavOpen(false);
+		setMenuOpen(false);
+		setNotificationsOpen(false);
+	}, [location.pathname]);
+
+	useEffect(() => {
+		function handleResize() {
+			if (window.innerWidth > 980) {
+				setMobileNavOpen(false);
+			}
+		}
+
+		window.addEventListener("resize", handleResize);
+		return () => window.removeEventListener("resize", handleResize);
+	}, []);
+
 	function handleLogout() {
 		localStorage.removeItem("token");
 		setMenuOpen(false);
 		setNotificationsOpen(false);
+		setMobileNavOpen(false);
 		navigate("/login");
+	}
+
+	function closeMobileNav() {
+		setMobileNavOpen(false);
 	}
 
 	return (
 		<div className="admin-shell reveal-up">
-			<aside className="admin-sidebar">
+			<aside className={`admin-sidebar${mobileNavOpen ? " open" : ""}`}>
 				<p className="admin-sidebar-title">Administracion</p>
 
 				<nav className="admin-nav" aria-label="Menu de administracion">
@@ -119,6 +143,7 @@ export default function AdminLayout() {
 						<NavLink
 							key={link.to}
 							to={link.to}
+							onClick={closeMobileNav}
 							className={({ isActive }) => `admin-nav-link${isActive ? " active" : ""}`}
 						>
 							<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -136,6 +161,7 @@ export default function AdminLayout() {
 						<NavLink
 							key={link.to}
 							to={link.to}
+							onClick={closeMobileNav}
 							className={({ isActive }) => `admin-nav-link${isActive ? " active" : ""}`}
 						>
 							<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -149,9 +175,23 @@ export default function AdminLayout() {
 
 			<section className="admin-main">
 				<header className="admin-topbar">
-					<div className="admin-brand-inline">
-						<img src="/iconOMJ.jpg" alt="OMJ" />
-						<strong>OMJ Curico</strong>
+					<div className="admin-topbar-left">
+						<button
+							type="button"
+							className="admin-nav-toggle"
+							onClick={() => setMobileNavOpen(previous => !previous)}
+							aria-expanded={mobileNavOpen}
+							aria-label="Abrir menu de administracion"
+						>
+							<span />
+							<span />
+							<span />
+						</button>
+
+						<div className="admin-brand-inline">
+							<img src="/iconOMJ.jpg" alt="OMJ" />
+							<strong>OMJ Curico</strong>
+						</div>
 					</div>
 
 					<div className="admin-topbar-actions" ref={menuRef}>

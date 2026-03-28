@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import "../styles/navbar.css";
 
 function decodeToken(token) {
@@ -19,9 +19,11 @@ function decodeToken(token) {
 
 export default function Navbar() {
 	const navigate = useNavigate();
+	const location = useLocation();
 	const [menuOpen, setMenuOpen] = useState(false);
 	const [notificationsOpen, setNotificationsOpen] = useState(false);
-	const actionsRef = useRef(null);
+	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+	const navRef = useRef(null);
 
 	const notifications = [
 		{ id: "usr-notif-1", title: "Actividad proxima", detail: "Taller de liderazgo manana a las 17:00", time: "Hace 20 min" },
@@ -34,10 +36,11 @@ export default function Navbar() {
   const isAuthenticated = !!user;
   const rol = user?.rol || null;
 	const displayName = user?.nombre || "Usuario";
+	const userInitial = displayName.charAt(0).toUpperCase();
 
 	useEffect(() => {
 		function handleDocumentClick(event) {
-			if (actionsRef.current && !actionsRef.current.contains(event.target)) {
+			if (navRef.current && !navRef.current.contains(event.target)) {
 				setMenuOpen(false);
 				setNotificationsOpen(false);
 			}
@@ -59,25 +62,65 @@ export default function Navbar() {
 		};
 	}, []);
 
+	useEffect(() => {
+		setMenuOpen(false);
+		setNotificationsOpen(false);
+		setMobileMenuOpen(false);
+	}, [location.pathname]);
+
+	useEffect(() => {
+		function handleResize() {
+			if (window.innerWidth > 860) {
+				setMobileMenuOpen(false);
+			}
+		}
+
+		window.addEventListener("resize", handleResize);
+		return () => window.removeEventListener("resize", handleResize);
+	}, []);
+
 	function handleLogout() {
 		localStorage.removeItem("token");
 		setMenuOpen(false);
 		setNotificationsOpen(false);
+		setMobileMenuOpen(false);
 		navigate("/login");
+	}
+
+	function handleNavItemClick() {
+		setMobileMenuOpen(false);
 	}
 
 	return (
 		<header className="navbar-wrap">
-			<nav className="navbar container">
-				<Link to="/" className="brand">
-					<img className="brand-mark" src="/iconOMJ.jpg" alt="Logo OMJ" />
-					<span className="brand-text">Plataforma Juvenil Curico</span>
-				</Link>
+			<nav className="navbar container" ref={navRef}>
+				<div className="navbar-top-left">
+					<button
+						type="button"
+						className="navbar-mobile-toggle"
+						onClick={() => setMobileMenuOpen(previous => !previous)}
+						aria-expanded={mobileMenuOpen}
+						aria-label="Abrir menu"
+					>
+						<span />
+						<span />
+						<span />
+					</button>
+
+					<Link to="/" className="brand">
+						<img className="brand-mark" src="/iconOMJ.jpg" alt="Logo OMJ" />
+						<span className="brand-text">Plataforma Juvenil Curico</span>
+					</Link>
+				</div>
+
+				<div className={`navbar-collapsible${mobileMenuOpen ? " open" : ""}`}>
+					{isAuthenticated && rol === "participante" && <p className="navbar-mobile-title">Panel de usuario</p>}
 
 				<div className="navbar-links" aria-label="Navegacion de usuario">
 					{isAuthenticated && rol === "participante" && (
 						<NavLink
 							to="/user/dashboard"
+							onClick={handleNavItemClick}
 							className={({ isActive }) => `navbar-link-item${isActive ? " active" : ""}`}
 						>
 							Inicio
@@ -87,6 +130,7 @@ export default function Navbar() {
 					{isAuthenticated && rol === "admin" && (
 						<NavLink
 							to="/admin/dashboard"
+							onClick={handleNavItemClick}
 							className={({ isActive }) => `navbar-link-item${isActive ? " active" : ""}`}
 						>
 							Panel admin
@@ -97,18 +141,21 @@ export default function Navbar() {
 						<>
 							<NavLink
 								to="/user/calendario"
+								onClick={handleNavItemClick}
 								className={({ isActive }) => `navbar-link-item${isActive ? " active" : ""}`}
 							>
 								Calendario
 							</NavLink>
 							<NavLink
 								to="/user/mis-actividades"
+								onClick={handleNavItemClick}
 								className={({ isActive }) => `navbar-link-item${isActive ? " active" : ""}`}
 							>
 								Mis actividades
 							</NavLink>
 							<NavLink
 								to="/user/asistencia"
+								onClick={handleNavItemClick}
 								className={({ isActive }) => `navbar-link-item${isActive ? " active" : ""}`}
 							>
 								Mi asistencia
@@ -116,10 +163,29 @@ export default function Navbar() {
 						</>
 					)}
 				</div>
-
-				<div className="navbar-actions" ref={actionsRef}>
 					{isAuthenticated && rol === "participante" && (
-						<NavLink to="/user/dashboard" className="btn btn-propose">
+						<div className="navbar-mobile-propose-wrap">
+							<NavLink to="/user/dashboard" className="btn btn-propose" onClick={handleNavItemClick}>
+								+ Proponer Actividad
+							</NavLink>
+						</div>
+					)}
+
+					{!isAuthenticated && (
+						<div className="navbar-mobile-auth-wrap">
+							<NavLink to="/login" className="btn btn-ghost" onClick={handleNavItemClick}>
+								Iniciar sesion
+							</NavLink>
+							<NavLink to="/register" className="btn btn-primary" onClick={handleNavItemClick}>
+								Registrarse
+							</NavLink>
+						</div>
+					)}
+				</div>
+
+				<div className="navbar-actions">
+					{isAuthenticated && rol === "participante" && (
+						<NavLink to="/user/dashboard" className="btn btn-propose navbar-desktop-only" onClick={handleNavItemClick}>
 							+ Proponer Actividad
 						</NavLink>
 					)}
@@ -171,11 +237,7 @@ export default function Navbar() {
 								aria-expanded={menuOpen}
 								aria-haspopup="menu"
 							>
-								<span className="user-icon" aria-hidden="true">
-									<svg viewBox="0 0 24 24" role="presentation">
-										<path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-3.31 0-6 2.02-6 4.5a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1c0-2.48-2.69-4.5-6-4.5Z" />
-									</svg>
-								</span>
+								<span className="user-avatar" aria-hidden="true">{userInitial}</span>
 								<span className="user-name">{displayName}</span>
 							</button>
 
@@ -191,10 +253,10 @@ export default function Navbar() {
 
 					{!isAuthenticated && (
 						<>
-							<NavLink to="/login" className="btn btn-ghost">
+							<NavLink to="/login" className="btn btn-ghost navbar-desktop-only" onClick={handleNavItemClick}>
 								Iniciar sesion
 							</NavLink>
-							<NavLink to="/register" className="btn btn-primary">
+							<NavLink to="/register" className="btn btn-primary navbar-desktop-only" onClick={handleNavItemClick}>
 								Registrarse
 							</NavLink>
 						</>
