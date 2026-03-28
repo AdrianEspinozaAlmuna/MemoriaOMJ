@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import Modal from "../components/Modal";
-import "../styles/adminPages.css";
 
 const initialNotifications = [
 	{ id: "sys-001", title: "Nueva propuesta de actividad", detail: "Sofia Munoz envio una actividad para aprobacion", date: "Hace 10 min", source: "Sistema" },
@@ -53,29 +52,29 @@ export default function AdminNotifications() {
 	}
 
 	return (
-		<section className="admin-page">
-			<header className="admin-page-header admin-toolbar">
+		<section className="grid gap-4">
+			<header className="flex items-center justify-between gap-3 pb-0.5 pt-1.5 max-[760px]:flex-col max-[760px]:items-start">
 				<div>
-					<h1>Notificaciones</h1>
-					<p>Alertas del sistema y eventos recientes</p>
+					<h1 className="m-0 text-[clamp(1.8rem,2.6vw,2.2rem)] font-bold text-[var(--text)]">Notificaciones</h1>
+					<p className="mt-1.5 text-[0.98rem] text-[var(--text-muted)]">Alertas del sistema y eventos recientes</p>
 				</div>
 				<button type="button" className="btn btn-primary" onClick={openModal}>
 					Agregar notificacion
 				</button>
 			</header>
 
-			<section className="admin-panel">
-				<div className="admin-list">
+			<section className="rounded-[var(--panel-radius)] border border-[var(--panel-border)] bg-[var(--panel-bg)] p-4 shadow-[var(--panel-shadow)]">
+				<div className="grid gap-2">
 					{notifications.map(item => (
-						<article key={item.id} className="admin-list-item">
+						<article key={item.id} className="flex items-center justify-between gap-3 rounded-[10px] border border-[#dce9e1] bg-white px-3 py-3">
 							<div>
-								<strong>{item.title}</strong>
-								<p>{item.detail}</p>
-								<div className="admin-notification-meta">
-									<span className={`admin-chip ${item.source === "Admin" ? "is-admin" : ""}`}>{item.source}</span>
+								<strong className="text-[0.98rem] text-[#2d4639]">{item.title}</strong>
+								<p className="mt-0.5 text-[0.88rem] text-[#708277]">{item.detail}</p>
+								<div className="mt-2 flex items-center gap-2">
+									<span className={`rounded-md px-2 py-1 text-[0.78rem] font-semibold ${item.source === "Admin" ? "bg-[#e9eefb] text-[#334f93]" : "bg-[#eef8f1] text-[#2e5a45]"}`}>{item.source}</span>
 								</div>
 							</div>
-							<span className="admin-chip">{item.date}</span>
+							<span className="rounded-md bg-[#eef8f1] px-2 py-1 text-[0.78rem] font-semibold text-[#2e5a45]">{item.date}</span>
 						</article>
 					))}
 				</div>
@@ -96,11 +95,11 @@ export default function AdminNotifications() {
 					</>
 				}
 			>
-				<div className="admin-modal-field">
+				<div className="grid gap-2">
 					<label htmlFor="notification-title">Titulo</label>
 					<input
 						id="notification-title"
-						className="admin-input"
+						className="w-full rounded-[10px] border border-[#cfded5] bg-white px-3 py-2.5 text-[0.92rem] outline-none focus:border-[var(--primary)] focus:shadow-[0_0_0_3px_rgba(5,166,61,0.1)]"
 						value={title}
 						onChange={event => {
 							setTitle(event.target.value);
@@ -110,11 +109,11 @@ export default function AdminNotifications() {
 					/>
 				</div>
 
-				<div className="admin-modal-field" style={{ marginTop: "0.75rem" }}>
+				<div className="mt-3 grid gap-2">
 					<label htmlFor="notification-detail">Mensaje</label>
 					<textarea
 						id="notification-detail"
-						className="admin-textarea"
+						className="min-h-28 w-full resize-y rounded-[10px] border border-[#cfded5] bg-white px-3 py-2.5 text-[0.92rem] outline-none focus:border-[var(--primary)] focus:shadow-[0_0_0_3px_rgba(5,166,61,0.1)]"
 						value={detail}
 						onChange={event => {
 							setDetail(event.target.value);
@@ -122,7 +121,7 @@ export default function AdminNotifications() {
 						}}
 						placeholder="Ejemplo: El sistema estara en mantencion este sabado de 23:00 a 01:00."
 					/>
-					{error && <p className="admin-field-error">{error}</p>}
+					{error && <p className="m-0 text-[0.82rem] font-semibold text-[#a03d2e]">{error}</p>}
 				</div>
 			</Modal>
 		</section>

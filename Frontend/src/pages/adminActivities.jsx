@@ -1,5 +1,4 @@
 import React from "react";
-import "../styles/adminPages.css";
 
 function MetaIcon({ name }) {
 	if (name === "place") {
@@ -55,59 +54,59 @@ const activities = [
 
 export default function AdminActivities() {
 	return (
-		<section className="admin-page">
-			<header className="admin-page-header">
-				<h1>Actividades</h1>
-				<p>Gestion general de actividades publicadas</p>
+		<section className="grid gap-4">
+			<header className="pb-0.5 pt-1.5 after:mt-3.5 after:block after:h-1 after:w-[min(210px,46vw)] after:rounded-full after:bg-[var(--header-accent)] after:opacity-45 after:content-['']">
+				<h1 className="m-0 text-[clamp(1.8rem,2.6vw,2.2rem)] font-bold text-[var(--text)]">Actividades</h1>
+				<p className="mt-1.5 text-[0.98rem] text-[var(--text-muted)]">Gestion general de actividades publicadas</p>
 			</header>
 
-			<section className="admin-activities-list">
+			<section className="grid w-full gap-3.5 xl:grid-cols-2">
 				{activities.map(item => (
-					<article key={item.id} className="admin-activity-card">
-						<div className="admin-activity-badges">
-							<span className="admin-chip is-type">{item.category}</span>
-							<span className={`admin-chip ${item.status === "Activa" ? "is-state-aprobada" : "is-state-pendiente"}`}>
+					<article key={item.id} className="grid gap-2.5 rounded-[var(--panel-radius)] border border-[var(--panel-border)] bg-white px-5 py-5 shadow-[var(--panel-shadow)]">
+						<div className="flex items-center gap-2">
+							<span className="rounded-md bg-[#f3f8f5] px-2 py-1 text-[0.78rem] font-semibold text-[#406251]">{item.category}</span>
+							<span className={`rounded-md px-2 py-1 text-[0.78rem] font-semibold ${item.status === "Activa" ? "bg-[#e7f5ec] text-[#177945]" : "bg-[#fff3de] text-[#b87015]"}`}>
 								{item.status}
 							</span>
 						</div>
 
-						<h2>{item.title}</h2>
-						<p>{item.description}</p>
+						<h2 className="m-0 text-[1.2rem] font-bold text-[#20372b]">{item.title}</h2>
+						<p className="text-[0.92rem] text-[#5f786a]">{item.description}</p>
 
-						<div className="admin-activity-meta-grid">
-							<div className="admin-activity-meta">
-								<div className="admin-meta-item">
-									<span className="admin-meta-icon" aria-hidden="true">
-										<svg viewBox="0 0 24 24" focusable="false"><MetaIcon name="place" /></svg>
+						<div className="grid gap-3 min-[761px]:grid-cols-2">
+							<div className="grid gap-2">
+								<div className="flex items-center gap-2">
+									<span className="grid h-[1.15rem] w-[1.15rem] place-items-center text-[#60796d]" aria-hidden="true">
+										<svg viewBox="0 0 24 24" focusable="false" className="h-4 w-4 fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round]"><MetaIcon name="place" /></svg>
 									</span>
-									<span>Lugar: {item.place}</span>
+									<span className="text-[0.9rem] text-[#52695c]">Lugar: {item.place}</span>
 								</div>
-								<div className="admin-meta-item">
-									<span className="admin-meta-icon" aria-hidden="true">
-										<svg viewBox="0 0 24 24" focusable="false"><MetaIcon name="seats" /></svg>
+								<div className="flex items-center gap-2">
+									<span className="grid h-[1.15rem] w-[1.15rem] place-items-center text-[#60796d]" aria-hidden="true">
+										<svg viewBox="0 0 24 24" focusable="false" className="h-4 w-4 fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round]"><MetaIcon name="seats" /></svg>
 									</span>
-									<span>Inscritos: {item.enrolled}</span>
+									<span className="text-[0.9rem] text-[#52695c]">Inscritos: {item.enrolled}</span>
 								</div>
 							</div>
-							<div className="admin-activity-meta">
-								<div className="admin-meta-item">
-									<span className="admin-meta-icon" aria-hidden="true">
-										<svg viewBox="0 0 24 24" focusable="false"><MetaIcon name="calendar" /></svg>
+							<div className="grid gap-2">
+								<div className="flex items-center gap-2">
+									<span className="grid h-[1.15rem] w-[1.15rem] place-items-center text-[#60796d]" aria-hidden="true">
+										<svg viewBox="0 0 24 24" focusable="false" className="h-4 w-4 fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round]"><MetaIcon name="calendar" /></svg>
 									</span>
-									<span>Fecha: {item.date}</span>
+									<span className="text-[0.9rem] text-[#52695c]">Fecha: {item.date}</span>
 								</div>
-								<div className="admin-meta-item">
-									<span className="admin-meta-icon" aria-hidden="true">
-										<svg viewBox="0 0 24 24" focusable="false"><MetaIcon name="time" /></svg>
+								<div className="flex items-center gap-2">
+									<span className="grid h-[1.15rem] w-[1.15rem] place-items-center text-[#60796d]" aria-hidden="true">
+										<svg viewBox="0 0 24 24" focusable="false" className="h-4 w-4 fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round]"><MetaIcon name="time" /></svg>
 									</span>
-									<span>Hora: {item.time}</span>
+									<span className="text-[0.9rem] text-[#52695c]">Hora: {item.time}</span>
 								</div>
 							</div>
 						</div>
 
-						<div className="admin-activity-actions">
-							<button type="button" className="admin-btn-inline">Editar</button>
-							<button type="button" className="admin-btn-inline">Ver detalle</button>
+						<div className="mt-1 flex flex-wrap items-center gap-2">
+							<button type="button" className="cursor-pointer rounded-lg border border-[#c9ddd0] bg-[#f3fbf6] px-2.5 py-1.5 text-[0.86rem] font-semibold text-[#1f5137]">Editar</button>
+							<button type="button" className="cursor-pointer rounded-lg border border-[#c9ddd0] bg-[#f3fbf6] px-2.5 py-1.5 text-[0.86rem] font-semibold text-[#1f5137]">Ver detalle</button>
 						</div>
 					</article>
 				))}
