@@ -73,6 +73,10 @@ a {
 	--nav-border: #d8dde2;
 }
 
+.app-shell-admin {
+	background: #f4f5f7;
+}
+
 .app-shell-user .page-main {
 	padding-top:3rem;
 	padding-bottom: 2rem;
@@ -80,6 +84,10 @@ a {
 
 .page-main {
 	padding-top: 5.5rem;
+}
+
+.page-main-admin {
+	padding-top: 0;
 }
 
 .btn {

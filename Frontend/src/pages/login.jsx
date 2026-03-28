@@ -39,7 +39,14 @@ export default function Login() {
 
 		try {
 			setLoading(true);
-			await login(formValues.email.trim().toLowerCase(), formValues.password);
+			const response = await login(formValues.email.trim().toLowerCase(), formValues.password);
+			const role = response?.user?.rol;
+
+			if (role === "admin") {
+				navigate("/admin/dashboard");
+				return;
+			}
+
 			navigate("/user/dashboard");
 		} catch (requestError) {
 			setError(requestError?.response?.data?.message || "No se pudo iniciar sesion.");

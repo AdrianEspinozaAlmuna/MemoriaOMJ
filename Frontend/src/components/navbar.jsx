@@ -20,7 +20,14 @@ function decodeToken(token) {
 export default function Navbar() {
 	const navigate = useNavigate();
 	const [menuOpen, setMenuOpen] = useState(false);
-	const menuRef = useRef(null);
+	const [notificationsOpen, setNotificationsOpen] = useState(false);
+	const actionsRef = useRef(null);
+
+	const notifications = [
+		{ id: "usr-notif-1", title: "Actividad proxima", detail: "Taller de liderazgo manana a las 17:00", time: "Hace 20 min" },
+		{ id: "usr-notif-2", title: "Inscripcion confirmada", detail: "Feria de emprendimiento fue confirmada", time: "Ayer" },
+		{ id: "usr-notif-3", title: "Recordatorio", detail: "Completa tu asistencia de la semana", time: "Ayer" }
+	];
 
   const token = localStorage.getItem("token");
   const user = decodeToken(token);
@@ -30,14 +37,16 @@ export default function Navbar() {
 
 	useEffect(() => {
 		function handleDocumentClick(event) {
-			if (menuRef.current && !menuRef.current.contains(event.target)) {
+			if (actionsRef.current && !actionsRef.current.contains(event.target)) {
 				setMenuOpen(false);
+				setNotificationsOpen(false);
 			}
 		}
 
 		function handleEscape(event) {
 			if (event.key === "Escape") {
 				setMenuOpen(false);
+				setNotificationsOpen(false);
 			}
 		}
 
@@ -53,6 +62,7 @@ export default function Navbar() {
 	function handleLogout() {
 		localStorage.removeItem("token");
 		setMenuOpen(false);
+		setNotificationsOpen(false);
 		navigate("/login");
 	}
 
@@ -65,12 +75,21 @@ export default function Navbar() {
 				</Link>
 
 				<div className="navbar-links" aria-label="Navegacion de usuario">
-					{isAuthenticated && (
+					{isAuthenticated && rol === "participante" && (
 						<NavLink
 							to="/user/dashboard"
 							className={({ isActive }) => `navbar-link-item${isActive ? " active" : ""}`}
 						>
 							Inicio
+						</NavLink>
+					)}
+
+					{isAuthenticated && rol === "admin" && (
+						<NavLink
+							to="/admin/dashboard"
+							className={({ isActive }) => `navbar-link-item${isActive ? " active" : ""}`}
+						>
+							Panel admin
 						</NavLink>
 					)}
 
@@ -98,7 +117,7 @@ export default function Navbar() {
 					)}
 				</div>
 
-				<div className="navbar-actions">
+				<div className="navbar-actions" ref={actionsRef}>
 					{isAuthenticated && rol === "participante" && (
 						<NavLink to="/user/dashboard" className="btn btn-propose">
 							+ Proponer Actividad
@@ -106,11 +125,49 @@ export default function Navbar() {
 					)}
 
 					{isAuthenticated && (
-						<div className="user-menu" ref={menuRef}>
+						<div className="navbar-notifications">
+							<button
+								type="button"
+								className="navbar-alert-btn"
+								aria-label="Notificaciones"
+								onClick={() => {
+									setNotificationsOpen(previous => !previous);
+									setMenuOpen(false);
+								}}
+								aria-expanded={notificationsOpen}
+							>
+								<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+									<path d="M6 9a6 6 0 1 1 12 0c0 6 2 7 2 7H4s2-1 2-7m3.5 10a2.5 2.5 0 0 0 5 0" />
+								</svg>
+								<span>3</span>
+							</button>
+
+							{notificationsOpen && (
+								<div className="navbar-notifications-panel" role="dialog" aria-label="Notificaciones">
+									<p className="navbar-popover-title">Notificaciones</p>
+									<div className="navbar-notifications-list">
+										{notifications.map(item => (
+											<article key={item.id} className="navbar-notification-item">
+												<strong>{item.title}</strong>
+												<small>{item.detail}</small>
+												<span>{item.time}</span>
+											</article>
+										))}
+									</div>
+								</div>
+							)}
+						</div>
+					)}
+
+					{isAuthenticated && (
+						<div className="user-menu">
 							<button
 								type="button"
 								className="user-menu-trigger"
-								onClick={() => setMenuOpen(previous => !previous)}
+								onClick={() => {
+									setMenuOpen(previous => !previous);
+									setNotificationsOpen(false);
+								}}
 								aria-expanded={menuOpen}
 								aria-haspopup="menu"
 							>

@@ -50,11 +50,34 @@ export function ParticipantProtectedRoute() {
 	return <Outlet />;
 }
 
+export function AdminProtectedRoute() {
+	const location = useLocation();
+	const user = getAuthenticatedUser();
+
+	if (!user) {
+		return <Navigate to="/login" replace state={{ from: location }} />;
+	}
+
+	if (user.rol !== "admin") {
+		if (user.rol === "participante") {
+			return <Navigate to="/user/dashboard" replace />;
+		}
+
+		return <Navigate to="/" replace />;
+	}
+
+	return <Outlet />;
+}
+
 export function PublicOnlyRoute() {
 	const user = getAuthenticatedUser();
 
 	if (user?.rol === "participante") {
 		return <Navigate to="/user/dashboard" replace />;
+	}
+
+	if (user?.rol === "admin") {
+		return <Navigate to="/admin/dashboard" replace />;
 	}
 
 	if (user) {
