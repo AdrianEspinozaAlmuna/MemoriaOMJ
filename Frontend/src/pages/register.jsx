@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { createUser } from "../services/userService";
+import { useNavigate } from "react-router-dom";
+import { createUser, login } from "../services/userService";
 import "../styles/register.css";
 
 export default function Register() {
+  const navigate = useNavigate();
   const [formValues, setFormValues] = useState({
     fullName: "",
     lastName: "",
@@ -14,7 +16,6 @@ export default function Register() {
     confirmPassword: ""
   });
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
   function handleChange(event) {
@@ -53,7 +54,6 @@ export default function Register() {
   async function handleSubmit(event) {
     event.preventDefault();
     setError("");
-    setSuccess("");
 
     const validationError = validateRegisterForm();
     if (validationError) {
@@ -72,16 +72,13 @@ export default function Register() {
         rol: "participante"
       });
 
-      setSuccess("Cuenta creada correctamente. Ahora puedes iniciar sesion.");
-      setFormValues({
-        fullName: "",
-        lastName: "",
-        rut: "",
-        registerEmail: "",
-        phone: "",
-        registerPassword: "",
-        confirmPassword: ""
-      });
+      const loginResponse = await login(
+        formValues.registerEmail.trim().toLowerCase(),
+        formValues.registerPassword
+      );
+
+      const role = loginResponse?.user?.rol;
+      navigate(role === "admin" ? "/admin/dashboard" : "/user/dashboard");
     } catch (requestError) {
       setError(requestError?.response?.data?.message || "No se pudo crear la cuenta.");
     } finally {
@@ -189,7 +186,6 @@ export default function Register() {
           />
 
           {error && <p className="auth-message auth-message-error">{error}</p>}
-          {success && <p className="auth-message auth-message-success">{success}</p>}
 
           <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
             {loading ? "Creando cuenta..." : "Crear cuenta"}

@@ -2,12 +2,12 @@ import React from "react";
 import "../styles/adminPages.css";
 
 const users = [
-	{ name: "Camila Torres", email: "camila@email.cl", rol: "Participante", group: "Grupo A", activities: 12, attendance: "92%", status: "Activo" },
-	{ name: "Diego Perez", email: "diego@email.cl", rol: "Participante", group: "Grupo B", activities: 18, attendance: "88%", status: "Activo" },
-	{ name: "Valentina Rojas", email: "vale@email.cl", rol: "Participante", group: "Grupo C", activities: 8, attendance: "75%", status: "Activo" },
-	{ name: "Matias Silva", email: "matias@email.cl", rol: "Participante", group: "Grupo A", activities: 25, attendance: "95%", status: "Activo" },
-	{ name: "Sofia Munoz", email: "sofia@email.cl", rol: "Encargado", group: "Grupo B", activities: 15, attendance: "90%", status: "Activo" },
-	{ name: "Lucas Ramirez", email: "lucas@email.cl", rol: "Participante", group: "Grupo C", activities: 9, attendance: "67%", status: "Inactivo" }
+	{ name: "Camila Torres", email: "camila@email.cl", rol: "Participante", group: "Grupo A", activities: 12, attendance: "92%", status: "Exitoso", type: "Asignado", signedUp: "Hace 1 ano" },
+	{ name: "Diego Perez", email: "diego@email.cl", rol: "Participante", group: "Grupo B", activities: 18, attendance: "88%", status: "Pendiente", type: "Sin asignar", signedUp: "Hace 2 meses" },
+	{ name: "Valentina Rojas", email: "vale@email.cl", rol: "Participante", group: "Grupo C", activities: 8, attendance: "75%", status: "Atrasado", type: "Asignado", signedUp: "Hace 8 meses" },
+	{ name: "Matias Silva", email: "matias@email.cl", rol: "Participante", group: "Grupo A", activities: 25, attendance: "95%", status: "Exitoso", type: "Suscripcion", signedUp: "Hace 4 meses" },
+	{ name: "Sofia Munoz", email: "sofia@email.cl", rol: "Encargado", group: "Grupo B", activities: 15, attendance: "90%", status: "Exitoso", type: "Suscripcion", signedUp: "Hace 1 ano" },
+	{ name: "Lucas Ramirez", email: "lucas@email.cl", rol: "Participante", group: "Grupo C", activities: 9, attendance: "67%", status: "Pendiente", type: "Suscripcion", signedUp: "Hace 6 meses" }
 ];
 
 function initialsFromName(name) {
@@ -43,28 +43,49 @@ export default function AdminUsers() {
 			</section>
 
 			<section className="admin-panel">
-				<h2>Filtros y Busqueda</h2>
-				<div className="admin-filter-row" style={{ marginTop: "0.9rem" }}>
-					<input className="admin-input" placeholder="Buscar por nombre o email..." />
-					<select className="admin-select"><option>Todos los roles</option></select>
-					<select className="admin-select"><option>Todos los grupos</option></select>
+				<div className="admin-users-controls">
+					<div className="admin-search-wrap">
+						<input className="admin-input" placeholder="Buscar usuarios" />
+					</div>
+					<div className="admin-users-filters">
+						<label>
+							Estado:
+							<select className="admin-select">
+								<option>Todos</option>
+								<option>Exitoso</option>
+								<option>Pendiente</option>
+								<option>Atrasado</option>
+							</select>
+						</label>
+						<label>
+							Rol:
+							<select className="admin-select">
+								<option>Todos</option>
+								<option>Participante</option>
+								<option>Encargado</option>
+							</select>
+						</label>
+					</div>
 				</div>
 			</section>
 
-			<section className="admin-panel">
-				<h2>Usuarios ({users.length})</h2>
-				<p className="admin-panel-subtitle">Lista de todos los usuarios registrados</p>
+			<section className="admin-panel admin-users-table-panel">
+				<div className="admin-users-table-head">
+					<h2>Usuarios</h2>
+					<p className="admin-panel-subtitle">Mostrando {users.length} registros</p>
+				</div>
 				<div className="admin-table-wrap">
-					<table className="admin-table">
+					<table className="admin-table admin-users-table-modern">
 						<thead>
 							<tr>
-								<th>Usuario</th>
-								<th>Rol</th>
-								<th>Grupo</th>
-								<th>Actividades</th>
-								<th>Asistencia</th>
+								<th>Nombre</th>
 								<th>Estado</th>
-								<th>Acciones</th>
+								<th>Tipo</th>
+								<th>Email</th>
+								<th>Registro</th>
+								<th>
+									<span className="admin-table-sort">Acciones</span>
+								</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -75,23 +96,39 @@ export default function AdminUsers() {
 											<span className="admin-user-mini-avatar">{initialsFromName(user.name)}</span>
 											<div>
 												<strong>{user.name}</strong>
-												<br />
-												<span>{user.email}</span>
+												<span>{user.rol}</span>
 											</div>
 										</div>
 									</td>
-									<td><span className="admin-chip">{user.rol}</span></td>
-									<td>{user.group}</td>
-									<td>{user.activities}</td>
-									<td>{user.attendance}</td>
 									<td>
-										<span className={`admin-status ${user.status === "Activo" ? "ok" : "warn"}`}>{user.status}</span>
+										<span
+											className={`admin-status-dot ${
+												user.status === "Exitoso" ? "ok" : user.status === "Pendiente" ? "warn" : "danger"
+											}`}
+										>
+											{user.status}
+										</span>
 									</td>
-									<td>⋮</td>
+									<td>{user.type}</td>
+									<td>{user.email}</td>
+									<td>{user.signedUp}</td>
+									<td>
+										<button type="button" className="admin-row-menu-btn" aria-label="Mas acciones">
+											⋮
+										</button>
+									</td>
 								</tr>
 							))}
 						</tbody>
 					</table>
+				</div>
+				<div className="admin-table-footer">
+					<span>Mostrando 1-{users.length} de {users.length}</span>
+					<div className="admin-table-pagination">
+						<button type="button">Anterior</button>
+						<button type="button" className="active">1</button>
+						<button type="button">Siguiente</button>
+					</div>
 				</div>
 			</section>
 		</section>
