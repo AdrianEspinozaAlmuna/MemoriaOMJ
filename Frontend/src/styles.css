@@ -70,6 +70,10 @@ a {
 		var(--bg);
 }
 
+.app-shell-public .page-main {
+	padding-top: 0;
+}
+
 .app-shell-user {
 	--nav-bg: var(--bg);
 	--nav-border: #d8dde2;

@@ -170,7 +170,11 @@ export default function Navbar() {
 				</div>
 					{isAuthenticated && rol === "participante" && (
 						<div className="hidden gap-2 max-[860px]:grid">
-							<NavLink to="/user/dashboard" className="btn btn-propose w-full" onClick={handleNavItemClick}>
+							<NavLink
+								to="/user/dashboard"
+								className="btn w-full border-[var(--primary)] bg-[var(--primary)] !text-white hover:border-[var(--primary-strong)] hover:bg-[var(--primary-strong)] hover:!text-white"
+								onClick={handleNavItemClick}
+							>
 								+ Proponer Actividad
 							</NavLink>
 						</div>
@@ -190,7 +194,11 @@ export default function Navbar() {
 
 				<div className="flex items-center justify-self-end gap-2 max-[1120px]:gap-1.5 max-[860px]:col-start-2 max-[860px]:row-start-1 max-[860px]:gap-2">
 					{isAuthenticated && rol === "participante" && (
-						<NavLink to="/user/dashboard" className="btn btn-propose hidden whitespace-nowrap rounded-lg border-[1.5px] border-[var(--primary)] px-3 py-2 font-semibold min-[861px]:inline-flex" onClick={handleNavItemClick}>
+						<NavLink
+							to="/user/dashboard"
+							className="btn hidden whitespace-nowrap rounded-lg border-[var(--primary)] bg-[var(--primary)] px-3 py-2 font-semibold !text-white hover:border-[var(--primary-strong)] hover:bg-[var(--primary-strong)] hover:!text-white min-[861px]:inline-flex"
+							onClick={handleNavItemClick}
+						>
 							+ Proponer Actividad
 						</NavLink>
 					)}
@@ -199,7 +207,7 @@ export default function Navbar() {
 						<div className="relative">
 							<button
 								type="button"
-								className="relative h-[2.15rem] w-[2.15rem] cursor-pointer rounded-lg border border-[#d2dfd8] bg-white transition-colors duration-200 hover:border-[#b7d0c2] hover:bg-[#f6fbf8]"
+								className="relative inline-flex h-[2.15rem] w-[2.15rem] items-center justify-center cursor-pointer rounded-lg border border-[#d2dfd8] bg-white transition-colors duration-200 hover:border-[#b7d0c2] hover:bg-[#f6fbf8]"
 								aria-label="Notificaciones"
 								onClick={() => {
 									setNotificationsOpen(previous => !previous);
@@ -234,7 +242,7 @@ export default function Navbar() {
 						<div className="relative">
 							<button
 								type="button"
-								className="inline-flex items-center gap-2 rounded-lg border border-[#d2dfd8] bg-white px-2 py-1.5 text-[0.89rem] font-semibold leading-none text-[#2e4c3d] transition-colors duration-200 hover:border-[#b6d0c1] hover:bg-[#f6fbf8] focus-visible:border-[var(--primary)] focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(5,166,61,0.15)] max-[860px]:h-[2.15rem] max-[860px]:min-w-[2.15rem] max-[860px]:justify-center max-[860px]:p-[0.18rem]"
+								className="inline-flex hover:cursor-pointer items-center gap-2 rounded-lg border border-[#d2dfd8] bg-white px-2 py-1.5 text-[0.89rem] font-semibold leading-none text-[#2e4c3d] transition-colors duration-200 hover:border-[#b6d0c1] hover:bg-[#f6fbf8] focus-visible:border-[var(--primary)] focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(5,166,61,0.15)] max-[860px]:h-[2.15rem] max-[860px]:min-w-[2.15rem] max-[860px]:justify-center max-[860px]:p-[0.18rem]"
 								onClick={() => {
 									setMenuOpen(previous => !previous);
 									setNotificationsOpen(false);
