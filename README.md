@@ -115,3 +115,69 @@ Ademas, el cache se versiona en Frontend/public/sw.js con la constante CACHE_NAM
   - Frontend/src/styles/login.css
   - Frontend/src/styles/register.css
   - Frontend/src/styles/navbar.css
+
+## Deploy Semanal (Gratis y Simple)
+
+Objetivo: publicar avances rapido para presentaciones, sin complejidad.
+
+### Recomendado (fase 1)
+
+- Frontend en Vercel (gratis)
+- Sin backend para demo: usa modo demo del frontend
+
+Esto te permite mostrar UI y flujo completo de navegacion de inmediato.
+
+### Configuracion del Frontend para Vercel
+
+El frontend ya incluye:
+
+- `Frontend/vercel.json` para rutas SPA (React Router)
+- `Frontend/src/services/api.js` con `VITE_API_URL`
+- `Frontend/src/services/userService.js` con modo demo por `VITE_DEMO_AUTH`
+
+Variables de entorno en Vercel (Project Settings > Environment Variables):
+
+- `VITE_DEMO_AUTH=true`
+- `VITE_API_URL=https://api-tu-backend.com/api` (opcional por ahora)
+
+Con `VITE_DEMO_AUTH=true`:
+
+- login y registro funcionan sin backend
+- si el email contiene `admin`, entra como admin
+- en otro caso, entra como participante
+
+### Flujo de ramas recomendado
+
+1. Trabaja en tu rama de feature.
+2. Para presentar: merge a `main`.
+3. Vercel despliega automaticamente `main`.
+4. Luego sigues iterando en tu rama y repites.
+
+### Fase 2 (cuando quieras backend + BD)
+
+- Backend: Render o Railway (plan gratuito)
+- Postgres: Neon o Supabase (plan gratuito)
+
+Variables backend:
+
+- `DATABASE_URL`
+- `JWT_SECRET`
+
+Prisma en produccion:
+
+- `prisma migrate deploy`
+- opcional: `prisma db seed`
+
+### Como editar la BD Postgres remota
+
+Opciones simples:
+
+1. Prisma Studio
+	- conecta con `DATABASE_URL` remota
+	- edita datos visualmente para demo
+
+2. Panel SQL (Neon/Supabase)
+	- ejecutar inserts/updates directos
+
+3. Script seed
+	- mantener datos demo consistentes cada semana
