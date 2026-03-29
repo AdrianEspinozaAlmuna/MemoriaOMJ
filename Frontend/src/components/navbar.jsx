@@ -94,7 +94,7 @@ export default function Navbar() {
 	const navLinkClass = ({ isActive }) =>
 		[
 			"rounded-lg border border-transparent px-3 py-2 text-[0.92rem] font-semibold text-[#2c4135] transition-colors duration-200 hover:bg-[#d0f8de]",
-			isActive ? "bg-[#e4f8ea] text-[var(--primary)]" : ""
+			isActive ? "bg-[#e4f8ea] text-[var(--primary-strong)]" : ""
 		].join(" ");
 
 	return (

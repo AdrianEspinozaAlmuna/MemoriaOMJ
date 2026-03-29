@@ -344,7 +344,7 @@ export default function Calendar({ activities, viewMode, monthDate, onActivityCl
                 {groupedDayActivities.map(([hourLabel, hourActivities]) => (
                   <section key={hourLabel} className="rounded-xl border border-[#cfd8e0] bg-[var(--surface)] p-3 shadow-[0_1px_0_rgba(18,28,45,0.05)]">
                     <header className="mb-2 flex items-center gap-2 border-b border-[#e1e7ed] pb-2">
-                      <span className="inline-flex items-center gap-1.5 rounded-md border border-[#d7dee6] bg-[#f4f7fa] px-2.5 py-1 text-[0.78rem] font-bold text-[#334b5f]">
+                      <span className="inline-flex items-center gap-1.5 rounded-md border border-[var(--primary)] bg-[var(--surface)] text-[var(--primary)] px-2.5 py-1 text-[0.78rem] font-bold text-[#334b5f]">
                         <Clock3 className="h-3.5 w-3.5" strokeWidth={2} />
                         {hourLabel}
                       </span>
@@ -355,7 +355,7 @@ export default function Calendar({ activities, viewMode, monthDate, onActivityCl
                         <button
                           key={activity.id}
                           type="button"
-                          className="grid cursor-pointer gap-1 rounded-lg border border-[#d4dde4] bg-white px-3 py-2 text-left transition-colors hover:border-[#c6d1da] hover:bg-[#f7f9fb]"
+                          className="hover:border-2 hover:border-[var(--primary)] hover:bg-[var(--surface)] grid cursor-pointer gap-1 rounded-lg border-2 border-[#d4dde4] bg-white px-3 py-2 text-left transition-colors"
                           onClick={() => handleActivityFromDayModal(activity)}
                         >
                           <strong className="text-[0.92rem] text-[#1b3528]">{activity.title}</strong>
@@ -385,7 +385,7 @@ export default function Calendar({ activities, viewMode, monthDate, onActivityCl
                 {groupedByRoomActivities.map(([roomLabel, roomActivities]) => (
                   <section key={roomLabel} className="rounded-xl border border-[#cfd8e0] bg-[var(--surface)] p-3 shadow-[0_1px_0_rgba(18,28,45,0.05)]">
                     <header className="mb-2 flex items-center gap-2 border-b border-[#e1e7ed] pb-2">
-                      <span className="inline-flex max-w-full items-center gap-1.5 rounded-md border border-[#d7dee6] bg-[#f4f7fa] px-2.5 py-1 text-[0.78rem] font-bold text-[#334b5f]">
+                      <span className="text-[var(--primary)] inline-flex max-w-full items-center gap-1.5 rounded-md border border-[var(--primary)] bg-[var(--surface)] px-2.5 py-1 text-[0.78rem] font-bold text-[#334b5f]">
                         <MapPin className="h-3.5 w-3.5" strokeWidth={2} />
                         <span className="max-w-[22ch] overflow-hidden text-ellipsis whitespace-nowrap">{roomLabel}</span>
                       </span>
@@ -396,7 +396,7 @@ export default function Calendar({ activities, viewMode, monthDate, onActivityCl
                         <button
                           key={activity.id}
                           type="button"
-                          className="grid cursor-pointer gap-1 rounded-lg border border-[#d4dde4] bg-white px-3 py-2 text-left transition-colors hover:border-[#c6d1da] hover:bg-[#f7f9fb]"
+                          className="hover:border-[var(--primary)] grid cursor-pointer gap-1 rounded-lg border-2 border-[#d4dde4] bg-white px-3 py-2 text-left transition-colors hover:border-[#c6d1da] hover:bg-[#f7f9fb]"
                           onClick={() => handleActivityFromDayModal(activity)}
                         >
                           <strong className="text-[0.92rem] text-[#1b3528]">{activity.title}</strong>
