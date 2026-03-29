@@ -1,6 +1,6 @@
 import React from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
-import Home from "./pages/home";
+import Home from "./pages/Home";
 import Login from "./pages/login";
 import Register from "./pages/register";
 import UserDashboard from "./pages/userDashboard";
@@ -8,7 +8,7 @@ import UserCalendar from "./pages/userCalendar";
 import MyActivities from "./pages/myActivities";
 import MyAttendance from "./pages/myAttendance";
 import CreateActivity from "./pages/createActivity";
-import Navbar from "./components/Navbar";
+import Navbar from "./components/navbar";
 import AdminLayout from "./components/AdminLayout";
 import AdminDashboard from "./pages/adminDashboard";
 import AdminUsers from "./pages/adminUsers";
