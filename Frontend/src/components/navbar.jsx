@@ -98,8 +98,8 @@ export default function Navbar() {
 
 	return (
 		<header className="sticky top-0 z-30 border-b border-[#e2e5e9] bg-white shadow-[0_1px_0_rgba(17,24,39,0.03)]">
-			<nav className="container grid min-h-16 grid-cols-[auto_1fr_auto] items-center gap-x-5 max-[1120px]:grid-cols-[auto_minmax(0,1fr)_auto] max-[860px]:min-h-[4.2rem] max-[860px]:grid-cols-[minmax(0,1fr)_auto] max-[860px]:gap-y-2 max-[860px]:py-2" ref={navRef}>
-				<div className="inline-flex items-center gap-2.5 min-[861px]:min-w-0">
+			<nav className="mx-auto grid min-h-16 w-[min(98vw,1680px)] grid-cols-[auto_1fr_auto] items-center gap-x-8 px-4 sm:px-6 lg:gap-x-10 max-[1120px]:grid-cols-[auto_minmax(0,1fr)_auto] max-[860px]:min-h-[4.2rem] max-[860px]:w-full max-[860px]:grid-cols-[minmax(0,1fr)_auto] max-[860px]:gap-y-2 max-[860px]:py-2" ref={navRef}>
+				<div className="inline-flex items-center gap-2.5 justify-self-start min-[861px]:min-w-0">
 					<button
 						type="button"
 						className="hidden h-[2.15rem] w-[2.15rem] flex-col items-center justify-center gap-[0.22rem] rounded-lg border border-[#d2dfd8] bg-white p-0 transition-colors duration-200 hover:border-[#b7d0c2] hover:bg-[#f6fbf8] max-[860px]:inline-flex"
@@ -121,7 +121,7 @@ export default function Navbar() {
 				<div className={`min-[861px]:contents ${mobileMenuOpen ? "max-[860px]:col-span-2 max-[860px]:grid max-[860px]:gap-2.5 max-[860px]:rounded-xl max-[860px]:border max-[860px]:border-[#d7e4dc] max-[860px]:bg-white max-[860px]:p-2.5" : "max-[860px]:hidden"}`}>
 					{isAuthenticated && rol === "participante" && <p className="hidden text-[0.82rem] font-semibold text-[#6f8278] max-[860px]:block">Panel de usuario</p>}
 
-				<div className="flex w-max flex-wrap items-center justify-center gap-1 justify-self-center max-[1120px]:w-auto max-[1120px]:max-w-full max-[1120px]:min-w-0 max-[1120px]:flex-nowrap max-[1120px]:justify-start max-[1120px]:overflow-x-auto max-[1120px]:pb-1 max-[860px]:w-full max-[860px]:flex-col max-[860px]:items-stretch max-[860px]:gap-1 max-[860px]:overflow-visible max-[860px]:pb-0" aria-label="Navegacion de usuario">
+				<div className="flex w-full flex-nowrap items-center justify-center gap-1.5 justify-self-center max-[1120px]:w-auto max-[1120px]:max-w-full max-[1120px]:min-w-0 max-[1120px]:justify-start max-[1120px]:overflow-x-auto max-[1120px]:pb-1 max-[860px]:w-full max-[860px]:flex-col max-[860px]:items-stretch max-[860px]:gap-1 max-[860px]:overflow-visible max-[860px]:pb-0" aria-label="Navegacion de usuario">
 					{isAuthenticated && rol === "participante" && (
 						<NavLink
 							to="/user/dashboard"
@@ -171,7 +171,7 @@ export default function Navbar() {
 					{isAuthenticated && rol === "participante" && (
 						<div className="hidden gap-2 max-[860px]:grid">
 							<NavLink
-								to="/user/dashboard"
+								to="/user/crear-actividad"
 								className="btn w-full border-[var(--primary)] bg-[var(--primary)] !text-white hover:border-[var(--primary-strong)] hover:bg-[var(--primary-strong)] hover:!text-white"
 								onClick={handleNavItemClick}
 							>
@@ -192,16 +192,18 @@ export default function Navbar() {
 					)}
 				</div>
 
-				<div className="flex items-center justify-self-end gap-2 max-[1120px]:gap-1.5 max-[860px]:col-start-2 max-[860px]:row-start-1 max-[860px]:gap-2">
+				<div className="flex items-center justify-self-end gap-5 max-[1120px]:gap-3 max-[860px]:col-start-2 max-[860px]:row-start-1 max-[860px]:gap-2">
 					{isAuthenticated && rol === "participante" && (
 						<NavLink
-							to="/user/dashboard"
-							className="btn hidden whitespace-nowrap rounded-lg border-[var(--primary)] bg-[var(--primary)] px-3 py-2 font-semibold !text-white hover:border-[var(--primary-strong)] hover:bg-[var(--primary-strong)] hover:!text-white min-[861px]:inline-flex"
+							to="/user/crear-actividad"
+							className="btn hidden whitespace-nowrap rounded-lg border-[var(--primary)] bg-[var(--primary)] px-3 py-2 font-semibold !text-white hover:border-[var(--primary-strong)] hover:bg-[var(--primary-strong)] hover:!text-white min-[861px]:inline-flex min-[861px]:mr-1 lg:mr-3"
 							onClick={handleNavItemClick}
 						>
 							+ Proponer Actividad
 						</NavLink>
 					)}
+
+					<div className="flex items-center gap-2 max-[1120px]:gap-1.5">
 
 					{isAuthenticated && (
 						<div className="relative">
@@ -274,6 +276,7 @@ export default function Navbar() {
 							</NavLink>
 						</>
 					)}
+					</div>
 				</div>
 			</nav>
 		</header>

@@ -63,19 +63,21 @@ export default function StatsPanel({ stats = {} }) {
           <div className="flex items-center justify-between gap-3">
             <p className="m-0 text-[0.83rem] text-[#6f8278]">{item.label}</p>
             <span
-              className={`inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#cee2d6] bg-[#edf7f1] text-[var(--primary-strong)] ${
+              className={`inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#cee2d6] bg-[#edf7f1] text-[var(--primary-strong)] ${
                 item.key === "total"
-                  ? "border-[#c6d7f3] bg-[#eef4ff] text-[#2d5f8c]"
+                  ? "border-[#c5dfd1] bg-[#eaf6ef] text-[#246b45]"
                   : item.key === "month"
-                    ? "border-[#f1dfaa] bg-[#fff8e7] text-[#8b6b10]"
+                    ? "border-[#bfdecf] bg-[#e6f5ec] text-[#21673f]"
                     : "border-[#c2dfcb]"
               }`}
             >
-              <StatIcon statKey={item.key} />
+              <span className="h-3.5 w-3.5">
+                <StatIcon statKey={item.key} />
+              </span>
             </span>
           </div>
           <h3 className="mb-0 mt-1.5 text-[1.12rem] font-bold text-[#153d2a]">{splitValue(item.key, item.value).main}</h3>
-          {splitValue(item.key, item.value).note && <small className="mt-1 block text-[0.78rem] font-semibold text-[#4b8b66]">{splitValue(item.key, item.value).note}</small>}
+          {splitValue(item.key, item.value).note && <small className="mt-1 block text-[0.78rem] font-semibold text-[#376c50]">{splitValue(item.key, item.value).note}</small>}
         </article>
       ))}
     </div>

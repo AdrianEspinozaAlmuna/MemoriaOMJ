@@ -157,7 +157,7 @@ const attendancePayload = {
       date: "2026-03-06",
       time: "17:30",
       place: "Sala Multimedia OMJ",
-      status: "Asistio"
+      status: "Asistido"
     },
     {
       id: "hist-02",
@@ -166,7 +166,7 @@ const attendancePayload = {
       date: "2026-02-25",
       time: "18:00",
       place: "Auditorio OMJ",
-      status: "No asistio"
+      status: "No Asistido"
     },
     {
       id: "hist-03",
@@ -175,7 +175,7 @@ const attendancePayload = {
       date: "2026-02-12",
       time: "16:00",
       place: "Centro Juvenil",
-      status: "Asistio"
+      status: "Asistido"
     },
     {
       id: "hist-04",
@@ -184,7 +184,7 @@ const attendancePayload = {
       date: "2026-01-31",
       time: "10:30",
       place: "Parque Cerro Condell",
-      status: "Asistio"
+      status: "Asistido"
     }
   ]
 };
@@ -213,4 +213,15 @@ export function getMyActivitiesData() {
 
 export function getAttendanceData() {
   return mockResponse(attendancePayload);
+}
+
+export function submitActivityProposal(payload) {
+  return mockResponse({
+    ok: true,
+    message: "Propuesta enviada correctamente.",
+    proposal: {
+      id: `prop-${Date.now()}`,
+      ...payload
+    }
+  });
 }

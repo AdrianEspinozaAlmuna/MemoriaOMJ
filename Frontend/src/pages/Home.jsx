@@ -276,7 +276,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="bg-[#f7faf8] py-16" id="funcionalidades">
+      <section className="bg-[var(--bg-neutral)] py-16" id="funcionalidades">
         <div className="container">
           <header className="mb-10 text-center">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-[rgba(10,143,74,0.12)] px-4 py-2">

@@ -63,7 +63,7 @@ export default function Login() {
 						
 					</div>
 					<p className="m-0 text-base font-medium leading-[1.35] text-[var(--primary)]">Oficina Municipal de la Juventud</p>
-					<h3 className="mb-1 mt-5 margin text-[clamp(1.45rem,2.5vw,1.82rem)] text-[#162e23]">Iniciar sesión</h3>
+					<h3 className="mb-1 mt-5 margin text-[clamp(1.45rem,2.5vw,1.82rem)] text-[#162e23] font-bold">Iniciar sesión</h3>
 					<p className="m-0 max-w-[33ch] text-[0.9rem] leading-[1.5] text-[var(--text-muted)] max-[640px]:text-[0.87rem]">
 						Ingresa con tu cuenta para ver tus actividades y novedades.
 					</p>

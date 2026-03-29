@@ -93,7 +93,7 @@ export default function Register() {
             <img src="/iconOMJ.jpg" alt="OMJ" className="h-12 w-12 rounded-sm object-cover" />
           </div>
           <p className="m-0 text-base font-medium leading-[1.35] text-[var(--primary)]">Oficina Municipal de la Juventud</p>
-          <h1 className="mb-1 mt-5 text-[clamp(1.45rem,2.5vw,1.82rem)] text-[#162e23]">Crear cuenta</h1>
+          <h1 className="mb-1 mt-5 text-[clamp(1.45rem,2.5vw,1.82rem)] text-[#162e23] font-bold">Crear cuenta</h1>
           <p className="m-0 max-w-[33ch] text-[0.9rem] leading-[1.5] text-[var(--text-muted)] max-[640px]:text-[0.87rem]">
             Regístrate para postular a talleres y recibir novedades de actividades.
           </p>

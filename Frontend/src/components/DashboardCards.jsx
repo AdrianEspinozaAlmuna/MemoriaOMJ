@@ -38,19 +38,21 @@ export default function DashboardCards({ items = [], loading = false }) {
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
       {items.map(item => (
-        <article key={item.key} className="rounded-xl border border-[#d7e2db] bg-[linear-gradient(180deg,#ffffff_0%,#f7fbf9_100%)] px-5 py-4 shadow-[0_10px_24px_-26px_rgba(8,38,23,0.48)]">
+        <article key={item.key} className="rounded-xl border border-[#d3e1d9] bg-[linear-gradient(145deg,#ffffff_0%,#f4faf7_100%)] px-5 py-4 shadow-[0_10px_24px_-26px_rgba(8,38,23,0.44)]">
           <div className="flex items-center justify-between gap-3">
             <p className="m-0 text-[0.85rem] font-medium text-[var(--text-muted)]">{item.label}</p>
             <span
-              className={`inline-flex h-[2.15rem] w-[2.15rem] flex-none items-center justify-center rounded-full border border-[#cfe0d6] bg-[#edf7f1] text-[var(--primary-strong)] ${
+              className={`inline-flex h-8 w-8 flex-none items-center justify-center rounded-full text-white shadow-[0_8px_14px_-10px_rgba(4,96,45,0.55)] ${
                 item.key === "attendanceRate" || item.key === "rate"
-                  ? "border-[#ecd99a] bg-[#fff7dd] text-[#8b6a10]"
+                  ? "bg-[linear-gradient(135deg,var(--primary-soft),var(--primary))]"
                   : item.key === "month" || item.key === "monthAttendance" || item.key === "completed"
-                    ? "border-[#bfd8f1] bg-[#e9f4ff] text-[#2e6e9f]"
-                    : ""
+                    ? "bg-[linear-gradient(135deg,var(--primary),var(--primary-strong))]"
+                    : "bg-[linear-gradient(135deg,#0b9e4b,#067c38)]"
               }`}
             >
-              <MetricIcon metricKey={item.key} />
+              <span className="h-4 w-4">
+                <MetricIcon metricKey={item.key} />
+              </span>
             </span>
           </div>
           <h3 className="mb-0 mt-2 text-[clamp(1.6rem,2.45vw,2rem)] font-bold text-[#163d2a]">{item.value}</h3>

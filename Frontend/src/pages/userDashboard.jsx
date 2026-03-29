@@ -1,15 +1,45 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import DashboardCards from "../components/DashboardCards";
 import ActivityCard from "../components/ActivityCard";
 import { getDashboardData } from "../services/userViewsService";
 
 const quickActions = [
-  { label: "Ver calendario", subtitle: "Todas las actividades", to: "/user/calendario", icon: "calendar", iconClass: "bg-emerald-500" },
-  { label: "Crear actividad", subtitle: "Propon una nueva", to: "/user/dashboard", icon: "plus", iconClass: "bg-emerald-800" },
-  { label: "Mis actividades", subtitle: "Ver mis inscripciones", to: "/user/mis-actividades", icon: "list", iconClass: "bg-emerald-700" },
-  { label: "Mi asistencia", subtitle: "Historial completo", to: "/user/asistencia", icon: "check", iconClass: "bg-emerald-600" }
+  {
+    label: "Agenda al dia",
+    subtitle: "Revisa fechas clave y reserva tu proximo lugar en segundos.",
+    cta: "Ir al calendario",
+    to: "/user/calendario",
+    icon: "calendar"
+  },
+  {
+    label: "Crea algo nuevo",
+    subtitle: "Quieres crear una actividad? Publicala ahora y suma participantes.",
+    cta: "Crear una actividad",
+    to: "/user/crear-actividad",
+    icon: "plus"
+  },
+  {
+    label: "Impulsa tus planes",
+    subtitle: "Gestiona tus inscripciones y sigue cada actividad desde un solo lugar.",
+    cta: "Ir a mis actividades",
+    to: "/user/mis-actividades",
+    icon: "list"
+  },
+  {
+    label: "Tu progreso real",
+    subtitle: "Controla tu asistencia completa y mantente siempre al dia.",
+    cta: "Ver mi asistencia",
+    to: "/user/asistencia",
+    icon: "check"
+  }
 ];
+
+function getQuickIconClass(name) {
+  if (name === "calendar") return "text-[#128645]";
+  if (name === "plus") return "text-[#0da14d]";
+  if (name === "list") return "text-[#177f46]";
+  return "text-[#149350]";
+}
 
 function QuickActionIcon({ name }) {
   if (name === "calendar") {
@@ -45,7 +75,6 @@ function QuickActionIcon({ name }) {
 
 export default function UserDashboard() {
   const [loading, setLoading] = useState(true);
-  const [metrics, setMetrics] = useState([]);
   const [upcomingActivities, setUpcomingActivities] = useState([]);
 
   useEffect(() => {
@@ -53,7 +82,6 @@ export default function UserDashboard() {
 
     getDashboardData().then(data => {
       if (!mounted) return;
-      setMetrics(data.metrics);
       setUpcomingActivities(data.upcomingActivities);
       setLoading(false);
     });
@@ -64,44 +92,56 @@ export default function UserDashboard() {
   }, []);
 
   return (
-    <section className="container relative animate-[revealUp_0.7s_ease_both]">
+    <section className="container relative animate-[revealUp_0.7s_ease_both] pb-2">
       <header className="pt-1.5 pb-0.5">
-        <p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-primary">Panel de usuario</p>
+        <p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Panel de usuario</p>
         <h1 className="mt-2 mb-0 text-[clamp(1.8rem,2.6vw,2.2rem)] font-bold text-[var(--text)]">Inicio</h1>
+        <p className="mt-2 text-[0.92rem] text-[var(--text-muted)]">Revisa tus metricas, accesos directos y proximas actividades en un solo lugar.</p>
         <span className="mt-3.5 block h-1 w-[min(190px,44vw)] rounded-full bg-[var(--header-accent)] opacity-45" />
       </header>
 
-      <section className="mt-6 rounded-[var(--panel-radius)] border border-[var(--panel-border)] bg-[var(--panel-bg)] p-6 shadow-[var(--panel-shadow)]">
-        <h2 className="mb-5 mt-0 inline-flex items-center gap-2 text-[1.1rem] font-bold text-[var(--text)] before:inline-block before:h-2 before:w-2 before:rounded-full before:bg-[linear-gradient(135deg,var(--primary)_0%,#45b373_100%)]">Metricas principales</h2>
-        <DashboardCards items={metrics} loading={loading} />
-      </section>
-
-      <section className="mt-6 rounded-[var(--panel-radius)] border border-[var(--panel-border)] bg-[var(--panel-bg)] p-6 shadow-[var(--panel-shadow)]">
-        <h2 className="mb-5 mt-0 inline-flex items-center gap-2 text-[1.1rem] font-bold text-[var(--text)] before:inline-block before:h-2 before:w-2 before:rounded-full before:bg-[linear-gradient(135deg,var(--primary)_0%,#45b373_100%)]">Acciones rapidas</h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="mt-6">
+        <div className="rounded-[10px]  p-2.5 sm:p-1">
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
           {quickActions.map(action => (
-            <Link
+            <article
               key={action.label}
-              to={action.to}
-              className="relative grid min-h-[100px] content-center gap-1 rounded-xl border border-[#d6e2da] bg-[linear-gradient(180deg,#ffffff_0%,#f8fcfa_100%)] px-4 py-5 font-semibold shadow-[0_10px_24px_-24px_rgba(7,42,25,0.5)] transition-[border-color,background,box-shadow] duration-200 before:absolute before:left-0 before:right-0 before:top-0 before:h-[3px] before:rounded-t-xl before:bg-[linear-gradient(90deg,rgba(15,143,78,0.7),rgba(242,215,66,0.62))] before:opacity-65 hover:border-[var(--primary)] hover:bg-[linear-gradient(180deg,#ffffff_0%,#f4fbf7_100%)] hover:shadow-[0_16px_34px_-26px_rgba(11,52,31,0.45)]"
+              className="group flex min-h-[230px] flex-col items-center justify-between rounded-[10px] border border-[#e5e7eb] bg-[#fbfdfc] px-4 py-5 text-center transition-all duration-200 hover:-translate-y-1 hover:border-[#d5ded8] hover:bg-white"
             >
-              <span className={`inline-flex h-11 w-11 items-center justify-center rounded-full text-white shadow-[0_8px_16px_-14px_rgba(15,143,78,0.72)] ${action.iconClass}`}>
-                <QuickActionIcon name={action.icon} />
+              <span className={`inline-flex h-20 w-20 items-center justify-center ${getQuickIconClass(action.icon)}`}>
+                <span className="h-9 w-9">
+                  <QuickActionIcon name={action.icon} />
+                </span>
               </span>
-              <span className="text-[0.96rem] text-[var(--text)]">{action.label}</span>
-              <small className="text-[0.8rem] font-medium text-[var(--text-muted)]">{action.subtitle}</small>
-            </Link>
+              <div className="mt-3 flex-1">
+                <span className="block text-[1rem] font-semibold leading-tight text-[var(--text)]">{action.label}</span>
+                <small className="mt-1.5 block text-[0.77rem] font-medium leading-relaxed text-[#5d6d66]">{action.subtitle}</small>
+              </div>
+              <Link
+                to={action.to}
+                className="mt-4 inline-flex w-full cursor-pointer justify-center rounded-[10px] bg-[var(--primary)] px-4 py-2 text-[0.83rem] font-semibold !text-white transition-all duration-200 hover:bg-[var(--primary-strong)] hover:!text-white visited:!text-white focus:!text-white active:!text-white hover:shadow-sm"
+              >
+                {action.cta}
+              </Link>
+            </article>
           ))}
+          </div>
         </div>
       </section>
 
       <section className="mt-6 rounded-[var(--panel-radius)] border border-[var(--panel-border)] bg-[var(--panel-bg)] p-6 shadow-[var(--panel-shadow)]">
         <h2 className="mb-5 mt-0 inline-flex items-center gap-2 text-[1.1rem] font-bold text-[var(--text)] before:inline-block before:h-2 before:w-2 before:rounded-full before:bg-[linear-gradient(135deg,var(--primary)_0%,#45b373_100%)]">Proximas actividades</h2>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {upcomingActivities.map(activity => (
-            <ActivityCard key={activity.id} activity={activity} actionLabel="Ver mas" />
-          ))}
-        </div>
+        {upcomingActivities.length === 0 && !loading ? (
+          <div className="grid min-h-[132px] place-items-center rounded-xl border border-dashed border-[#cdded3] bg-[#f9fcfa] text-center">
+            <p className="max-w-[44ch] px-4 text-[0.9rem] text-[var(--text-muted)]">Aun no tienes actividades proximas. Explora el calendario para inscribirte en nuevos talleres.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {upcomingActivities.map(activity => (
+              <ActivityCard key={activity.id} activity={activity} actionLabel="Ver mas" />
+            ))}
+          </div>
+        )}
       </section>
     </section>
   );

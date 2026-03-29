@@ -43,8 +43,9 @@ export default function UserCalendar() {
   return (
     <section className="container relative animate-[revealUp_0.7s_ease_both]">
       <header className="pt-1.5 pb-0.5">
-        <p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-primary">Panel de usuario</p>
+        <p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Panel de usuario</p>
         <h1 className="mt-2 mb-0 text-[clamp(1.8rem,2.6vw,2.2rem)] font-bold text-[var(--text)]">Calendario</h1>
+        <p className="mt-2 text-[0.92rem] text-[var(--text-muted)]">Filtra tus actividades por categoria, estado o fecha para encontrar lo que necesitas.</p>
         <span className="mt-3.5 block h-1 w-[min(190px,44vw)] rounded-full bg-[var(--header-accent)] opacity-45" />
       </header>
 
@@ -84,8 +85,19 @@ export default function UserCalendar() {
           </label>
         </div>
 
+        {!loading && (
+          <div className="mb-4 flex items-center justify-between rounded-lg border border-[#d8e6dd] bg-[#f7fbf9] px-3.5 py-2.5">
+            <p className="text-[0.85rem] font-medium text-[var(--text-muted)]">Resultados encontrados</p>
+            <span className="inline-flex rounded-full bg-[rgba(15,143,78,0.12)] px-2.5 py-1 text-[0.78rem] font-semibold text-[var(--primary-strong)]">{filteredActivities.length}</span>
+          </div>
+        )}
+
         {loading ? (
           <div className="grid min-h-[220px] place-items-center rounded-[10px] border border-[#dbe5de] bg-[linear-gradient(180deg,#f9fcfa_0%,#f5f8f6_100%)] font-medium text-[var(--text-muted)]">Cargando calendario...</div>
+        ) : filteredActivities.length === 0 ? (
+          <div className="grid min-h-[220px] place-items-center rounded-[10px] border border-dashed border-[#cddfd4] bg-[#f9fcfa] px-5 text-center font-medium text-[var(--text-muted)]">
+            No hay actividades con los filtros seleccionados. Prueba con otra categoria o estado.
+          </div>
         ) : (
           <Calendar
             activities={filteredActivities}

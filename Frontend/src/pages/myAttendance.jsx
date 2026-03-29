@@ -40,8 +40,9 @@ export default function MyAttendance() {
   return (
     <section className="container relative animate-[revealUp_0.7s_ease_both]">
       <header className="pt-1.5 pb-0.5">
-        <p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-primary">Panel de usuario</p>
+        <p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Panel de usuario</p>
         <h1 className="mt-2 mb-0 text-[clamp(1.8rem,2.6vw,2.2rem)] font-bold text-[var(--text)]">Mi asistencia</h1>
+        <p className="mt-2 text-[0.92rem] text-[var(--text-muted)]">Monitorea tu avance mensual y revisa el detalle de asistencias registradas.</p>
         <span className="mt-3.5 block h-1 w-[min(190px,44vw)] rounded-full bg-[var(--header-accent)] opacity-45" />
       </header>
 
@@ -82,8 +83,8 @@ export default function MyAttendance() {
               </tr>
             </thead>
             <tbody>
-              {history.map(row => (
-                <tr key={row.id}>
+              {history.map((row, index) => (
+                <tr key={row.id} className={index % 2 === 0 ? "bg-white" : "bg-[#fbfdfb]"}>
                   <td className="border-b border-[#e5ece7] px-3.5 py-3 text-[0.86rem] font-semibold text-[var(--text)]">{row.name}</td>
                   <td className="border-b border-[#e5ece7] px-3.5 py-3 text-[0.86rem] text-[var(--text-muted)]">
                     <span className="inline-flex items-center justify-center rounded-lg border border-[#d7e5dc] bg-[#f2f8f4] px-2 py-1 text-[0.75rem] font-semibold text-[#2f5c46]">{row.type || "Actividad"}</span>
@@ -92,7 +93,7 @@ export default function MyAttendance() {
                   <td className="border-b border-[#e5ece7] px-3.5 py-3 text-[0.86rem] text-[var(--text-muted)]">{row.time || "-"}</td>
                   <td className="border-b border-[#e5ece7] px-3.5 py-3 text-[0.86rem] text-[var(--text-muted)]">{row.place || "-"}</td>
                   <td className="border-b border-[#e5ece7] px-3.5 py-3 text-[0.86rem] text-[var(--text-muted)]">
-                    <span className={`inline-flex items-center justify-center rounded-lg border px-3 py-1.5 text-xs font-semibold ${row.status === "Asistio" ? "border-[var(--status-ok-border)] bg-[var(--status-ok-bg)] text-[var(--primary-strong)]" : "border-[var(--status-miss-border)] bg-[var(--status-miss-bg)] text-[#7a2d1f]"}`}>{row.status}</span>
+                    <span className={`inline-flex items-center justify-center rounded-lg border px-3 py-1.5 text-xs font-semibold ${row.status === "Asistido" ? "border-[var(--status-ok-border)] bg-[var(--status-ok-bg)] text-[var(--primary-strong)]" : "border-[var(--status-miss-border)] bg-[var(--status-miss-bg)] text-[#7a2d1f]"}`}>{row.status}</span>
                   </td>
                 </tr>
               ))}
