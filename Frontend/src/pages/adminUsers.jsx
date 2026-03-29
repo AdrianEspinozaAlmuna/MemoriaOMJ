@@ -1,4 +1,5 @@
 import React from "react";
+import { UserRoundPlus } from "lucide-react";
 
 const users = [
 	{ name: "Camila Torres", email: "camila@email.cl", rol: "Participante", group: "Grupo A", activities: 12, attendance: "92%", status: "Exitoso", type: "Asignado", signedUp: "Hace 1 ano" },
@@ -27,9 +28,7 @@ export default function AdminUsers() {
 					<p className="mt-1.5 text-[0.98rem] text-[var(--text-muted)]">Administra los usuarios registrados en la plataforma</p>
 				</div>
 				<button type="button" className="btn btn-primary inline-flex items-center gap-2 rounded-[10px]">
-					<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="h-4 w-4 fill-none stroke-current stroke-[1.9] [stroke-linecap:round] [stroke-linejoin:round]">
-						<path d="M16 11a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm-8 2a3 3 0 1 0-3-3 3 3 0 0 0 3 3Zm0 2c-2.76 0-5 1.57-5 3.5A1.5 1.5 0 0 0 4.5 20h7m3-4v4m-2-2h4" />
-					</svg>
+					<UserRoundPlus aria-hidden="true" focusable="false" className="h-4 w-4" strokeWidth={1.9} />
 					Agregar Usuario
 				</button>
 			</header>

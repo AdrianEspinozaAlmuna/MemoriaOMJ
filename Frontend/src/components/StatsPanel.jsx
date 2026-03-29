@@ -1,35 +1,20 @@
 import React from "react";
+import { CalendarDays, CheckCircle2, TrendingUp, UserRound } from "lucide-react";
 
 function StatIcon({ statKey }) {
   if (statKey === "rate") {
-    return (
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="m5 16 4-4 3 3 7-7M15 8h4v4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    );
+    return <TrendingUp aria-hidden="true" focusable="false" className="h-full w-full" strokeWidth={1.8} />;
   }
 
   if (statKey === "total") {
-    return (
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="m7.5 12 2.8 2.8L16.8 8.3M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    );
+    return <CheckCircle2 aria-hidden="true" focusable="false" className="h-full w-full" strokeWidth={1.8} />;
   }
 
   if (statKey === "month") {
-    return (
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M7 4v3M17 4v3M4 9h16M6 7h12a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    );
+    return <CalendarDays aria-hidden="true" focusable="false" className="h-full w-full" strokeWidth={1.8} />;
   }
 
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path d="M12 5.5a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm0 8.6c-4.2 0-7.6 2.2-7.6 4.9v.5h15.2V19c0-2.7-3.4-4.9-7.6-4.9Z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
+  return <UserRound aria-hidden="true" focusable="false" className="h-full w-full" strokeWidth={1.8} />;
 }
 
 function splitValue(statKey, value) {

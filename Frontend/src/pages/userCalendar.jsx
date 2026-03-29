@@ -1,12 +1,21 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { CalendarDays, ChevronLeft, ChevronRight, Layers3, ListFilter, Tags } from "lucide-react";
 import Calendar from "../components/Calendar";
 import Modal from "../components/Modal";
 import { getCalendarData } from "../services/userViewsService";
+
+function getMonthLabel(date) {
+  return new Intl.DateTimeFormat("es-ES", { month: "long", year: "numeric" }).format(date);
+}
 
 export default function UserCalendar() {
   const [loading, setLoading] = useState(true);
   const [activities, setActivities] = useState([]);
   const [viewMode, setViewMode] = useState("mensual");
+  const [monthDate, setMonthDate] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
   const [selectedCategory, setSelectedCategory] = useState("todos");
   const [selectedStatus, setSelectedStatus] = useState("todos");
   const [selectedDate, setSelectedDate] = useState("");
@@ -40,6 +49,16 @@ export default function UserCalendar() {
     });
   }, [activities, selectedCategory, selectedStatus, selectedDate]);
 
+  const monthLabel = useMemo(() => getMonthLabel(monthDate), [monthDate]);
+
+  function goToPreviousMonth() {
+    setMonthDate(current => new Date(current.getFullYear(), current.getMonth() - 1, 1));
+  }
+
+  function goToNextMonth() {
+    setMonthDate(current => new Date(current.getFullYear(), current.getMonth() + 1, 1));
+  }
+
   return (
     <section className="container relative animate-[revealUp_0.7s_ease_both]">
       <header className="pt-1.5 pb-0.5">
@@ -52,7 +71,10 @@ export default function UserCalendar() {
       <section className="mt-6 rounded-[var(--panel-radius)] border border-[var(--panel-border)] bg-[var(--panel-bg)] p-6 shadow-[var(--panel-shadow)]">
         <div className="mb-4 grid grid-cols-1 gap-4 rounded-xl border border-[#d8e5dc] bg-[linear-gradient(180deg,#fbfdfc_0%,#f5faf7_100%)] p-4 sm:grid-cols-2 xl:grid-cols-4">
           <label className="grid gap-2 text-[0.85rem] font-semibold text-[var(--text)]">
-            Categoria
+            <span className="inline-flex items-center gap-1.5">
+              <Tags className="h-4 w-4 text-[var(--primary)]" strokeWidth={1.9} />
+              Categoria
+            </span>
             <select className="rounded-[10px] border border-[#d0ddd5] bg-white px-3.5 py-2.5 text-[0.9rem] text-[var(--text)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] outline-none focus:border-[var(--primary)] focus:bg-[#fbfffd] focus:shadow-[0_0_0_3px_rgba(15,143,78,0.12)]" value={selectedCategory} onChange={event => setSelectedCategory(event.target.value)}>
               {categories.map(category => (
                 <option key={category} value={category}>
@@ -63,12 +85,18 @@ export default function UserCalendar() {
           </label>
 
           <label className="grid gap-2 text-[0.85rem] font-semibold text-[var(--text)]">
-            Fecha
+            <span className="inline-flex items-center gap-1.5">
+              <CalendarDays className="h-4 w-4 text-[var(--primary)]" strokeWidth={1.9} />
+              Fecha
+            </span>
             <input className="rounded-[10px] border border-[#d0ddd5] bg-white px-3.5 py-2.5 text-[0.9rem] text-[var(--text)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] outline-none focus:border-[var(--primary)] focus:bg-[#fbfffd] focus:shadow-[0_0_0_3px_rgba(15,143,78,0.12)]" type="date" value={selectedDate} onChange={event => setSelectedDate(event.target.value)} />
           </label>
 
           <label className="grid gap-2 text-[0.85rem] font-semibold text-[var(--text)]">
-            Estado
+            <span className="inline-flex items-center gap-1.5">
+              <ListFilter className="h-4 w-4 text-[var(--primary)]" strokeWidth={1.9} />
+              Estado
+            </span>
             <select className="rounded-[10px] border border-[#d0ddd5] bg-white px-3.5 py-2.5 text-[0.9rem] text-[var(--text)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] outline-none focus:border-[var(--primary)] focus:bg-[#fbfffd] focus:shadow-[0_0_0_3px_rgba(15,143,78,0.12)]" value={selectedStatus} onChange={event => setSelectedStatus(event.target.value)}>
               <option value="todos">todos</option>
               <option value="inscrito">inscrito</option>
@@ -77,7 +105,10 @@ export default function UserCalendar() {
           </label>
 
           <label className="grid gap-2 text-[0.85rem] font-semibold text-[var(--text)]">
-            Vista
+            <span className="inline-flex items-center gap-1.5">
+              <Layers3 className="h-4 w-4 text-[var(--primary)]" strokeWidth={1.9} />
+              Vista
+            </span>
             <select className="rounded-[10px] border border-[#d0ddd5] bg-white px-3.5 py-2.5 text-[0.9rem] text-[var(--text)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] outline-none focus:border-[var(--primary)] focus:bg-[#fbfffd] focus:shadow-[0_0_0_3px_rgba(15,143,78,0.12)]" value={viewMode} onChange={event => setViewMode(event.target.value)}>
               <option value="mensual">mensual</option>
               <option value="semanal">semanal</option>
@@ -85,12 +116,27 @@ export default function UserCalendar() {
           </label>
         </div>
 
-        {!loading && (
-          <div className="mb-4 flex items-center justify-between rounded-lg border border-[#d8e6dd] bg-[#f7fbf9] px-3.5 py-2.5">
-            <p className="text-[0.85rem] font-medium text-[var(--text-muted)]">Resultados encontrados</p>
-            <span className="inline-flex rounded-full bg-[rgba(15,143,78,0.12)] px-2.5 py-1 text-[0.78rem] font-semibold text-[var(--primary-strong)]">{filteredActivities.length}</span>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[#d8e6dd] bg-[#f7fbf9] px-3.5 py-2.5">
+          <strong className="text-[0.95rem] capitalize text-[var(--text)]">{monthLabel}</strong>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className="inline-flex items-center gap-1.5 rounded-[10px] border border-[var(--primary)] bg-[var(--primary)] px-3 py-2 text-[0.84rem] font-semibold text-white transition-colors hover:border-[var(--primary-strong)] hover:bg-[var(--primary-strong)]"
+              onClick={goToPreviousMonth}
+            >
+              <ChevronLeft className="h-4 w-4" strokeWidth={2} />
+              Mes anterior
+            </button>
+            <button
+              type="button"
+              className="inline-flex items-center gap-1.5 rounded-[10px] border border-[var(--primary)] bg-[var(--primary)] px-3 py-2 text-[0.84rem] font-semibold text-white transition-colors hover:border-[var(--primary-strong)] hover:bg-[var(--primary-strong)]"
+              onClick={goToNextMonth}
+            >
+              Mes siguiente
+              <ChevronRight className="h-4 w-4" strokeWidth={2} />
+            </button>
           </div>
-        )}
+        </div>
 
         {loading ? (
           <div className="grid min-h-[220px] place-items-center rounded-[10px] border border-[#dbe5de] bg-[linear-gradient(180deg,#f9fcfa_0%,#f5f8f6_100%)] font-medium text-[var(--text-muted)]">Cargando calendario...</div>
@@ -102,7 +148,7 @@ export default function UserCalendar() {
           <Calendar
             activities={filteredActivities}
             viewMode={viewMode}
-            monthDate={new Date(2026, 2, 1)}
+            monthDate={monthDate}
             onActivityClick={setActiveActivity}
           />
         )}

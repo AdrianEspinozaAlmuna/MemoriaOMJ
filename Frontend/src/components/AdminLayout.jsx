@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Activity, BarChart3, Bell, CalendarDays, CheckCircle2, Circle, Cog, LayoutDashboard, Users } from "lucide-react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 function decodeToken(token) {
@@ -41,29 +42,32 @@ const notifications = [
 	{ id: "adm-notif-3", title: "Alerta de asistencia", detail: "Dos actividades tienen baja asistencia", time: "Hoy" }
 ];
 
-function SidebarIcon({ name }) {
+function SidebarIcon({ name, className = "h-4 w-4" }) {
 	if (name === "dashboard") {
-		return <path d="M4 13h7V4H4v9Zm9 7h7v-6h-7v6Zm0-9h7V4h-7v7Zm-9 9h7v-4H4v4Z" />;
+		return <LayoutDashboard aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
 	}
 	if (name === "users") {
-		return <path d="M16 11a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm-8 2a3 3 0 1 0-3-3 3 3 0 0 0 3 3Zm0 2c-2.76 0-5 1.57-5 3.5A1.5 1.5 0 0 0 4.5 20h7m1.5 0H20a1.5 1.5 0 0 0 1.5-1.5C21.5 16.57 19.26 15 16.5 15H13" />;
+		return <Users aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
 	}
 	if (name === "check") {
-		return <path d="m8.5 12.5 2.3 2.3 4.7-4.7M12 21a9 9 0 1 1 0-18 9 9 0 0 1 0 18Z" />;
+		return <CheckCircle2 aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
 	}
 	if (name === "calendar") {
-		return <path d="M7 3v3M17 3v3M4 9h16M6 6h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z" />;
+		return <CalendarDays aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
 	}
 	if (name === "activity") {
-		return <path d="M3 12h4l2-5 4 10 2-5h6" />;
+		return <Activity aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
 	}
 	if (name === "report") {
-		return <path d="M5 20h14M7 16V8m5 8V4m5 12v-6" />;
+		return <BarChart3 aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
 	}
 	if (name === "bell") {
-		return <path d="M6 9a6 6 0 1 1 12 0c0 6 2 7 2 7H4s2-1 2-7m3.5 10a2.5 2.5 0 0 0 5 0" />;
+		return <Bell aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
 	}
-	return <path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm8 4A8 8 0 1 1 4 12a8 8 0 0 1 16 0Z" />;
+	if (name === "settings") {
+		return <Cog aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
+	}
+	return <Circle aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
 }
 
 export default function AdminLayout() {
@@ -151,9 +155,7 @@ export default function AdminLayout() {
 							onClick={closeMobileNav}
 							className={navLinkClass}
 						>
-							<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="h-4 w-4 fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round]">
-								<SidebarIcon name={link.icon} />
-							</svg>
+							<SidebarIcon name={link.icon} className="h-4 w-4" />
 							<span>{link.label}</span>
 							{link.label === "Aprobaciones" && <span className="ml-auto rounded-full bg-[#6f7d72] px-1.5 py-[1px] text-[0.74rem] font-bold text-white">5</span>}
 						</NavLink>
@@ -169,9 +171,7 @@ export default function AdminLayout() {
 							onClick={closeMobileNav}
 							className={navLinkClass}
 						>
-							<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="h-4 w-4 fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round]">
-								<SidebarIcon name={link.icon} />
-							</svg>
+							<SidebarIcon name={link.icon} className="h-4 w-4" />
 							<span>{link.label}</span>
 						</NavLink>
 					))}
@@ -202,7 +202,7 @@ export default function AdminLayout() {
 					<div className="relative flex items-center gap-2" ref={menuRef}>
 						<button
 							type="button"
-							className="relative h-[2.15rem] w-[2.15rem] cursor-pointer rounded-lg border border-[#d2dfd8] bg-white transition-colors duration-200 hover:border-[#b7d0c2] hover:bg-[#f6fbf8]"
+							className="relative grid h-[2.15rem] w-[2.15rem] cursor-pointer place-items-center rounded-lg border border-[#d2dfd8] bg-white transition-colors duration-200 hover:border-[#b7d0c2] hover:bg-[#f6fbf8]"
 							aria-label="Notificaciones"
 							onClick={() => {
 								setNotificationsOpen(previous => !previous);
@@ -210,9 +210,7 @@ export default function AdminLayout() {
 							}}
 							aria-expanded={notificationsOpen}
 						>
-							<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="h-4 w-4 fill-none stroke-[#3e5b4c] stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round]">
-								<path d="M6 9a6 6 0 1 1 12 0c0 6 2 7 2 7H4s2-1 2-7m3.5 10a2.5 2.5 0 0 0 5 0" />
-							</svg>
+							<Bell aria-hidden="true" focusable="false" className="h-4 w-4 text-[#3e5b4c]" strokeWidth={1.8} />
 							<span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-[var(--primary)] px-1 text-[0.7rem] font-bold text-white">3</span>
 						</button>
 
@@ -233,7 +231,7 @@ export default function AdminLayout() {
 
 						<button
 							type="button"
-							className="inline-flex items-center gap-2 rounded-lg border border-[#d2dfd8] bg-white px-2 py-1.5 text-[0.89rem] font-medium text-[#2e4c3d] transition-colors duration-200 hover:border-[#b6d0c1] hover:bg-[#f6fbf8]"
+							className="inline-flex items-center gap-2 rounded-lg border border-[#d2dfd8] hover:cursor-pointer bg-white px-2 py-1.5 text-[0.89rem] font-medium text-[#2e4c3d] transition-colors duration-200 hover:border-[#b6d0c1] hover:bg-[#f6fbf8]"
 							onClick={() => {
 								setMenuOpen(previous => !previous);
 								setNotificationsOpen(false);
@@ -247,7 +245,7 @@ export default function AdminLayout() {
 
 						{menuOpen && (
 							<div className="absolute right-0 top-[calc(100%+0.4rem)] z-20 min-w-44 rounded-[10px] border border-[#d7e4dc] bg-white p-2 shadow-[0_14px_26px_-20px_rgba(11,38,24,0.35)]" role="menu">
-								<button type="button" role="menuitem" onClick={handleLogout} className="w-full rounded-lg bg-[#eff8f2] px-2.5 py-2 text-left text-[0.85rem] font-semibold text-[#214234]">
+								<button type="button" role="menuitem" onClick={handleLogout} className="hover:cursor-pointer w-full rounded-lg bg-[#eff8f2] px-2.5 py-2 text-left text-[0.85rem] font-semibold text-[#214234]">
 									Cerrar sesion
 								</button>
 							</div>

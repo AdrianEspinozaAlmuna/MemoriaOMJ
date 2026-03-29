@@ -1,4 +1,5 @@
 import React from "react";
+import { Activity, BarChart3, CalendarDays, Clock3, TrendingUp, Users } from "lucide-react";
 
 const summary = [
 	{ label: "Total Usuarios", value: 247 },
@@ -19,32 +20,32 @@ const recentUsers = [
 	{ initials: "VR", name: "Valentina Rojas", email: "vale@email.cl", group: "Grupo C" }
 ];
 
-function MetricIcon({ index }) {
+function MetricIcon({ index, className = "h-[1.15rem] w-[1.15rem]" }) {
 	if (index === 0) {
-		return <path d="M16 11a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm-8 2a3 3 0 1 0-3-3 3 3 0 0 0 3 3Zm0 2c-2.76 0-5 1.57-5 3.5A1.5 1.5 0 0 0 4.5 20h7m1.5 0H20a1.5 1.5 0 0 0 1.5-1.5C21.5 16.57 19.26 15 16.5 15H13" />;
+		return <Users aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
 	}
 
 	if (index === 1) {
-		return <path d="M3 12h4l2-5 4 10 2-5h6" />;
+		return <Activity aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
 	}
 
 	if (index === 2) {
-		return <path d="M12 8v5l3 2m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />;
+		return <Clock3 aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
 	}
 
-	return <path d="m5 16 4-4 3 3 7-7M15 8h4v4" />;
+	return <TrendingUp aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
 }
 
-function QuickIcon({ type }) {
+function QuickIcon({ type, className = "h-[1.2rem] w-[1.2rem]" }) {
 	if (type === "users") {
-		return <path d="M16 11a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm-8 2a3 3 0 1 0-3-3 3 3 0 0 0 3 3Zm0 2c-2.76 0-5 1.57-5 3.5A1.5 1.5 0 0 0 4.5 20h7m1.5 0H20a1.5 1.5 0 0 0 1.5-1.5C21.5 16.57 19.26 15 16.5 15H13" />;
+		return <Users aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
 	}
 
 	if (type === "calendar") {
-		return <path d="M7 3v3M17 3v3M4 9h16M6 6h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z" />;
+		return <CalendarDays aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
 	}
 
-	return <path d="M5 20h14M7 16V8m5 8V4m5 12v-6" />;
+	return <BarChart3 aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
 }
 
 export default function AdminDashboard() {
@@ -61,9 +62,7 @@ export default function AdminDashboard() {
 						<div className="flex items-center justify-between gap-2">
 							<p className="m-0 text-[0.9rem] text-[#6d8275]">{card.label}</p>
 							<span className="grid h-8 w-8 place-items-center rounded-[10px] bg-[#e7f5ec] text-[#168845]">
-								<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="h-[1.15rem] w-[1.15rem] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round]">
-									<MetricIcon index={index} />
-								</svg>
+								<MetricIcon index={index} />
 							</span>
 						</div>
 						<strong className="text-[2rem] font-bold leading-none text-[#20372b]">{card.value}</strong>
@@ -119,9 +118,7 @@ export default function AdminDashboard() {
 			<section className="grid gap-3.5 xl:grid-cols-3">
 				<article className="flex items-center gap-3 rounded-[var(--panel-radius)] border border-[var(--panel-border)] bg-white px-4 py-3.5 shadow-[var(--panel-shadow)]">
 					<div className="grid h-[2.2rem] w-[2.6rem] place-items-center rounded-lg bg-[#e6f4ea] text-[#178845]">
-						<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="h-[1.2rem] w-[1.2rem] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round]">
-							<QuickIcon type="users" />
-						</svg>
+						<QuickIcon type="users" />
 					</div>
 					<div>
 						<strong className="block text-[1.02rem] text-[#263c31]">Gestion de Usuarios</strong>
@@ -130,9 +127,7 @@ export default function AdminDashboard() {
 				</article>
 				<article className="flex items-center gap-3 rounded-[var(--panel-radius)] border border-[var(--panel-border)] bg-white px-4 py-3.5 shadow-[var(--panel-shadow)]">
 					<div className="grid h-[2.2rem] w-[2.6rem] place-items-center rounded-lg bg-[#dff5e6] text-[#13984f]">
-						<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="h-[1.2rem] w-[1.2rem] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round]">
-							<QuickIcon type="calendar" />
-						</svg>
+						<QuickIcon type="calendar" />
 					</div>
 					<div>
 						<strong className="block text-[1.02rem] text-[#263c31]">Calendario</strong>
@@ -141,9 +136,7 @@ export default function AdminDashboard() {
 				</article>
 				<article className="flex items-center gap-3 rounded-[var(--panel-radius)] border border-[var(--panel-border)] bg-white px-4 py-3.5 shadow-[var(--panel-shadow)]">
 					<div className="grid h-[2.2rem] w-[2.6rem] place-items-center rounded-lg bg-[#ecf1ff] text-[#3665db]">
-						<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="h-[1.2rem] w-[1.2rem] fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round]">
-							<QuickIcon type="report" />
-						</svg>
+						<QuickIcon type="report" />
 					</div>
 					<div>
 						<strong className="block text-[1.02rem] text-[#263c31]">Reportes</strong>

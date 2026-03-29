@@ -1,4 +1,5 @@
 import React from "react";
+import { BriefcaseBusiness, CalendarDays, Clock3, ImageOff, MapPin, Music2 } from "lucide-react";
 
 function formatDate(dateValue) {
   return new Date(dateValue).toLocaleDateString("es-CL", {
@@ -26,27 +27,15 @@ function formatTime(activity) {
 }
 
 function CalendarIcon({ className = "h-4 w-4" }) {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className={className}>
-      <path d="M7 3v3M17 3v3M4 9h16M6 6h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
+  return <CalendarDays aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
 }
 
 function PlaceIcon({ className = "h-4 w-4" }) {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className={className}>
-      <path d="M12 21s-6.5-5.2-6.5-10a6.5 6.5 0 1 1 13 0c0 4.8-6.5 10-6.5 10Zm0-7.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
+  return <MapPin aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
 }
 
 function TimeIcon({ className = "h-4 w-4" }) {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className={className}>
-      <path d="M12 6v6l3.5 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
+  return <Clock3 aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
 }
 
 function getCategory(activity) {
@@ -60,8 +49,53 @@ function getStatus(activity) {
   return "Activo";
 }
 
+function getPlaceholderTheme(activity) {
+  const category = String(activity.category || "").toLowerCase();
+  const title = String(activity.title || "").toLowerCase();
+  const label = `${category} ${title}`;
+
+  if (label.includes("baile") || label.includes("danza") || label.includes("musica")) {
+    return {
+      wrapper: "bg-[linear-gradient(145deg,#d8efe3_0%,#bfe2cd_100%)]",
+      ring: "border-[#8ebfa2] bg-white/88 text-[#24593d]",
+      chip: "border-[#93c4a7] bg-[#e9f6ee] text-[#2c6245]"
+    };
+  }
+
+  if (label.includes("workshop") || label.includes("formacion") || label.includes("emprend")) {
+    return {
+      wrapper: "bg-[linear-gradient(145deg,#e0ebf9_0%,#cbdcf4_100%)]",
+      ring: "border-[#95acd0] bg-white/90 text-[#2b4f83]",
+      chip: "border-[#9ab2d6] bg-[#ebf2fd] text-[#35598e]"
+    };
+  }
+
+  return {
+    wrapper: "bg-[linear-gradient(145deg,#dbeee2_0%,#c9e3d5_100%)]",
+    ring: "border-[#93bfa7] bg-white/88 text-[#2b5a42]",
+    chip: "border-[#9bc8af] bg-[#edf8f1] text-[#2f6648]"
+  };
+}
+
+function PlaceholderIcon({ activity }) {
+  const category = String(activity.category || "").toLowerCase();
+  const title = String(activity.title || "").toLowerCase();
+  const label = `${category} ${title}`;
+
+  if (label.includes("baile") || label.includes("danza") || label.includes("musica")) {
+    return <Music2 aria-hidden="true" focusable="false" className="h-5 w-5" strokeWidth={1.9} />;
+  }
+
+  if (label.includes("workshop") || label.includes("formacion") || label.includes("emprend")) {
+    return <BriefcaseBusiness aria-hidden="true" focusable="false" className="h-5 w-5" strokeWidth={1.9} />;
+  }
+
+  return <ImageOff aria-hidden="true" focusable="false" className="h-5 w-5" strokeWidth={1.9} />;
+}
+
 export default function ActivityCard({ activity, actionLabel = "Ver mas", onActionClick }) {
   const hasImage = Boolean(activity.image);
+  const placeholderTheme = getPlaceholderTheme(activity);
 
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#d2dfd8] bg-white shadow-[0_14px_28px_-28px_rgba(10,35,25,0.35)] transition-[transform,box-shadow] duration-200 hover:-translate-y-[3px] hover:shadow-[0_18px_30px_-24px_rgba(10,35,25,0.42)]">
@@ -69,13 +103,19 @@ export default function ActivityCard({ activity, actionLabel = "Ver mas", onActi
         {hasImage ? (
           <img src={activity.image} alt={activity.title} className="h-full w-full object-cover" />
         ) : (
-          <div className="relative flex h-full w-full items-center justify-center overflow-hidden bg-[#dbeee2]">
-            <span className="absolute -left-7 -top-7 h-20 w-20 rounded-full bg-[#b6dcc4]" aria-hidden="true" />
-            <span className="absolute right-6 top-5 h-12 w-12 rounded-full border border-[#c3dacd] bg-white/55" aria-hidden="true" />
-            <span className="absolute -bottom-10 right-1/4 h-28 w-28 rounded-full bg-[#c6e4d2]" aria-hidden="true" />
-            <span className="absolute bottom-6 left-8 h-2 w-14 rounded-full bg-[#b8d8c7]" aria-hidden="true" />
-            <span className="absolute bottom-10 left-10 h-2 w-8 rounded-full bg-[#cae4d6]" aria-hidden="true" />
-            <span className="relative rounded-full border border-[#afcdbd] bg-white/85 px-3 py-1 text-[0.74rem] font-semibold text-[#2f5241]">Actividad OMJ</span>
+          <div className={`relative flex h-full w-full items-center justify-center overflow-hidden ${placeholderTheme.wrapper}`}>
+            <span className="absolute -right-8 -top-10 h-28 w-28 rounded-full bg-white/28" aria-hidden="true" />
+            <span className="absolute -left-10 -bottom-12 h-32 w-32 rounded-full bg-black/5" aria-hidden="true" />
+            <span className="absolute inset-x-0 top-1/2 h-px bg-white/35" aria-hidden="true" />
+
+            <div className="relative grid justify-items-center gap-2">
+              <span className={`grid h-12 w-12 place-items-center rounded-2xl border shadow-[0_10px_20px_-16px_rgba(0,0,0,0.35)] ${placeholderTheme.ring}`}>
+                <PlaceholderIcon activity={activity} />
+              </span>
+              <span className={`rounded-full border px-3 py-1 text-[0.72rem] font-semibold ${placeholderTheme.chip}`}>
+                Imagen pendiente
+              </span>
+            </div>
           </div>
         )}
 

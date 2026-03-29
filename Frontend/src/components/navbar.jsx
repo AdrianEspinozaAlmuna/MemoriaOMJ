@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { Bell } from "lucide-react";
 import { Link, NavLink } from "react-router-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -217,9 +218,7 @@ export default function Navbar() {
 								}}
 								aria-expanded={notificationsOpen}
 							>
-								<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="h-4 w-4 fill-none stroke-[#3e5b4c] stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round]">
-									<path d="M6 9a6 6 0 1 1 12 0c0 6 2 7 2 7H4s2-1 2-7m3.5 10a2.5 2.5 0 0 0 5 0" />
-								</svg>
+								<Bell aria-hidden="true" focusable="false" className="h-4 w-4 text-[#3e5b4c]" strokeWidth={1.8} />
 								<span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-[var(--primary)] px-1 text-[0.7rem] font-bold text-white">3</span>
 							</button>
 

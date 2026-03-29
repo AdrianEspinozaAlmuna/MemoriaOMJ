@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { CalendarDays, ListChecks   , ClipboardCheck , Plus } from "lucide-react";
 import ActivityCard from "../components/ActivityCard";
 import { getDashboardData } from "../services/userViewsService";
 
@@ -19,14 +20,14 @@ const quickActions = [
     icon: "plus"
   },
   {
-    label: "Impulsa tus planes",
-    subtitle: "Gestiona tus inscripciones y sigue cada actividad desde un solo lugar.",
+    label: "Gestiona tus eventos",
+    subtitle: "Organiza y participa en cada actividad desde un solo lugar.",
     cta: "Ir a mis actividades",
     to: "/user/mis-actividades",
     icon: "list"
   },
   {
-    label: "Tu progreso real",
+    label: "Registro de asistencia",
     subtitle: "Controla tu asistencia completa y mantente siempre al dia.",
     cta: "Ver mi asistencia",
     to: "/user/asistencia",
@@ -43,34 +44,18 @@ function getQuickIconClass(name) {
 
 function QuickActionIcon({ name }) {
   if (name === "calendar") {
-    return (
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M7 3v3M17 3v3M4 9h16M6 6h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    );
+    return <CalendarDays aria-hidden="true" focusable="false" className="h-full w-full" strokeWidth={1.8} />;
   }
 
   if (name === "plus") {
-    return (
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-      </svg>
-    );
+    return <Plus aria-hidden="true" focusable="false" className="h-full w-full" strokeWidth={1.8} />;
   }
 
   if (name === "list") {
-    return (
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M10 6h9M10 12h9M10 18h9M5 6h.01M5 12h.01M5 18h.01" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-      </svg>
-    );
+    return <ListChecks     aria-hidden="true" focusable="false" className="h-full w-full" strokeWidth={1.8} />;
   }
 
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path d="m7.5 12 2.8 2.8L16.8 8.3M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
+  return <ClipboardCheck aria-hidden="true" focusable="false" className="h-full w-full" strokeWidth={1.8} />;
 }
 
 export default function UserDashboard() {

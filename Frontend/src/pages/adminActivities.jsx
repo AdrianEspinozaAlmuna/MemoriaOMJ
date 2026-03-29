@@ -1,19 +1,20 @@
 import React from "react";
+import { CalendarDays, Clock3, ListChecks, MapPin } from "lucide-react";
 
-function MetaIcon({ name }) {
+function MetaIcon({ name, className = "h-4 w-4" }) {
 	if (name === "place") {
-		return <path d="M12 21s6-5.2 6-10a6 6 0 1 0-12 0c0 4.8 6 10 6 10Zm0-8.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" />;
+		return <MapPin aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
 	}
 
 	if (name === "calendar") {
-		return <path d="M7 3v3M17 3v3M4 9h16M6 6h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z" />;
+		return <CalendarDays aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
 	}
 
 	if (name === "time") {
-		return <path d="M12 8v5l3 2m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />;
+		return <Clock3 aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
 	}
 
-	return <path d="M6 8h12M6 12h8m-8 4h6M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />;
+	return <ListChecks aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
 }
 
 const activities = [
@@ -77,13 +78,13 @@ export default function AdminActivities() {
 							<div className="grid gap-2">
 								<div className="flex items-center gap-2">
 									<span className="grid h-[1.15rem] w-[1.15rem] place-items-center text-[#60796d]" aria-hidden="true">
-										<svg viewBox="0 0 24 24" focusable="false" className="h-4 w-4 fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round]"><MetaIcon name="place" /></svg>
+										<MetaIcon name="place" className="h-4 w-4" />
 									</span>
 									<span className="text-[0.9rem] text-[#52695c]">Lugar: {item.place}</span>
 								</div>
 								<div className="flex items-center gap-2">
 									<span className="grid h-[1.15rem] w-[1.15rem] place-items-center text-[#60796d]" aria-hidden="true">
-										<svg viewBox="0 0 24 24" focusable="false" className="h-4 w-4 fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round]"><MetaIcon name="seats" /></svg>
+										<MetaIcon name="seats" className="h-4 w-4" />
 									</span>
 									<span className="text-[0.9rem] text-[#52695c]">Inscritos: {item.enrolled}</span>
 								</div>
@@ -91,13 +92,13 @@ export default function AdminActivities() {
 							<div className="grid gap-2">
 								<div className="flex items-center gap-2">
 									<span className="grid h-[1.15rem] w-[1.15rem] place-items-center text-[#60796d]" aria-hidden="true">
-										<svg viewBox="0 0 24 24" focusable="false" className="h-4 w-4 fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round]"><MetaIcon name="calendar" /></svg>
+										<MetaIcon name="calendar" className="h-4 w-4" />
 									</span>
 									<span className="text-[0.9rem] text-[#52695c]">Fecha: {item.date}</span>
 								</div>
 								<div className="flex items-center gap-2">
 									<span className="grid h-[1.15rem] w-[1.15rem] place-items-center text-[#60796d]" aria-hidden="true">
-										<svg viewBox="0 0 24 24" focusable="false" className="h-4 w-4 fill-none stroke-current stroke-[1.8] [stroke-linecap:round] [stroke-linejoin:round]"><MetaIcon name="time" /></svg>
+										<MetaIcon name="time" className="h-4 w-4" />
 									</span>
 									<span className="text-[0.9rem] text-[#52695c]">Hora: {item.time}</span>
 								</div>
