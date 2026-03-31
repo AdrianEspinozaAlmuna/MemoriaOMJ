@@ -38,21 +38,20 @@ export default function MyAttendance() {
   }, []);
 
   return (
-    <section className="container relative animate-[revealUp_0.7s_ease_both]">
-      <header className="pt-1.5 pb-0.5">
+    <section className="max-w-7xl mx-auto px-4 py-6 space-y-8">
+      <header>
         <p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Panel de usuario</p>
-        <h1 className="mt-2 mb-0 text-[clamp(1.8rem,2.6vw,2.2rem)] font-bold text-[var(--text)]">Mi asistencia</h1>
+        <h1 className="mt-2 mb-0 text-[clamp(1.8rem,2.5vw,2.3rem)] font-bold text-[var(--text)]">Mi asistencia</h1>
         <p className="mt-2 text-[0.92rem] text-[var(--text-muted)]">Monitorea tu avance mensual y revisa el detalle de asistencias registradas.</p>
-        <span className="mt-3.5 block h-1 w-[min(190px,44vw)] rounded-full bg-[var(--header-accent)] opacity-45" />
       </header>
 
-      <section className="mt-6 rounded-[var(--panel-radius)] border border-[var(--panel-border)] bg-[var(--panel-bg)] p-6 shadow-[var(--panel-shadow)]">
-        <h2 className="mb-5 mt-0 inline-flex items-center gap-2 text-[1.1rem] font-bold text-[var(--text)] before:inline-block before:h-2 before:w-2 before:rounded-full before:bg-[linear-gradient(135deg,var(--primary)_0%,#45b373_100%)]">Indicadores principales</h2>
+      <section className="rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-6 shadow-sm">
+        <h2 className="mb-4 mt-0 text-[1rem] font-semibold text-[var(--text)]">Indicadores principales</h2>
         {loading ? <div className="min-h-[140px] rounded-xl border border-[#d8e3dc] bg-[linear-gradient(180deg,#f9fcfa_0%,#f2f8f4_100%)]" /> : <StatsPanel stats={stats} />}
       </section>
 
-      <section className="mt-6 rounded-[var(--panel-radius)] border border-[var(--panel-border)] bg-[var(--panel-bg)] p-6 shadow-[var(--panel-shadow)]">
-        <h2 className="mb-5 mt-0 inline-flex items-center gap-2 text-[1.1rem] font-bold text-[var(--text)] before:inline-block before:h-2 before:w-2 before:rounded-full before:bg-[linear-gradient(135deg,var(--primary)_0%,#45b373_100%)]">Asistencia mensual</h2>
+      <section className="rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-6 shadow-sm">
+        <h2 className="mb-4 mt-0 text-[1rem] font-semibold text-[var(--text)]">Asistencia mensual</h2>
         <div className="grid gap-3">
           {monthly.map(item => (
             <article key={item.month} className="rounded-xl border border-[#d6e2da] bg-[linear-gradient(180deg,#ffffff_0%,#f8fcfa_100%)] px-4 pb-3.5 pt-3.5 shadow-[0_8px_20px_-26px_rgba(10,40,25,0.45)]">
@@ -68,31 +67,31 @@ export default function MyAttendance() {
         </div>
       </section>
 
-      <section className="mt-6 rounded-[var(--panel-radius)] border border-[var(--panel-border)] bg-[var(--panel-bg)] p-6 shadow-[var(--panel-shadow)]">
-        <h2 className="mb-5 mt-0 inline-flex items-center gap-2 text-[1.1rem] font-bold text-[var(--text)] before:inline-block before:h-2 before:w-2 before:rounded-full before:bg-[linear-gradient(135deg,var(--primary)_0%,#45b373_100%)]">Historial detallado</h2>
-        <div className="overflow-x-auto rounded-xl border border-[#d6e2da] bg-white">
+      <section className="rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-6 shadow-sm">
+        <h2 className="mb-4 mt-0 text-[1rem] font-semibold text-[var(--text)]">Historial detallado</h2>
+        <div className="overflow-x-auto rounded-xl border border-[#d8e6dd] bg-white shadow-sm">
           <table className="min-w-[680px] w-full border-collapse">
             <thead>
               <tr>
-                <th className="border-b border-[#e5ece7] bg-[#f5faf7] px-3.5 py-3 text-left text-[0.8rem] font-semibold tracking-[0.01em] text-[#375849]">Actividad</th>
-                <th className="border-b border-[#e5ece7] bg-[#f5faf7] px-3.5 py-3 text-left text-[0.8rem] font-semibold tracking-[0.01em] text-[#375849]">Tipo</th>
-                <th className="border-b border-[#e5ece7] bg-[#f5faf7] px-3.5 py-3 text-left text-[0.8rem] font-semibold tracking-[0.01em] text-[#375849]">Fecha</th>
-                <th className="border-b border-[#e5ece7] bg-[#f5faf7] px-3.5 py-3 text-left text-[0.8rem] font-semibold tracking-[0.01em] text-[#375849]">Hora</th>
-                <th className="border-b border-[#e5ece7] bg-[#f5faf7] px-3.5 py-3 text-left text-[0.8rem] font-semibold tracking-[0.01em] text-[#375849]">Lugar</th>
-                <th className="border-b border-[#e5ece7] bg-[#f5faf7] px-3.5 py-3 text-left text-[0.8rem] font-semibold tracking-[0.01em] text-[#375849]">Estado</th>
+                <th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3.5 py-3 text-left text-[0.8rem] font-semibold tracking-[0.01em] text-[#375849]">Actividad</th>
+                <th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3.5 py-3 text-left text-[0.8rem] font-semibold tracking-[0.01em] text-[#375849]">Tipo</th>
+                <th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3.5 py-3 text-left text-[0.8rem] font-semibold tracking-[0.01em] text-[#375849]">Fecha</th>
+                <th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3.5 py-3 text-left text-[0.8rem] font-semibold tracking-[0.01em] text-[#375849]">Hora</th>
+                <th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3.5 py-3 text-left text-[0.8rem] font-semibold tracking-[0.01em] text-[#375849]">Lugar</th>
+                <th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3.5 py-3 text-left text-[0.8rem] font-semibold tracking-[0.01em] text-[#375849]">Estado</th>
               </tr>
             </thead>
             <tbody>
               {history.map((row, index) => (
                 <tr key={row.id} className={index % 2 === 0 ? "bg-white" : "bg-[#fbfdfb]"}>
-                  <td className="border-b border-[#e5ece7] px-3.5 py-3 text-[0.86rem] font-semibold text-[var(--text)]">{row.name}</td>
-                  <td className="border-b border-[#e5ece7] px-3.5 py-3 text-[0.86rem] text-[var(--text-muted)]">
+                  <td className="border-b border-[#d8e6dd] px-3.5 py-3 text-[0.86rem] font-semibold text-[var(--text)]">{row.name}</td>
+                  <td className="border-b border-[#d8e6dd] px-3.5 py-3 text-[0.86rem] text-[var(--text-muted)]">
                     <span className="inline-flex items-center justify-center rounded-lg border border-[#d7e5dc] bg-[#f2f8f4] px-2 py-1 text-[0.75rem] font-semibold text-[#2f5c46]">{row.type || "Actividad"}</span>
                   </td>
-                  <td className="border-b border-[#e5ece7] px-3.5 py-3 text-[0.86rem] text-[var(--text-muted)]">{new Date(row.date).toLocaleDateString("es-CL")}</td>
-                  <td className="border-b border-[#e5ece7] px-3.5 py-3 text-[0.86rem] text-[var(--text-muted)]">{row.time || "-"}</td>
-                  <td className="border-b border-[#e5ece7] px-3.5 py-3 text-[0.86rem] text-[var(--text-muted)]">{row.place || "-"}</td>
-                  <td className="border-b border-[#e5ece7] px-3.5 py-3 text-[0.86rem] text-[var(--text-muted)]">
+                  <td className="border-b border-[#d8e6dd] px-3.5 py-3 text-[0.86rem] text-[var(--text-muted)]">{new Date(row.date).toLocaleDateString("es-CL")}</td>
+                  <td className="border-b border-[#d8e6dd] px-3.5 py-3 text-[0.86rem] text-[var(--text-muted)]">{row.time || "-"}</td>
+                  <td className="border-b border-[#d8e6dd] px-3.5 py-3 text-[0.86rem] text-[var(--text-muted)]">{row.place || "-"}</td>
+                  <td className="border-b border-[#d8e6dd] px-3.5 py-3 text-[0.86rem] text-[var(--text-muted)]">
                     <span className={`inline-flex items-center justify-center rounded-lg border px-3 py-1.5 text-xs font-semibold ${row.status === "Asistido" ? "border-[var(--status-ok-border)] bg-[var(--status-ok-bg)] text-[var(--primary-strong)]" : "border-[var(--status-miss-border)] bg-[var(--status-miss-bg)] text-[#7a2d1f]"}`}>{row.status}</span>
                   </td>
                 </tr>

@@ -18,6 +18,7 @@ import AdminActivities from "./pages/adminActivities";
 import AdminReports from "./pages/adminReports";
 import AdminNotifications from "./pages/adminNotifications";
 import AdminSettings from "./pages/adminSettings";
+import ActivityDetail from "./pages/activityDetail";
 import { AdminProtectedRoute, ParticipantProtectedRoute, PublicOnlyRoute } from "./components/RouteGuards";
 
 export default function App() {
@@ -42,6 +43,7 @@ export default function App() {
             <Route path="/user/dashboard" element={<UserDashboard />} />
             <Route path="/user/calendario" element={<UserCalendar />} />
             <Route path="/user/mis-actividades" element={<MyActivities />} />
+            <Route path="/user/actividad/:activityId" element={<ActivityDetail />} />
             <Route path="/user/asistencia" element={<MyAttendance />} />
             <Route path="/user/crear-actividad" element={<CreateActivity />} />
           </Route>
@@ -54,6 +56,7 @@ export default function App() {
               <Route path="aprobaciones" element={<AdminApprovals />} />
               <Route path="calendario" element={<AdminCalendar />} />
               <Route path="actividades" element={<AdminActivities />} />
+              <Route path="actividad/:activityId" element={<ActivityDetail />} />
               <Route path="reportes" element={<AdminReports />} />
               <Route path="notificaciones" element={<AdminNotifications />} />
               <Route path="configuracion" element={<AdminSettings />} />

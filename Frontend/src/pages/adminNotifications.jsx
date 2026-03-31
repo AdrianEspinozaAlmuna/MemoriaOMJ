@@ -52,32 +52,32 @@ export default function AdminNotifications() {
 	}
 
 	return (
-		<section className="grid gap-4">
-			<header className="flex items-center justify-between gap-3 pb-0.5 pt-1.5 max-[760px]:flex-col max-[760px]:items-start">
-				<div>
-					<h1 className="m-0 text-[clamp(1.8rem,2.6vw,2.2rem)] font-bold text-[var(--text)]">Notificaciones</h1>
-					<p className="mt-1.5 text-[0.98rem] text-[var(--text-muted)]">Alertas del sistema y eventos recientes</p>
-				</div>
-				<button type="button" className="btn btn-primary" onClick={openModal}>
-					Agregar notificacion
-				</button>
-			</header>
+			<section className="space-y-8">
+				<header className="flex items-center justify-between gap-3 max-[760px]:flex-col max-[760px]:items-start">
+					<div>
+						<h1 className="m-0 text-[clamp(1.8rem,2.5vw,2.3rem)] font-bold text-[var(--text)]">Notificaciones</h1>
+						<p className="mt-1.5 text-[0.92rem] text-[var(--text-muted)]">Alertas del sistema y eventos recientes</p>
+					</div>
+					<button type="button" className="inline-flex rounded-lg border border-[var(--primary)] bg-[var(--primary)] px-3.5 py-2 text-[0.9rem] font-semibold text-white hover:bg-[#0a7f3d]" onClick={openModal}>
+						Agregar notificacion
+					</button>
+				</header>
 
-			<section className="rounded-[var(--panel-radius)] border border-[var(--panel-border)] bg-[var(--panel-bg)] p-4 shadow-[var(--panel-shadow)]">
-				<div className="grid gap-2">
-					{notifications.map(item => (
-						<article key={item.id} className="flex items-center justify-between gap-3 rounded-[10px] border border-[#dce9e1] bg-white px-3 py-3">
-							<div>
-								<strong className="text-[0.98rem] text-[#2d4639]">{item.title}</strong>
-								<p className="mt-0.5 text-[0.88rem] text-[#708277]">{item.detail}</p>
-								<div className="mt-2 flex items-center gap-2">
-									<span className={`rounded-md px-2 py-1 text-[0.78rem] font-semibold ${item.source === "Admin" ? "bg-[#e9eefb] text-[#334f93]" : "bg-[#eef8f1] text-[#2e5a45]"}`}>{item.source}</span>
+				<section className="rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-6 shadow-sm">
+					<div className="grid gap-2">
+						{notifications.map(item => (
+							<article key={item.id} className="flex items-center justify-between gap-3 rounded-lg border border-[#d8e6dd] bg-white px-3 py-3">
+								<div>
+									<strong className="text-[0.95rem] text-[var(--text)]">{item.title}</strong>
+									<p className="mt-0.5 text-[0.82rem] text-[var(--text-muted)]">{item.detail}</p>
+									<div className="mt-2 flex items-center gap-2">
+										<span className={`rounded-md px-2 py-1 text-[0.75rem] font-semibold ${item.source === "Admin" ? "bg-[#e9eefb] text-[#334f93]" : "bg-[#eef8f1] text-[#2e5a45]"}`}>{item.source}</span>
+									</div>
 								</div>
-							</div>
-							<span className="rounded-md bg-[#eef8f1] px-2 py-1 text-[0.78rem] font-semibold text-[#2e5a45]">{item.date}</span>
-						</article>
-					))}
-				</div>
+								<span className="rounded-md bg-[#eef8f1] px-2 py-1 text-[0.75rem] font-semibold text-[#2e5a45]">{item.date}</span>
+							</article>
+						))}
+					</div>
 			</section>
 
 			<Modal

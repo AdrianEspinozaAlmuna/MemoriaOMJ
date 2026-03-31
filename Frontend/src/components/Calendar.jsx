@@ -342,13 +342,12 @@ export default function Calendar({ activities, viewMode, monthDate, onActivityCl
             ) : dayViewMode === "hora" ? (
               <div className="grid gap-3">
                 {groupedDayActivities.map(([hourLabel, hourActivities]) => (
-                  <section key={hourLabel} className="rounded-xl border border-[#cfd8e0] bg-[var(--surface)] p-3 shadow-[0_1px_0_rgba(18,28,45,0.05)]">
-                    <header className="mb-2 flex items-center gap-2 border-b border-[#e1e7ed] pb-2">
-                      <span className="inline-flex items-center gap-1.5 rounded-md border border-[var(--primary)] bg-[var(--surface)] text-[var(--primary)] px-2.5 py-1 text-[0.78rem] font-bold text-[#334b5f]">
+                  <section key={hourLabel} className="rounded-md border border-[#cfd8e0] bg-[var(--surface)] p-3 shadow-[0_1px_0_rgba(18,28,45,0.05)]">
+                    <header className="mb-2 flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1.5 bg-[var(--surface)] text-[var(--primary)] px-2.5 py-1 text-[0.78rem] font-bold text-[var(--primary)]">
                         <Clock3 className="h-3.5 w-3.5" strokeWidth={2} />
                         {hourLabel}
                       </span>
-                      <span className="h-px flex-1 bg-[#e1e7ed]" aria-hidden="true" />
                     </header>
                     <div className="grid gap-2">
                       {hourActivities.map(activity => (
@@ -383,13 +382,12 @@ export default function Calendar({ activities, viewMode, monthDate, onActivityCl
             ) : (
               <div className="grid gap-3 md:grid-cols-2">
                 {groupedByRoomActivities.map(([roomLabel, roomActivities]) => (
-                  <section key={roomLabel} className="rounded-xl border border-[#cfd8e0] bg-[var(--surface)] p-3 shadow-[0_1px_0_rgba(18,28,45,0.05)]">
-                    <header className="mb-2 flex items-center gap-2 border-b border-[#e1e7ed] pb-2">
-                      <span className="text-[var(--primary)] inline-flex max-w-full items-center gap-1.5 rounded-md border border-[var(--primary)] bg-[var(--surface)] px-2.5 py-1 text-[0.78rem] font-bold text-[#334b5f]">
+                  <section key={roomLabel} className="rounded-md border border-[#cfd8e0] bg-[var(--surface)] p-3 shadow-[0_1px_0_rgba(18,28,45,0.05)]">
+                    <header className="mb-2 flex items-center gap-2 ">
+                      <span className="text-[var(--primary)] inline-flex max-w-full items-center gap-1.5 bg-[var(--surface)] px-2.5 py-1 text-[0.78rem] font-bold text-[var(--primary)]">
                         <MapPin className="h-3.5 w-3.5" strokeWidth={2} />
                         <span className="max-w-[22ch] overflow-hidden text-ellipsis whitespace-nowrap">{roomLabel}</span>
                       </span>
-                      <span className="h-px flex-1 bg-[#e1e7ed]" aria-hidden="true" />
                     </header>
                     <div className="grid gap-2">
                       {roomActivities.map(activity => (

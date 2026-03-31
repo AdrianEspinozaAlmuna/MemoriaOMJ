@@ -122,10 +122,10 @@ export default function AdminApprovals() {
 	}
 
 	return (
-		<section className="grid gap-4">
-			<header className="pb-0.5 pt-1.5 after:mt-3.5 after:block after:h-1 after:w-[min(210px,46vw)] after:rounded-full after:bg-[var(--header-accent)] after:opacity-45 after:content-['']">
-				<h1 className="m-0 text-[clamp(1.8rem,2.6vw,2.2rem)] font-bold text-[var(--text)]">Aprobacion de Actividades</h1>
-				<p className="mt-1.5 text-[0.98rem] text-[var(--text-muted)]">Revisa y aprueba propuestas de actividades</p>
+		<section className="space-y-8">
+			<header>
+				<h1 className="m-0 text-[clamp(1.8rem,2.5vw,2.3rem)] font-bold text-[var(--text)]">Aprobacion de Actividades</h1>
+				<p className="mt-1.5 text-[0.92rem] text-[var(--text-muted)]">Revisa y aprueba propuestas de actividades</p>
 			</header>
 
 			<section className="inline-flex w-fit max-w-full items-center gap-0.5 self-start rounded-xl border border-[#d8e5de] bg-[#eef4f1] p-1 max-[760px]:grid max-[760px]:w-full max-[760px]:grid-cols-1" role="tablist" aria-label="Filtros de aprobacion">
@@ -154,13 +154,13 @@ export default function AdminApprovals() {
 
 			<section className="grid w-full gap-3.5 xl:grid-cols-2" aria-live="polite">
 				{filteredItems.length === 0 && (
-					<article className="rounded-[var(--panel-radius)] border border-[var(--panel-border)] bg-white p-5 shadow-[var(--panel-shadow)]">
-						<p className="text-[0.92rem] text-[#6f8277]">No hay actividades en este estado.</p>
+				<article className="rounded-xl border border-[#d8e6dd] bg-white p-5 shadow-sm">
+					<p className="text-[0.92rem] text-[var(--text-muted)]">No hay actividades en este estado.</p>
 					</article>
 				)}
 
 				{filteredItems.map(item => (
-					<article key={item.id} className="rounded-[var(--panel-radius)] border border-[var(--panel-border)] bg-white px-5 py-5 shadow-[var(--panel-shadow)]">
+					<article key={item.id} className="rounded-xl border border-[#d8e6dd] bg-white px-5 py-5 shadow-sm">
 						<div className="mb-2 flex items-center gap-2">
 							<span className="rounded-md bg-[#f3f8f5] px-2 py-1 text-[0.78rem] font-semibold text-[#406251]">{item.type}</span>
 							<span className={`rounded-md px-2 py-1 text-[0.78rem] font-semibold ${item.status === "Pendiente" ? "bg-[#fff3de] text-[#b87015]" : item.status === "Aprobada" ? "bg-[#e7f5ec] text-[#177945]" : "bg-[#fee8e5] text-[#ad4334]"}`}>{item.status}</span>
@@ -216,7 +216,7 @@ export default function AdminApprovals() {
 								</button>
 							</div>
 						) : (
-							<div className="mt-4 rounded-[10px] border border-[#d8e5de] bg-[#f2faf5] px-3 py-2 text-[0.9rem] font-semibold text-[#3f5f4d]">Esta actividad ya fue procesada.</div>
+								<div className="mt-4 rounded-lg border border-[#d8e6dd] bg-white px-3 py-2 text-[0.9rem] font-semibold text-[var(--text-muted)]">Esta actividad ya fue procesada.</div>
 						)}
 					</article>
 				))}

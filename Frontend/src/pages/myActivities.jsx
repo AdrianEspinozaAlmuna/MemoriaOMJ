@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import DashboardCards from "../components/DashboardCards";
 import { getMyActivitiesData, getMyActivitiesSummary } from "../services/userViewsService";
 
@@ -11,6 +12,9 @@ function CompletedActivity({ activity }) {
       <span className={`mt-auto inline-flex items-center justify-center rounded-lg border px-3 py-1.5 text-xs font-semibold ${activity.attended ? "border-[var(--status-ok-border)] bg-[var(--status-ok-bg)] text-[var(--primary-strong)]" : "border-[var(--status-miss-border)] bg-[var(--status-miss-bg)] text-[#7a2d1f]"}`}>
         {activity.attended ? "Asistio" : "No asistio"}
       </span>
+      <Link to={`/user/actividad/${activity.id}`} className="mt-2 inline-flex justify-center rounded-lg border border-[#c9ddd0] bg-[#f3fbf6] px-3 py-1.5 text-xs font-semibold text-[#1f5137] transition-colors duration-150 hover:bg-[#ebf7f0]">
+        Ver detalle
+      </Link>
     </article>
   );
 }
@@ -36,23 +40,22 @@ export default function MyActivities() {
   }, []);
 
   return (
-    <section className="container relative animate-[revealUp_0.7s_ease_both]">
-      <header className="pt-1.5 pb-0.5">
+    <section className="max-w-7xl mx-auto px-4 py-6 space-y-8">
+      <header>
         <p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Panel de usuario</p>
-        <h1 className="mt-2 mb-0 text-[clamp(1.8rem,2.6vw,2.2rem)] font-bold text-[var(--text)]">Mis actividades</h1>
+        <h1 className="mt-2 mb-0 text-[clamp(1.8rem,2.5vw,2.3rem)] font-bold text-[var(--text)]">Mis actividades</h1>
         <p className="mt-2 text-[0.92rem] text-[var(--text-muted)]">Consulta tus actividades inscritas, el historial completado y tu resumen general.</p>
-        <span className="mt-3.5 block h-1 w-[min(190px,44vw)] rounded-full bg-[var(--header-accent)] opacity-45" />
       </header>
 
-      <section className="mt-6 rounded-[var(--panel-radius)] border border-[var(--panel-border)] bg-[var(--panel-bg)] p-6 shadow-[var(--panel-shadow)]">
-        <h2 className="mb-5 mt-0 inline-flex items-center gap-2 text-[1.1rem] font-bold text-[var(--text)] before:inline-block before:h-2 before:w-2 before:rounded-full before:bg-[linear-gradient(135deg,var(--primary)_0%,#45b373_100%)]">Resumen</h2>
+      <section className="rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-6 shadow-sm">
+        <h2 className="mb-4 mt-0 text-[1rem] font-semibold text-[var(--text)]">Resumen</h2>
         <DashboardCards items={summaryCards} loading={loading} />
       </section>
 
-      <section className="mt-6 rounded-[var(--panel-radius)] border border-[var(--panel-border)] bg-[var(--panel-bg)] p-6 shadow-[var(--panel-shadow)]">
-        <h2 className="mb-5 mt-0 inline-flex items-center gap-2 text-[1.1rem] font-bold text-[var(--text)] before:inline-block before:h-2 before:w-2 before:rounded-full before:bg-[linear-gradient(135deg,var(--primary)_0%,#45b373_100%)]">Completadas</h2>
+      <section className="rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-6 shadow-sm">
+        <h2 className="mb-4 mt-0 text-[1rem] font-semibold text-[var(--text)]">Completadas</h2>
         {completed.length === 0 && !loading ? (
-          <div className="grid min-h-[128px] place-items-center rounded-xl border border-dashed border-[#cdded3] bg-[#f9fcfa] text-center">
+          <div className="grid min-h-[128px] place-items-center rounded-lg border border-dashed border-[#d8e6dd] bg-[#f9fbfa] text-center">
             <p className="max-w-[44ch] px-4 text-[0.9rem] text-[var(--text-muted)]">Aun no hay actividades completadas para mostrar.</p>
           </div>
         ) : (

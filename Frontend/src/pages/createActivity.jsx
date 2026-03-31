@@ -63,15 +63,14 @@ export default function CreateActivity() {
   }
 
   return (
-    <section className="container relative animate-[revealUp_0.7s_ease_both] pb-2">
-      <header className="pt-1.5 pb-0.5">
+    <section className="max-w-7xl mx-auto px-4 py-6 space-y-8">
+      <header>
         <p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Panel de usuario</p>
-        <h1 className="mt-2 mb-0 text-[clamp(1.8rem,2.6vw,2.2rem)] font-bold text-[var(--text)]">Crear actividad</h1>
+        <h1 className="mt-2 mb-0 text-[clamp(1.8rem,2.5vw,2.3rem)] font-bold text-[var(--text)]">Crear actividad</h1>
         <p className="mt-2 text-[0.92rem] text-[var(--text-muted)]">Propone una nueva actividad indicando lugar, fecha y horario para su revision.</p>
-        <span className="mt-3.5 block h-1 w-[min(210px,48vw)] rounded-full bg-[var(--header-accent)] opacity-45" />
       </header>
 
-      <section className="mt-6 rounded-[var(--panel-radius)] border border-[var(--panel-border)] bg-[var(--panel-bg)] p-6 shadow-[var(--panel-shadow)]">
+      <section className="rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-6 shadow-sm">
         <form className="grid gap-5" onSubmit={handleSubmit}>
           <div className="grid gap-2">
             <label htmlFor="title" className="text-[0.88rem] font-semibold text-[var(--text)]">
@@ -83,7 +82,7 @@ export default function CreateActivity() {
               type="text"
               maxLength={90}
               placeholder="Ej: Taller de fotografia urbana"
-              className="rounded-[10px] border border-[#d0ddd5] bg-white px-3.5 py-2.5 text-[0.92rem] text-[var(--text)] outline-none transition-[border-color,box-shadow] focus:border-[var(--primary)] focus:shadow-[0_0_0_3px_rgba(15,143,78,0.12)]"
+              className="rounded-lg border border-[#d8e6dd] bg-[var(--panel-bg)] px-3.5 py-2.5 text-[0.92rem] text-[var(--text)] outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[#05a63d]/20"
               value={form.title}
               onChange={handleChange}
               required
@@ -100,7 +99,7 @@ export default function CreateActivity() {
               rows={5}
               maxLength={500}
               placeholder="Describe objetivo, publico y dinamica de la actividad."
-              className="resize-y rounded-[10px] border border-[#d0ddd5] bg-white px-3.5 py-2.5 text-[0.92rem] text-[var(--text)] outline-none transition-[border-color,box-shadow] focus:border-[var(--primary)] focus:shadow-[0_0_0_3px_rgba(15,143,78,0.12)]"
+              className="resize-y rounded-lg border border-[#d8e6dd] bg-[var(--panel-bg)] px-3.5 py-2.5 text-[0.92rem] text-[var(--text)] outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[#05a63d]/20"
               value={form.description}
               onChange={handleChange}
               required
@@ -116,7 +115,7 @@ export default function CreateActivity() {
               <select
                 id="room"
                 name="room"
-                className="rounded-[10px] border border-[#d0ddd5] bg-white px-3.5 py-2.5 text-[0.92rem] text-[var(--text)] outline-none transition-[border-color,box-shadow] focus:border-[var(--primary)] focus:shadow-[0_0_0_3px_rgba(15,143,78,0.12)]"
+                className="rounded-lg border border-[#d8e6dd] bg-[var(--panel-bg)] px-3.5 py-2.5 text-[0.92rem] text-[var(--text)] outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[#05a63d]/20"
                 value={form.room}
                 onChange={handleChange}
               >
@@ -136,7 +135,7 @@ export default function CreateActivity() {
                 id="date"
                 name="date"
                 type="date"
-                className="rounded-[10px] border border-[#d0ddd5] bg-white px-3.5 py-2.5 text-[0.92rem] text-[var(--text)] outline-none transition-[border-color,box-shadow] focus:border-[var(--primary)] focus:shadow-[0_0_0_3px_rgba(15,143,78,0.12)]"
+                className="rounded-lg border border-[#d8e6dd] bg-[var(--panel-bg)] px-3.5 py-2.5 text-[0.92rem] text-[var(--text)] outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[#05a63d]/20"
                 value={form.date}
                 onChange={handleChange}
                 required
@@ -151,7 +150,7 @@ export default function CreateActivity() {
                 id="time"
                 name="time"
                 type="time"
-                className="rounded-[10px] border border-[#d0ddd5] bg-white px-3.5 py-2.5 text-[0.92rem] text-[var(--text)] outline-none transition-[border-color,box-shadow] focus:border-[var(--primary)] focus:shadow-[0_0_0_3px_rgba(15,143,78,0.12)]"
+                className="rounded-lg border border-[#d8e6dd] bg-[var(--panel-bg)] px-3.5 py-2.5 text-[0.92rem] text-[var(--text)] outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[#05a63d]/20"
                 value={form.time}
                 onChange={handleChange}
                 required
@@ -175,7 +174,7 @@ export default function CreateActivity() {
           <div className="flex flex-wrap items-center gap-3 pt-1">
             <button
               type="submit"
-              className="inline-flex items-center rounded-lg border border-[var(--primary)] bg-[var(--primary)] px-5 py-2.5 text-[0.9rem] font-semibold text-white transition-colors hover:border-[var(--primary-strong)] hover:bg-[var(--primary-strong)] disabled:cursor-not-allowed disabled:opacity-70"
+              className="inline-flex items-center rounded-lg border border-[var(--primary)] bg-[var(--primary)] px-5 py-2.5 text-[0.9rem] font-semibold text-white transition-all hover:bg-[#0a7f3d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#05a63d]/30 disabled:cursor-not-allowed disabled:opacity-70"
               disabled={isSubmitting}
             >
               {isSubmitting ? "Enviando..." : "Enviar propuesta"}
@@ -183,7 +182,7 @@ export default function CreateActivity() {
 
             <Link
               to="/user/dashboard"
-              className="inline-flex items-center rounded-lg border border-[#cad9cf] bg-white px-5 py-2.5 text-[0.9rem] font-semibold text-[#284536] transition-colors hover:bg-[#f5f9f7]"
+              className="inline-flex items-center rounded-lg border border-[#d8e6dd] bg-white px-5 py-2.5 text-[0.9rem] font-semibold text-[#284536] transition-colors hover:bg-[#f5f9f7]"
             >
               Volver al inicio
             </Link>

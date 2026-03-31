@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { CalendarDays, Clock3, ListChecks, MapPin } from "lucide-react";
 
 function MetaIcon({ name, className = "h-4 w-4" }) {
@@ -55,59 +56,61 @@ const activities = [
 
 export default function AdminActivities() {
 	return (
-		<section className="grid gap-4">
-			<header className="pb-0.5 pt-1.5 after:mt-3.5 after:block after:h-1 after:w-[min(210px,46vw)] after:rounded-full after:bg-[var(--header-accent)] after:opacity-45 after:content-['']">
-				<h1 className="m-0 text-[clamp(1.8rem,2.6vw,2.2rem)] font-bold text-[var(--text)]">Actividades</h1>
-				<p className="mt-1.5 text-[0.98rem] text-[var(--text-muted)]">Gestion general de actividades publicadas</p>
+		<section className="space-y-8">
+			<header>
+				<h1 className="m-0 text-[clamp(1.8rem,2.5vw,2.3rem)] font-bold text-[var(--text)]">Actividades</h1>
+				<p className="mt-1.5 text-[0.92rem] text-[var(--text-muted)]">Gestion general de actividades publicadas</p>
 			</header>
 
-			<section className="grid w-full gap-3.5 xl:grid-cols-2">
+			<section className="grid w-full gap-4 xl:grid-cols-2">
 				{activities.map(item => (
-					<article key={item.id} className="grid gap-2.5 rounded-[var(--panel-radius)] border border-[var(--panel-border)] bg-white px-5 py-5 shadow-[var(--panel-shadow)]">
+					<article key={item.id} className="rounded-xl border border-[#d8e6dd] bg-white px-5 py-5 shadow-sm flex flex-col gap-3">
 						<div className="flex items-center gap-2">
-							<span className="rounded-md bg-[#f3f8f5] px-2 py-1 text-[0.78rem] font-semibold text-[#406251]">{item.category}</span>
-							<span className={`rounded-md px-2 py-1 text-[0.78rem] font-semibold ${item.status === "Activa" ? "bg-[#e7f5ec] text-[#177945]" : "bg-[#fff3de] text-[#b87015]"}`}>
+							<span className="rounded-md bg-[#f3f8f5] px-2 py-1 text-[0.75rem] font-semibold text-[#406251]">{item.category}</span>
+							<span className={`rounded-md px-2 py-1 text-[0.75rem] font-semibold ${item.status === "Activa" ? "bg-[#e7f5ec] text-[#177945]" : "bg-[#fff3de] text-[#b87015]"}`}>
 								{item.status}
 							</span>
 						</div>
 
-						<h2 className="m-0 text-[1.2rem] font-bold text-[#20372b]">{item.title}</h2>
-						<p className="text-[0.92rem] text-[#5f786a]">{item.description}</p>
+						<h2 className="m-0 text-[1.15rem] font-semibold text-[var(--text)]">{item.title}</h2>
+						<p className="text-[0.92rem] text-[var(--text-muted)]">{item.description}</p>
 
-						<div className="grid gap-3 min-[761px]:grid-cols-2">
+						<div className="grid gap-3 min-[761px]:grid-cols-2 text-[0.9rem]">
 							<div className="grid gap-2">
 								<div className="flex items-center gap-2">
-									<span className="grid h-[1.15rem] w-[1.15rem] place-items-center text-[#60796d]" aria-hidden="true">
+									<span className="grid place-items-center text-[var(--text-muted)]">
 										<MetaIcon name="place" className="h-4 w-4" />
 									</span>
-									<span className="text-[0.9rem] text-[#52695c]">Lugar: {item.place}</span>
+									<span className="text-[var(--text-muted)]">Lugar: {item.place}</span>
 								</div>
 								<div className="flex items-center gap-2">
-									<span className="grid h-[1.15rem] w-[1.15rem] place-items-center text-[#60796d]" aria-hidden="true">
+									<span className="grid place-items-center text-[var(--text-muted)]">
 										<MetaIcon name="seats" className="h-4 w-4" />
 									</span>
-									<span className="text-[0.9rem] text-[#52695c]">Inscritos: {item.enrolled}</span>
+									<span className="text-[var(--text-muted)]">Inscritos: {item.enrolled}</span>
 								</div>
 							</div>
 							<div className="grid gap-2">
 								<div className="flex items-center gap-2">
-									<span className="grid h-[1.15rem] w-[1.15rem] place-items-center text-[#60796d]" aria-hidden="true">
+									<span className="grid place-items-center text-[var(--text-muted)]">
 										<MetaIcon name="calendar" className="h-4 w-4" />
 									</span>
-									<span className="text-[0.9rem] text-[#52695c]">Fecha: {item.date}</span>
+									<span className="text-[var(--text-muted)]">Fecha: {item.date}</span>
 								</div>
 								<div className="flex items-center gap-2">
-									<span className="grid h-[1.15rem] w-[1.15rem] place-items-center text-[#60796d]" aria-hidden="true">
+									<span className="grid place-items-center text-[var(--text-muted)]">
 										<MetaIcon name="time" className="h-4 w-4" />
 									</span>
-									<span className="text-[0.9rem] text-[#52695c]">Hora: {item.time}</span>
+									<span className="text-[var(--text-muted)]">Hora: {item.time}</span>
 								</div>
 							</div>
 						</div>
 
 						<div className="mt-1 flex flex-wrap items-center gap-2">
-							<button type="button" className="cursor-pointer rounded-lg border border-[#c9ddd0] bg-[#f3fbf6] px-2.5 py-1.5 text-[0.86rem] font-semibold text-[#1f5137]">Editar</button>
-							<button type="button" className="cursor-pointer rounded-lg border border-[#c9ddd0] bg-[#f3fbf6] px-2.5 py-1.5 text-[0.86rem] font-semibold text-[#1f5137]">Ver detalle</button>
+							<button type="button" className="rounded-lg border border-[#c9ddd0] bg-[#f3fbf6] px-2.5 py-1.5 text-[0.8rem] font-semibold text-[#1f5137] hover:bg-[#ebf7f0]">Editar</button>
+							<Link to={`/admin/actividad/${item.id}`} className="inline-flex rounded-lg border border-[#c9ddd0] bg-[#f3fbf6] px-2.5 py-1.5 text-[0.8rem] font-semibold text-[#1f5137] hover:bg-[#ebf7f0]">
+								Ver detalle
+							</Link>
 						</div>
 					</article>
 				))}

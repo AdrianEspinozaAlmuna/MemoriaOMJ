@@ -58,7 +58,7 @@ export function AdminProtectedRoute() {
 		return <Navigate to="/login" replace state={{ from: location }} />;
 	}
 
-	if (user.rol !== "admin") {
+	if (user.rol !== "admin" && user.rol !== "encargado") {
 		if (user.rol === "participante") {
 			return <Navigate to="/user/dashboard" replace />;
 		}
@@ -77,6 +77,10 @@ export function PublicOnlyRoute() {
 	}
 
 	if (user?.rol === "admin") {
+		return <Navigate to="/admin/dashboard" replace />;
+	}
+
+	if (user?.rol === "encargado") {
 		return <Navigate to="/admin/dashboard" replace />;
 	}
 
