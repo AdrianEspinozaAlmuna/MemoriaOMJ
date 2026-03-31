@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import DashboardCards from "../components/DashboardCards";
-import ActivityCard from "../components/ActivityCard";
 import { getMyActivitiesData, getMyActivitiesSummary } from "../services/userViewsService";
 
 function CompletedActivity({ activity }) {
@@ -19,7 +18,6 @@ function CompletedActivity({ activity }) {
 export default function MyActivities() {
   const [loading, setLoading] = useState(true);
   const [summaryCards, setSummaryCards] = useState([]);
-  const [upcoming, setUpcoming] = useState([]);
   const [completed, setCompleted] = useState([]);
 
   useEffect(() => {
@@ -28,7 +26,6 @@ export default function MyActivities() {
     Promise.all([getMyActivitiesSummary(), getMyActivitiesData()]).then(([summaryData, activitiesData]) => {
       if (!mounted) return;
       setSummaryCards(summaryData.cards);
-      setUpcoming(activitiesData.upcoming);
       setCompleted(activitiesData.completed);
       setLoading(false);
     });
@@ -50,21 +47,6 @@ export default function MyActivities() {
       <section className="mt-6 rounded-[var(--panel-radius)] border border-[var(--panel-border)] bg-[var(--panel-bg)] p-6 shadow-[var(--panel-shadow)]">
         <h2 className="mb-5 mt-0 inline-flex items-center gap-2 text-[1.1rem] font-bold text-[var(--text)] before:inline-block before:h-2 before:w-2 before:rounded-full before:bg-[linear-gradient(135deg,var(--primary)_0%,#45b373_100%)]">Resumen</h2>
         <DashboardCards items={summaryCards} loading={loading} />
-      </section>
-
-      <section className="mt-6 rounded-[var(--panel-radius)] border border-[var(--panel-border)] bg-[var(--panel-bg)] p-6 shadow-[var(--panel-shadow)]">
-        <h2 className="mb-5 mt-0 inline-flex items-center gap-2 text-[1.1rem] font-bold text-[var(--text)] before:inline-block before:h-2 before:w-2 before:rounded-full before:bg-[linear-gradient(135deg,var(--primary)_0%,#45b373_100%)]">Proximas</h2>
-        {upcoming.length === 0 && !loading ? (
-          <div className="grid min-h-[128px] place-items-center rounded-xl border border-dashed border-[#cdded3] bg-[#f9fcfa] text-center">
-            <p className="max-w-[44ch] px-4 text-[0.9rem] text-[var(--text-muted)]">No tienes actividades proximas por ahora.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {upcoming.map(activity => (
-              <ActivityCard key={activity.id} activity={activity} actionLabel="Ver mas" />
-            ))}
-          </div>
-        )}
       </section>
 
       <section className="mt-6 rounded-[var(--panel-radius)] border border-[var(--panel-border)] bg-[var(--panel-bg)] p-6 shadow-[var(--panel-shadow)]">

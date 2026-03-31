@@ -55,6 +55,20 @@ self.addEventListener("fetch", event => {
           return res;
         });
       })
-      .catch(() => caches.match(req))
+      .catch(async () => {
+        const cached = await caches.match(req);
+        if (cached) return cached;
+
+        if (req.mode === "navigate") {
+          const appShell = await caches.match("/index.html");
+          if (appShell) return appShell;
+        }
+
+        return new Response("Offline", {
+          status: 503,
+          statusText: "Service Unavailable",
+          headers: { "Content-Type": "text/plain; charset=utf-8" }
+        });
+      })
   );
 });

@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "installCommand": "npm install && cd Frontend && npm ci && cd ../Backend && npm ci && npx prisma generate --schema=./prisma/schema.prisma",
+  "buildCommand": "cd Frontend && npm run build",
+  "outputDirectory": "Frontend/dist",
+  "functions": {
+    "api/[...all].js": {
+      "includeFiles": [
+        "Backend/prisma/**",
+        "Backend/prisma/src/**",
+        "node_modules/.prisma/**",
+        "node_modules/@prisma/**"
+      ]
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/[...all].js"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

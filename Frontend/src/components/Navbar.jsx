@@ -93,17 +93,17 @@ export default function Navbar() {
 
 	const navLinkClass = ({ isActive }) =>
 		[
-			"rounded-lg border border-transparent px-3 py-2 text-[0.92rem] font-semibold text-[#2c4135] transition-colors duration-200 hover:bg-[#d0f8de]",
-			isActive ? "bg-[#e4f8ea] text-[var(--primary)]" : ""
+			"rounded-xl px-3.5 py-2 text-[0.92rem] font-semibold text-[#355447] [transition:background-color_150ms_ease,color_120ms_ease] hover:bg-[#def3e7] hover:text-[var(--primary-strong)] active:bg-[var(--primary-active)]",
+			isActive ? "bg-[var(--primary-active)] !text-[var(--primary-strong)]" : ""
 		].join(" ");
 
 	return (
-		<header className="sticky top-0 z-30 border-b border-[#e2e5e9] bg-white shadow-[0_1px_0_rgba(17,24,39,0.03)]">
+		<header className="sticky top-0 z-30 bg-[color:var(--nav-bg,white)]/95 backdrop-blur supports-[backdrop-filter]:bg-[color:var(--nav-bg,white)]/80 shadow-[0_8px_20px_-20px_rgba(6,40,24,0.55)]">
 			<nav className="mx-auto grid min-h-16 w-[min(98vw,1680px)] grid-cols-[auto_1fr_auto] items-center gap-x-8 px-4 sm:px-6 lg:gap-x-10 max-[1120px]:grid-cols-[auto_minmax(0,1fr)_auto] max-[860px]:min-h-[4.2rem] max-[860px]:w-full max-[860px]:grid-cols-[minmax(0,1fr)_auto] max-[860px]:gap-y-2 max-[860px]:py-2" ref={navRef}>
 				<div className="inline-flex items-center gap-2.5 justify-self-start min-[861px]:min-w-0">
 					<button
 						type="button"
-						className="hidden h-[2.15rem] w-[2.15rem] flex-col items-center justify-center gap-[0.22rem] rounded-lg border border-[#d2dfd8] bg-white p-0 transition-colors duration-200 hover:border-[#b7d0c2] hover:bg-[#f6fbf8] max-[860px]:inline-flex"
+						className="hidden h-[2.15rem] w-[2.15rem] flex-col items-center justify-center gap-[0.22rem] rounded-lg bg-[#eef7f1] p-0 transition-colors duration-200 hover:bg-[#e2f4e9] max-[860px]:inline-flex"
 						onClick={() => setMobileMenuOpen(previous => !previous)}
 						aria-expanded={mobileMenuOpen}
 						aria-label="Abrir menu"
@@ -114,12 +114,12 @@ export default function Navbar() {
 					</button>
 
 					<Link to="/" className="inline-flex items-center gap-2.5 justify-self-start min-[861px]:min-w-0">
-						<img className="block h-8 w-8 min-w-8 rounded-md border border-[#cfd5db] object-cover" src="/iconOMJ.jpg" alt="Logo OMJ" />
+						<img className="block h-8 w-8 min-w-8 rounded-md object-cover shadow-[0_6px_14px_-10px_rgba(8,38,23,0.5)]" src="/iconOMJ.jpg" alt="Logo OMJ" />
 						<span className="text-[0.98rem] font-bold leading-[1.2] tracking-[0.005em] max-[1120px]:max-w-[11.2rem] max-[1120px]:overflow-hidden max-[1120px]:text-ellipsis max-[1120px]:whitespace-nowrap max-[1120px]:text-[0.92rem] max-[860px]:hidden">Plataforma Juvenil Curico</span>
 					</Link>
 				</div>
 
-				<div className={`min-[861px]:contents ${mobileMenuOpen ? "max-[860px]:col-span-2 max-[860px]:grid max-[860px]:gap-2.5 max-[860px]:rounded-xl max-[860px]:border max-[860px]:border-[#d7e4dc] max-[860px]:bg-white max-[860px]:p-2.5" : "max-[860px]:hidden"}`}>
+				<div className={`min-[861px]:contents ${mobileMenuOpen ? "max-[860px]:col-span-2 max-[860px]:grid max-[860px]:gap-2.5 max-[860px]:rounded-xl max-[860px]:bg-white/95 max-[860px]:p-2.5 max-[860px]:shadow-[0_12px_24px_-18px_rgba(8,38,23,0.45)]" : "max-[860px]:hidden"}`}>
 					{isAuthenticated && rol === "participante" && <p className="hidden text-[0.82rem] font-semibold text-[#6f8278] max-[860px]:block">Panel de usuario</p>}
 
 				<div className="flex w-full flex-nowrap items-center justify-center gap-1.5 justify-self-center max-[1120px]:w-auto max-[1120px]:max-w-full max-[1120px]:min-w-0 max-[1120px]:justify-start max-[1120px]:overflow-x-auto max-[1120px]:pb-1 max-[860px]:w-full max-[860px]:flex-col max-[860px]:items-stretch max-[860px]:gap-1 max-[860px]:overflow-visible max-[860px]:pb-0" aria-label="Navegacion de usuario">
@@ -210,7 +210,7 @@ export default function Navbar() {
 						<div className="relative">
 							<button
 								type="button"
-								className="relative inline-flex h-[2.15rem] w-[2.15rem] items-center justify-center cursor-pointer rounded-lg border border-[#d2dfd8] bg-white transition-colors duration-200 hover:border-[#b7d0c2] hover:bg-[#f6fbf8]"
+								className="relative inline-flex h-[2.15rem] w-[2.15rem] items-center justify-center cursor-pointer rounded-lg bg-[#eef7f1] transition-colors duration-200 hover:bg-[#e2f4e9]"
 								aria-label="Notificaciones"
 								onClick={() => {
 									setNotificationsOpen(previous => !previous);
@@ -243,7 +243,7 @@ export default function Navbar() {
 						<div className="relative">
 							<button
 								type="button"
-								className="inline-flex hover:cursor-pointer items-center gap-2 rounded-lg border border-[#d2dfd8] bg-white px-2 py-1.5 text-[0.89rem] font-semibold leading-none text-[#2e4c3d] transition-colors duration-200 hover:border-[#b6d0c1] hover:bg-[#f6fbf8] focus-visible:border-[var(--primary)] focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(5,166,61,0.15)] max-[860px]:h-[2.15rem] max-[860px]:min-w-[2.15rem] max-[860px]:justify-center max-[860px]:p-[0.18rem]"
+								className="inline-flex hover:cursor-pointer items-center gap-2 rounded-xl bg-[#eef7f1] px-2 py-1.5 text-[0.89rem] font-semibold leading-none text-[#2e4c3d] transition-colors duration-200 hover:bg-[#e2f4e9] focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(5,166,61,0.15)] max-[860px]:h-[2.15rem] max-[860px]:min-w-[2.15rem] max-[860px]:justify-center max-[860px]:p-[0.18rem]"
 								onClick={() => {
 									setMenuOpen(previous => !previous);
 									setNotificationsOpen(false);

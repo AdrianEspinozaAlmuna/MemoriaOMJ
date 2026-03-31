@@ -10,6 +10,8 @@
 	--primary: #05A63D;
 	--primary-strong: #038330;
 	--primary-soft: rgb(31, 196, 89);
+	--primary-hover: #dff8e8;
+	--primary-active: #c9f3d8;
 	--accent: #f2d742;
 	--border: #c7dfd0;
 	--panel-bg: #ffffff;
