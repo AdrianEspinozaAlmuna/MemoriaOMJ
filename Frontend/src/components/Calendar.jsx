@@ -199,8 +199,8 @@ export default function Calendar({ activities, viewMode, monthDate, onActivityCl
 
   return (
     <>
-      <section className="overflow-x-auto rounded-2xl border border-[#cfded5] bg-[linear-gradient(180deg,#ffffff_0%,#f6fbf8_100%)] p-4 shadow-[0_20px_36px_-30px_rgba(10,45,28,0.45)]">
-      <div className="mb-3 grid grid-cols-7 gap-2 rounded-xl border border-[#d6e5dc] bg-[#edf6f1] px-2 py-2">
+      <section className="overflow-x-auto rounded-2xl border border-[#cfded5] bg-white p-4">
+      <div className="mb-3 grid grid-cols-7 gap-2 rounded-xl border border-[#d6e5dc] bg-white px-2 py-2">
         {weekDays.map(day => (
           <span key={day} className="text-center text-[0.73rem] font-bold uppercase tracking-[0.08em] text-[#4f6f5f]">
             {day}
@@ -210,7 +210,7 @@ export default function Calendar({ activities, viewMode, monthDate, onActivityCl
       <div className="grid min-w-[760px] grid-cols-7 gap-2">
         {daysToRender.map((day, index) => {
           if (!day) {
-            return <div key={`empty-${index}`} className="h-[126px] rounded-xl border border-dashed border-[#d9e5de] bg-[#f7fbf9] p-2" />;
+            return <div key={`empty-${index}`} className="h-[126px] rounded-xl border border-dashed border-[#d9e5de] bg-white p-2" />;
           }
 
           const dateKey = day.toISOString().slice(0, 10);
@@ -224,10 +224,10 @@ export default function Calendar({ activities, viewMode, monthDate, onActivityCl
               key={dateKey}
               className={`h-[126px] cursor-pointer rounded-xl border p-2.5 transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-[1px] hover:shadow-[0_12px_20px_-18px_rgba(7,45,27,0.48)] ${
                 today
-                  ? "border-[#58a97a] bg-[linear-gradient(180deg,#ffffff_0%,#f0faf4_100%)]"
+                  ? "border-[#4f9f70] bg-white"
                   : isWeekend
-                    ? "border-[#d8e6de] bg-[#f8fcfa]"
-                    : "border-[#dbe7e0] bg-[#fdfefd]"
+                    ? "border-[#c8d9cf] bg-white"
+                    : "border-[#c6d7cd] bg-white"
               }`}
               onClick={() => openDayModal(day)}
               onKeyDown={event => {
@@ -249,7 +249,7 @@ export default function Calendar({ activities, viewMode, monthDate, onActivityCl
               </header>
               <div className="flex h-[78px] items-end">
                 {dayActivities.length > 0 ? (
-                  <div className="w-full rounded-lg border border-[#0f8f4e] bg-[linear-gradient(135deg,#12924f,#0f8f4e)] px-2.5 py-2 text-white">
+                  <div className="w-full rounded-md border border-[#0f8f4e] bg-[linear-gradient(135deg,#12924f,#0f8f4e)] px-2.5 py-2 text-white">
                     <p className="text-[0.76rem] font-bold">{dayActivities.length} actividades en el dia</p>
                     <p className="mt-0.5 text-[0.7rem] font-semibold text-white/85">{enrolledCount} inscritas</p>
                   </div>
@@ -344,7 +344,7 @@ export default function Calendar({ activities, viewMode, monthDate, onActivityCl
                 {groupedDayActivities.map(([hourLabel, hourActivities]) => (
                   <section
                     key={hourLabel}
-                    className="rounded-[10px] border border-[#cdd9d1] bg-[var(--bg)] p-3 shadow-[0_1px_0_rgba(16,38,27,0.04)]"
+                    className="rounded-[10px] bg-[var(--gray-soft)] p-3 shadow-[0_1px_0_rgba(16,38,27,0.04)]"
                   >
                     <header className="mb-2 flex items-center justify-between gap-2">
                       <span className="inline-flex items-center gap-1.5 rounded-[8px] border border-[var(--primary)] bg-white px-2.5 py-1 text-[0.78rem] font-bold text-[var(--primary)]">
@@ -390,7 +390,7 @@ export default function Calendar({ activities, viewMode, monthDate, onActivityCl
                 {groupedByRoomActivities.map(([roomLabel, roomActivities]) => (
                   <section
                     key={roomLabel}
-                    className="rounded-[10px] border border-[#cdd9d1] bg-[var(--bg)] p-3 shadow-[0_1px_0_rgba(16,38,27,0.04)]"
+                    className="rounded-[10px] bg-[var(--gray-soft)] p-3 shadow-[0_1px_0_rgba(16,38,27,0.04)]"
                   >
                     <header className="mb-2 flex items-center justify-between gap-2">
                       <span className="text-[var(--primary)] inline-flex max-w-full items-center gap-1.5 rounded-[8px] border border-[var(--primary)] bg-white px-2.5 py-1 text-[0.78rem] font-bold">

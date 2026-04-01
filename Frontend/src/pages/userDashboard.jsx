@@ -93,7 +93,7 @@ export default function UserDashboard() {
           {quickActions.map(action => (
             <article
               key={action.label}
-              className="flex min-h-[220px] flex-col items-center justify-between rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] px-5 py-6 text-center transition-all duration-200 hover:shadow-sm hover:border-[#cde2d5]"
+              className="text-[white] flex min-h-[220px] flex-col items-center justify-between rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] px-5 py-6 text-center transition-all duration-200 hover:shadow-sm hover:border-[#cde2d5]"
             >
               <span className={`inline-flex h-16 w-16 items-center justify-center ${getQuickIconClass(action.icon)}`}>
                 <span className="h-8 w-8">
@@ -106,7 +106,7 @@ export default function UserDashboard() {
               </div>
               <Link
                 to={action.to}
-                className="mt-4 inline-flex w-full cursor-pointer justify-center rounded-lg bg-[var(--primary)] px-4 py-2.5 text-[0.85rem] font-semibold text-white transition-all duration-200 hover:bg-[var(--primary-strong)] hover:shadow-sm"
+                className="mt-4 inline-flex w-full cursor-pointer justify-center rounded-sm bg-[var(--primary)] px-4 py-2.5 text-[0.85rem] font-semibold text-white transition-all duration-200 hover:bg-[var(--primary-strong)] hover:shadow-sm"
               >
                 {action.cta}
               </Link>

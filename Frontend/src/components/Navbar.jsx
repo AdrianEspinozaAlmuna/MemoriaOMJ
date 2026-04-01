@@ -210,7 +210,7 @@ export default function Navbar() {
 						<div className="relative">
 							<button
 								type="button"
-								className="relative inline-flex h-[2.15rem] w-[2.15rem] items-center justify-center cursor-pointer rounded-lg bg-[#eef7f1] transition-colors duration-200 hover:bg-[#e2f4e9]"
+								className="relative inline-flex h-[2.15rem] w-[2.15rem] items-center justify-center cursor-pointer rounded-md bg-[var(--gray)] transition-colors duration-200 hover:bg-[#e2f4e9]"
 								aria-label="Notificaciones"
 								onClick={() => {
 									setNotificationsOpen(previous => !previous);
@@ -243,7 +243,7 @@ export default function Navbar() {
 						<div className="relative">
 							<button
 								type="button"
-								className="inline-flex hover:cursor-pointer items-center gap-2 rounded-xl bg-[#eef7f1] px-2 py-1.5 text-[0.89rem] font-semibold leading-none text-[#2e4c3d] transition-colors duration-200 hover:bg-[#e2f4e9] focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(5,166,61,0.15)] max-[860px]:h-[2.15rem] max-[860px]:min-w-[2.15rem] max-[860px]:justify-center max-[860px]:p-[0.18rem]"
+								className="inline-flex hover:cursor-pointer items-center gap-2 rounded-xl bg-[var(--gray)] px-2 py-1.5 text-[0.89rem] font-semibold leading-none text-[#2e4c3d] transition-colors duration-200 hover:bg-[#e2f4e9] focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(5,166,61,0.15)] max-[860px]:h-[2.15rem] max-[860px]:min-w-[2.15rem] max-[860px]:justify-center max-[860px]:p-[0.18rem]"
 								onClick={() => {
 									setMenuOpen(previous => !previous);
 									setNotificationsOpen(false);
@@ -257,7 +257,7 @@ export default function Navbar() {
 
 							{menuOpen && (
 								<div className="absolute right-0 top-[calc(100%+0.42rem)] z-[35] min-w-[10.5rem] rounded-[10px] border border-[#dce3ea] bg-white p-1.5 shadow-[0_12px_26px_-20px_rgba(18,32,25,0.42)] max-[860px]:top-[calc(100%+0.5rem)] max-[860px]:w-[min(320px,calc(100vw-1.4rem))] max-[640px]:w-[min(300px,calc(100vw-1rem))]" role="menu">
-									<button type="button" className="w-full cursor-pointer rounded-lg bg-transparent px-2.5 py-2 text-left text-[0.87rem] font-semibold text-[#2b3f34] transition-colors duration-150 hover:bg-[#f1f6f3] hover:text-[#173326] focus-visible:bg-[#ecf6ef] focus-visible:outline-none" role="menuitem" onClick={handleLogout}>
+									<button type="button" className="w-full cursor-pointer rounded-md bg-transparent px-2.5 py-2 text-left text-[0.87rem] font-semibold text-[#2b3f34] transition-colors duration-150 hover:bg-[#f1f6f3] hover:text-[#173326] focus-visible:bg-[#ecf6ef] focus-visible:outline-none" role="menuitem" onClick={handleLogout}>
 										Cerrar sesion
 									</button>
 								</div>
