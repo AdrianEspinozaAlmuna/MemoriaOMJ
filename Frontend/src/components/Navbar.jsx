@@ -164,7 +164,7 @@ export default function Navbar() {
 								onClick={handleNavItemClick}
 								className={navLinkClass}
 							>
-								Mi asistencia
+								Mis asistencias
 							</NavLink>
 						</>
 					)}

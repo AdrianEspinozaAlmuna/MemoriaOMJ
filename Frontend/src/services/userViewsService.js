@@ -165,13 +165,65 @@ const calendarActivities = [
 
 const myActivitiesSummary = {
   cards: [
-    { key: "totalEnrolled", label: "Total inscritas", value: 12 },
-    { key: "completed", label: "Total completadas", value: 9 },
+    { key: "totalEnrolled", label: "Participando", value: 6 },
+    { key: "totalCreated", label: "Creadas por mi", value: 3 },
     { key: "rate", label: "Tasa de asistencia", value: "75%" }
   ]
 };
 
 const myActivitiesPayload = {
+  participating: [
+    {
+      id: "my-01",
+      title: "Laboratorio audiovisual",
+      date: "2026-03-30",
+      place: "Estudio Comunitario",
+      status: "inscrito"
+    },
+    {
+      id: "my-02",
+      title: "Taller de programacion creativa",
+      date: "2026-04-05",
+      place: "Hub Digital",
+      status: "inscrito"
+    },
+    {
+      id: "my-06",
+      title: "Mentoria de proyecto social",
+      date: "2026-04-10",
+      place: "Centro Juvenil",
+      status: "inscrito"
+    }
+  ],
+  created: [
+    {
+      id: "my-c-01",
+      title: "Taller de fotografia movil",
+      date: "2026-04-08",
+      place: "Sala Multimedia",
+      participants: 14,
+      capacity: 20,
+      status: "publicada"
+    },
+    {
+      id: "my-c-02",
+      title: "Jornada de voluntariado barrial",
+      date: "2026-04-12",
+      place: "Plaza Civica",
+      participants: 22,
+      capacity: 30,
+      status: "publicada"
+    },
+    {
+      id: "my-c-03",
+      title: "Clinica de CV para primer empleo",
+      date: "2026-04-19",
+      place: "Espacio OMJ",
+      participants: 9,
+      capacity: 25,
+      status: "publicada"
+    }
+  ],
   upcoming: [
     {
       id: "my-01",
@@ -185,6 +237,13 @@ const myActivitiesPayload = {
       title: "Taller de programacion creativa",
       date: "2026-04-05",
       place: "Hub Digital",
+      status: "inscrito"
+    },
+    {
+      id: "my-06",
+      title: "Mentoria de proyecto social",
+      date: "2026-04-10",
+      place: "Centro Juvenil",
       status: "inscrito"
     }
   ],
