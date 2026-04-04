@@ -15,7 +15,7 @@ function StatCard({ label, value, helper, icon: Icon }) {
   return (
     <article className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-bg)] px-4 py-3.5">
       <div className="flex items-center justify-between gap-3">
-        <p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.06em] text-[var(--text-muted)]">{label}</p>
+        <p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.06em] text-black">{label}</p>
         <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--surface-soft)] text-[var(--primary)]">
           <Icon aria-hidden="true" className="h-4 w-4" />
         </span>
@@ -28,9 +28,9 @@ function StatCard({ label, value, helper, icon: Icon }) {
 
 function ActiveActivityRow({ activity, mode = "created" }) {
   return (
-    <article className=" shadow-sm rounded-sm border border-[var(--panel-border)] bg-[var(--panel-bg)] px-3.5 py-4 transition-all duration-150 hover:border-[var(--primary)] hover:shadow-[0_6px_14px_-10px_rgba(5,166,61,0.2)]">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
+    <article className="min-h-[96px] shadow rounded-md border border-[var(--panel-border)] bg-[var(--panel-bg)] px-4 py-4 transition-all duration-200 hover:border-[var(--primary)] hover:shadow-[0_8px_20px_-8px_rgba(16,24,40,0.06)]">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0 flex-1 pt-2">
           <h3 className="m-0 text-[1rem] font-semibold leading-tight text-[var(--text)]">{activity.title}</h3>
           <div className="mt-1.5 flex flex-wrap gap-3 text-[0.9rem] text-[var(--text-muted)]">
             <p className="m-0 inline-flex items-center gap-1.5">
@@ -56,7 +56,7 @@ function ActiveActivityRow({ activity, mode = "created" }) {
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-2 self-start">
+        <div className="flex shrink-0 items-center gap-2 self-start pt-4">
           {mode === "created" ? (
           <Link to={`/user/actividad/${activity.id}`} className="inline-flex rounded-sm border border-[var(--border)] bg-[var(--gray-soft)] px-3 py-1.5 text-[0.82rem] font-semibold text-[var(--primary-strong)] transition-colors duration-150 hover:bg-[var(--surface-soft)]">
             Gestionar
@@ -105,7 +105,7 @@ function PaginationFooter({ currentPage, totalPages, onPageChange }) {
   if (totalPages <= 1) return null;
 
   return (
-    <div className="mt-5 flex items-center justify-end gap-6 rounded-md border-t border-[var(--panel-border)] px-4 py-2">
+    <div className="mt-5 flex items-center justify-end gap-6 border-t border-[var(--panel-border)] px-4 py-2">
       <button
         onClick={() => onPageChange(Math.max(1, currentPage - 1))}
         disabled={currentPage === 1}
@@ -129,13 +129,13 @@ function PaginationFooter({ currentPage, totalPages, onPageChange }) {
 
 function EmptyState({ title, message, actionLabel, actionTo }) {
   return (
-    <div className="grid min-h-[136px] place-items-center rounded-md border border-dashed border-[var(--panel-border)] bg-[var(--gray-soft)] px-4 text-center">
-      <div>
-        <CalendarDays aria-hidden="true" className="mx-auto h-6 w-6 text-[var(--text-muted)]" />
-        <p className="mt-2 mb-0 text-[1rem] font-semibold text-[var(--text)]">{title}</p>
-        <p className="mt-1 mb-0 max-w-[44ch] text-[0.92rem] text-[var(--text-muted)]">{message}</p>
+    <div className="grid min-h-[180px] place-items-center rounded-md border border-dashed border-[var(--panel-border)] bg-[var(--gray-soft)] px-6 py-6 text-center">
+      <div className="flex flex-col items-center gap-3">
+        <CalendarDays aria-hidden="true" className="mx-auto h-8 w-8 text-[var(--text-muted)]" />
+        <p className="mt-1 mb-0 text-[1.02rem] font-semibold text-[var(--text)]">{title}</p>
+        <p className="mt-0 mb-0 max-w-[56ch] text-[0.95rem] text-[var(--text-muted)]">{message}</p>
         {actionLabel && actionTo ? (
-          <Link to={actionTo} className="mt-3 inline-flex items-center rounded-sm bg-[var(--primary)] px-3 py-1.5 text-[0.85rem] font-semibold !text-white transition-colors hover:bg-[var(--primary-strong)]">
+          <Link to={actionTo} className="mt-3 inline-flex items-center rounded-sm bg-[var(--primary)] px-4 py-1.5 text-[0.9rem] font-semibold !text-white transition-colors hover:bg-[var(--primary-strong)]">
             {actionLabel}
           </Link>
         ) : null}
@@ -257,7 +257,7 @@ export default function MyActivities() {
           <StatCard label="Creadas" value={participationStats.totalCreated} helper="actividades publicadas" icon={BarChart3} />
           <StatCard label="Inscritos" value={participationStats.totalParticipants} helper="usuarios en tus actividades" icon={UsersRound} />
           <StatCard label="Ocupacion" value={`${participationStats.occupancy}%`} helper="cupo total utilizado" icon={Percent} />
-          <StatCard label="Promedio" value={participationStats.avgParticipants} helper="inscritos por actividad" icon={TrendingUp} />
+          <StatCard label="Promedio" value={participationStats.avgParticipants } helper="inscritos por actividad" icon={TrendingUp} />
         </div>
       </section>
 
@@ -285,7 +285,7 @@ export default function MyActivities() {
           </div>
         ) : (
           <div className="rounded-md p-2.5">
-            <div className="space-y-2.5">
+            <div className="space-y-3.5">
               {paginatedCreated.length === 0 && createdTotalPages === 0 ? (
                 <EmptyState title="Sin actividades activas" message="Publica una actividad para comenzar a recibir inscripciones." actionLabel="Crear actividad" actionTo="/user/crear-actividad" />
               ) : (
@@ -329,7 +329,7 @@ export default function MyActivities() {
           </div>
         ) : (
           <div className="rounded-md p-2.5">
-            <div className="space-y-2.5">
+            <div className="space-y-3.5">
               {paginatedCompleted.length === 0 && completedTotalPages === 0 ? (
                 <EmptyState title="Sin actividades finalizadas" message="Las actividades que completes aparecerán aquí para referencia." actionLabel="Crear actividad" actionTo="/user/crear-actividad" />
               ) : (

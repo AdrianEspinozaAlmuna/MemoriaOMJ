@@ -66,7 +66,7 @@ export default function ActivityCard({ activity, actionLabel = "Ver mas", onActi
   const placeLabel = activity.place || "Lugar por confirmar";
 
   return (
-    <article className="group flex h-full flex-col rounded-2xl border border-[#d8e6dd] bg-white p-5 shadow-[0_12px_26px_-28px_rgba(10,35,25,0.4)] transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-[2px] hover:border-[#bdd4c5] hover:shadow-[0_18px_30px_-26px_rgba(10,35,25,0.45)]">
+    <article className="shadow-sm group flex h-full flex-col rounded-2xl border border-[#d8e6dd] bg-white p-5 shadow-[0_12px_26px_-28px_rgba(10,35,25,0.4)] transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-[2px] hover:border-[#bdd4c5] hover:shadow-[0_18px_30px_-26px_rgba(10,35,25,0.45)]">
       <header className="flex min-h-[2.4rem] items-start justify-between gap-3">
         <span className="inline-flex items-center rounded-[8px] border border-[#d1e3d7] bg-[#f5faf7] px-2.5 py-1 text-[0.74rem] font-semibold text-[#315644]">
           <UserRound className="mr-1.5 h-3.5 w-3.5 text-[var(--primary)]" strokeWidth={1.9} />
