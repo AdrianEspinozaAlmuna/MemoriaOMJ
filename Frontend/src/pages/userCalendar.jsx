@@ -149,6 +149,7 @@ export default function UserCalendar() {
             viewMode={viewMode}
             monthDate={monthDate}
             onActivityClick={activity => navigate(`/user/actividad/${activity.id}`)}
+            createActivityPath="/user/crear-actividad"
           />
         )}
       </section>

@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { CalendarDays, ChevronLeft, ChevronRight, Clock3, LayoutGrid, MapPin, Rows3 } from "lucide-react";
 import Modal from "./Modal";
 
@@ -112,7 +113,7 @@ function buildMonthDays(year, month) {
   });
 }
 
-export default function Calendar({ activities, viewMode, monthDate, onActivityClick }) {
+export default function Calendar({ activities, viewMode, monthDate, onActivityClick, createActivityPath = null }) {
   const [selectedDay, setSelectedDay] = useState(null);
   const [dayViewMode, setDayViewMode] = useState("hora");
 
@@ -310,27 +311,38 @@ export default function Calendar({ activities, viewMode, monthDate, onActivityCl
           </header>
 
           <div className=" bg-[var(--surface)] px-5 py-2.5">
-            <div className="inline-flex gap-1 rounded-[10px] border border-[#e5e7eb] bg-[#f8faf9] p-1">
-              <button
-                type="button"
-                className={`inline-flex cursor-pointer items-center gap-1.5 rounded-[8px] px-3 py-1.5 text-[0.8rem] font-semibold transition-colors ${
-                  dayViewMode === "hora" ? "bg-[var(--primary)] text-white" : "text-[var(--text-muted)] hover:bg-white"
-                }`}
-                onClick={() => setDayViewMode("hora")}
-              >
-                <Rows3 className="h-4 w-4" strokeWidth={2} />
-                Por hora
-              </button>
-              <button
-                type="button"
-                className={`inline-flex cursor-pointer items-center gap-1.5 rounded-[8px] px-3 py-1.5 text-[0.8rem] font-semibold transition-colors ${
-                  dayViewMode === "sala" ? "bg-[var(--primary)] text-white" : "text-[var(--text-muted)] hover:bg-white"
-                }`}
-                onClick={() => setDayViewMode("sala")}
-              >
-                <LayoutGrid className="h-4 w-4" strokeWidth={2} />
-                Por sala
-              </button>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="inline-flex gap-1 rounded-[10px] border border-[#e5e7eb] bg-[#f8faf9] p-1">
+                <button
+                  type="button"
+                  className={`inline-flex cursor-pointer items-center gap-1.5 rounded-[8px] px-3 py-1.5 text-[0.8rem] font-semibold transition-colors ${
+                    dayViewMode === "hora" ? "bg-[var(--primary)] text-white" : "text-[var(--text-muted)] hover:bg-white"
+                  }`}
+                  onClick={() => setDayViewMode("hora")}
+                >
+                  <Rows3 className="h-4 w-4" strokeWidth={2} />
+                  Por hora
+                </button>
+                <button
+                  type="button"
+                  className={`inline-flex cursor-pointer items-center gap-1.5 rounded-[8px] px-3 py-1.5 text-[0.8rem] font-semibold transition-colors ${
+                    dayViewMode === "sala" ? "bg-[var(--primary)] text-white" : "text-[var(--text-muted)] hover:bg-white"
+                  }`}
+                  onClick={() => setDayViewMode("sala")}
+                >
+                  <LayoutGrid className="h-4 w-4" strokeWidth={2} />
+                  Por sala
+                </button>
+              </div>
+              {createActivityPath ? (
+                <Link
+                  to={createActivityPath}
+                  onClick={closeDayModal}
+                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-[8px] border border-[var(--primary)] bg-[var(--primary)] px-3 py-1.5 text-[0.9rem] font-semibold !text-white transition-colors hover:border-[var(--primary-strong)] hover:bg-[var(--primary-strong)]"
+                >
+                  Proponer Actividad
+                </Link>
+              ) : null}
             </div>
           </div>
 

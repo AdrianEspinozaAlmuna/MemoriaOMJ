@@ -169,17 +169,6 @@ export default function Navbar() {
 						</>
 					)}
 				</div>
-					{isAuthenticated && rol === "participante" && (
-						<div className="hidden gap-2 max-[860px]:grid">
-							<NavLink
-								to="/user/crear-actividad"
-								className="btn w-full border-[var(--primary)] bg-[var(--primary)] !text-white hover:border-[var(--primary-strong)] hover:bg-[var(--primary-strong)] hover:!text-white"
-								onClick={handleNavItemClick}
-							>
-								+ Proponer Actividad
-							</NavLink>
-						</div>
-					)}
 
 					{!isAuthenticated && (
 						<div className="hidden gap-2 max-[860px]:grid">
@@ -194,15 +183,7 @@ export default function Navbar() {
 				</div>
 
 				<div className="flex items-center justify-self-end gap-5 max-[1120px]:gap-3 max-[860px]:col-start-2 max-[860px]:row-start-1 max-[860px]:gap-2">
-					{isAuthenticated && rol === "participante" && (
-						<NavLink
-							to="/user/crear-actividad"
-							className="btn hidden whitespace-nowrap rounded-lg border-[var(--primary)] bg-[var(--primary)] px-3 py-2 font-semibold !text-white hover:border-[var(--primary-strong)] hover:bg-[var(--primary-strong)] hover:!text-white min-[861px]:inline-flex min-[861px]:mr-1 lg:mr-3"
-							onClick={handleNavItemClick}
-						>
-							+ Proponer Actividad
-						</NavLink>
-					)}
+                    
 
 					<div className="flex items-center gap-2 max-[1120px]:gap-1.5">
 
