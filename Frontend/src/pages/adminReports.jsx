@@ -9,18 +9,18 @@ export default function AdminReports() {
 			</header>
 
 			<section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-				<article className="grid gap-2 rounded-[var(--panel-radius)] border border-[var(--panel-border)] bg-[var(--panel-bg)] p-4 shadow-[var(--panel-shadow)]"><p className="m-0 text-[0.9rem] text-[#6d8275]">Asistencia mensual</p><strong className="text-[2rem] font-bold leading-none text-[#20372b]">84%</strong></article>
-				<article className="grid gap-2 rounded-[var(--panel-radius)] border border-[var(--panel-border)] bg-[var(--panel-bg)] p-4 shadow-[var(--panel-shadow)]"><p className="m-0 text-[0.9rem] text-[#6d8275]">Actividades completadas</p><strong className="text-[2rem] font-bold leading-none text-[#20372b]">37</strong></article>
-				<article className="grid gap-2 rounded-[var(--panel-radius)] border border-[var(--panel-border)] bg-[var(--panel-bg)] p-4 shadow-[var(--panel-shadow)]"><p className="m-0 text-[0.9rem] text-[#6d8275]">Usuarios recurrentes</p><strong className="text-[2rem] font-bold leading-none text-[#20372b]">126</strong></article>
-				<article className="grid gap-2 rounded-[var(--panel-radius)] border border-[var(--panel-border)] bg-[var(--panel-bg)] p-4 shadow-[var(--panel-shadow)]"><p className="m-0 text-[0.9rem] text-[#6d8275]">Retencion trimestral</p><strong className="text-[2rem] font-bold leading-none text-[#20372b]">76%</strong></article>
+				<article className="rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-4 shadow-sm"><p className="m-0 text-[0.9rem] font-medium text-[var(--text-muted)]">Asistencia mensual</p><strong className="text-[2rem] font-bold leading-none text-[var(--text)]">84%</strong></article>
+				<article className="rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-4 shadow-sm"><p className="m-0 text-[0.9rem] font-medium text-[var(--text-muted)]">Actividades completadas</p><strong className="text-[2rem] font-bold leading-none text-[var(--text)]">37</strong></article>
+				<article className="rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-4 shadow-sm"><p className="m-0 text-[0.9rem] font-medium text-[var(--text-muted)]">Usuarios recurrentes</p><strong className="text-[2rem] font-bold leading-none text-[var(--text)]">126</strong></article>
+				<article className="rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-4 shadow-sm"><p className="m-0 text-[0.9rem] font-medium text-[var(--text-muted)]">Retencion trimestral</p><strong className="text-[2rem] font-bold leading-none text-[var(--text)]">76%</strong></article>
 			</section>
 
-			<section className="rounded-[var(--panel-radius)] border border-[var(--panel-border)] bg-[var(--panel-bg)] p-4 shadow-[var(--panel-shadow)]">
-				<h2 className="m-0 text-[1.08rem] font-bold text-[#23392d]">Resumen ejecutivo</h2>
-				<p className="mb-3 mt-1 text-[0.92rem] text-[#6f8277]">
+			<section className="rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-6 shadow-sm">
+				<h2 className="m-0 text-[1rem] font-semibold text-[var(--text)]">Resumen ejecutivo</h2>
+				<p className="mb-4 mt-1 text-[0.92rem] text-[var(--text-muted)]">
 					La asistencia se mantiene estable y las actividades de formacion lideran la participacion.
 				</p>
-				<button type="button" className="btn btn-primary">Exportar reporte</button>
+				<button type="button" className="inline-flex rounded-lg border border-[var(--primary)] bg-[var(--primary)] px-3.5 py-2 text-[0.9rem] font-semibold text-white hover:bg-[#0a7f3d]">Exportar reporte</button>
 			</section>
 		</section>
 	);

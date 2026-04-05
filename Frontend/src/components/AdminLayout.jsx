@@ -138,8 +138,8 @@ export default function AdminLayout() {
 
 	const navLinkClass = ({ isActive }) =>
 		[
-			"flex items-center gap-2 rounded-lg px-2 py-2 text-[0.95rem] font-medium text-[#2b4337] transition-colors duration-200 hover:bg-[#edf6f0]",
-			isActive ? "bg-[#e8f5ec] text-[#0c7a36] font-semibold" : ""
+			"flex items-center gap-2 rounded-xl px-3.5 py-2 text-[0.92rem] font-semibold text-[#355447] [transition:background-color_150ms_ease,color_120ms_ease] hover:bg-[#def3e7] hover:text-[var(--primary-strong)] active:bg-[var(--primary-active)] focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(5,166,61,0.15)]",
+			isActive ? "bg-[var(--primary-active)] !text-[var(--primary-strong)]" : ""
 		].join(" ");
 
 	return (
@@ -183,7 +183,7 @@ export default function AdminLayout() {
 					<div className="flex items-center gap-2.5">
 						<button
 							type="button"
-							className="hidden h-[2.15rem] w-[2.15rem] flex-col items-center justify-center gap-[0.22rem] rounded-lg border border-[#d2dfd8] bg-white p-0 transition-colors duration-200 hover:border-[#b7d0c2] hover:bg-[#f6fbf8] max-[980px]:inline-flex"
+							className="hidden h-[2.15rem] w-[2.15rem] flex-col items-center justify-center gap-[0.22rem] rounded-lg bg-[#eef7f1] p-0 transition-colors duration-200 hover:bg-[#e2f4e9] focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(5,166,61,0.15)] max-[980px]:inline-flex"
 							onClick={() => setMobileNavOpen(previous => !previous)}
 							aria-expanded={mobileNavOpen}
 							aria-label="Abrir menu de administracion"
@@ -202,7 +202,7 @@ export default function AdminLayout() {
 					<div className="relative flex items-center gap-2" ref={menuRef}>
 						<button
 							type="button"
-							className="relative grid h-[2.15rem] w-[2.15rem] cursor-pointer place-items-center rounded-lg border border-[#d2dfd8] bg-white transition-colors duration-200 hover:border-[#b7d0c2] hover:bg-[#f6fbf8]"
+							className="relative inline-flex h-[2.15rem] w-[2.15rem] items-center justify-center cursor-pointer rounded-lg bg-[#eef7f1] transition-colors duration-200 hover:bg-[#e2f4e9] focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(5,166,61,0.15)]"
 							aria-label="Notificaciones"
 							onClick={() => {
 								setNotificationsOpen(previous => !previous);
@@ -231,7 +231,7 @@ export default function AdminLayout() {
 
 						<button
 							type="button"
-							className="inline-flex items-center gap-2 rounded-lg border border-[#d2dfd8] hover:cursor-pointer bg-white px-2 py-1.5 text-[0.89rem] font-medium text-[#2e4c3d] transition-colors duration-200 hover:border-[#b6d0c1] hover:bg-[#f6fbf8]"
+							className="inline-flex hover:cursor-pointer items-center gap-2 rounded-xl bg-[#eef7f1] px-2 py-1.5 text-[0.89rem] font-semibold leading-none text-[#2e4c3d] transition-colors duration-200 hover:bg-[#e2f4e9] focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(5,166,61,0.15)]"
 							onClick={() => {
 								setMenuOpen(previous => !previous);
 								setNotificationsOpen(false);
