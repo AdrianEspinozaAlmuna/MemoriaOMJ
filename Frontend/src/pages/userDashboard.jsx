@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { CalendarDays, ListChecks   , ClipboardCheck , Plus } from "lucide-react";
 import ActivityCard from "../components/ActivityCard";
@@ -62,6 +62,12 @@ export default function UserDashboard() {
   const [loading, setLoading] = useState(true);
   const [upcomingActivities, setUpcomingActivities] = useState([]);
 
+  const nextFiveUpcoming = useMemo(() => {
+    return [...(upcomingActivities || [])]
+      .sort((a, b) => new Date(a.date) - new Date(b.date))
+      .slice(0, 5);
+  }, [upcomingActivities]);
+
   useEffect(() => {
     let mounted = true;
 
@@ -117,13 +123,13 @@ export default function UserDashboard() {
         {/* Próximas Actividades */}
         <article className="rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-6 shadow-sm">
           <h2 className="m-0 mb-4 text-[1rem] font-semibold text-[var(--text)]">Próximas actividades</h2>
-          {upcomingActivities.length === 0 && !loading ? (
+          {nextFiveUpcoming.length === 0 && !loading ? (
             <div className="grid min-h-[140px] place-items-center rounded-lg border border-dashed border-[#e0e9e2] bg-[#f9fcfa] text-center">
               <p className="max-w-[44ch] px-4 text-[0.9rem] text-[var(--text-muted)]">Aún no tienes actividades próximas. Explora el calendario para inscribirte en nuevos talleres.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {upcomingActivities.map(activity => (
+            <div className="space-y-3.5">
+              {nextFiveUpcoming.map(activity => (
                 <ActivityCard key={activity.id} activity={activity} actionLabel="Ver más" />
               ))}
             </div>

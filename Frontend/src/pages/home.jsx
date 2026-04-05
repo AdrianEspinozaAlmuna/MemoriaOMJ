@@ -283,7 +283,7 @@ export default function Home() {
             <p className="mx-auto mt-3 max-w-2xl text-[1rem] text-[#64786d]">Talleres para distintos niveles y estilos, en espacios de Curico.</p>
           </header>
 
-          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <div className="space-y-3.5">
             {highlightedActivities.map(activity => (
               <ActivityCard key={activity.title} activity={activity} actionLabel="Ver detalle" />
             ))}

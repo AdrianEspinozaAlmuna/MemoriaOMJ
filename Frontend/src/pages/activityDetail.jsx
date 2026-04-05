@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { CalendarDays, Clock3, MapPin, Users } from "lucide-react";
 import { Link, useLocation, useParams } from "react-router-dom";
 
@@ -44,6 +44,13 @@ export default function ActivityDetail() {
 	const role = user?.rol || "participante";
 	const isManagerView = role === "admin" || role === "encargado";
 	const [isEnrolled, setIsEnrolled] = useState(false);
+
+	// Ensure the page scrolls to top when entering the detail view
+	useEffect(() => {
+		if (typeof window !== "undefined") {
+			window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+		}
+	}, [activityId]);
 
 	const freeSpots = useMemo(() => Math.max(activity.capacity - activity.enrolled, 0), []);
 	const backTo = location.pathname.startsWith("/admin") ? "/admin/actividades" : "/user/mis-actividades";

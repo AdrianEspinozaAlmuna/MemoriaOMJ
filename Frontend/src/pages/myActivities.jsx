@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { BarChart3, CalendarDays, MapPin, Percent, Plus, TrendingUp, Users, UsersRound } from "lucide-react";
+import { BarChart3, CalendarDays, MapPin, Percent, Plus, Star, TrendingUp, Users, UsersRound } from "lucide-react";
 import { getMyActivitiesData } from "../services/userViewsService";
+import ActivityCard from "../components/ActivityCard";
 
 function formatDate(dateValue) {
   return new Date(dateValue).toLocaleDateString("es-CL", {
@@ -58,13 +59,22 @@ function ActiveActivityRow({ activity, mode = "created" }) {
 
         <div className="flex shrink-0 items-center gap-2 self-start pt-4">
           {mode === "created" ? (
-          <Link to={`/user/actividad/${activity.id}`} className="inline-flex rounded-sm border border-[var(--border)] bg-[var(--gray-soft)] px-3 py-1.5 text-[0.82rem] font-semibold text-[var(--primary-strong)] transition-colors duration-150 hover:bg-[var(--surface-soft)]">
-            Gestionar
-          </Link>
-          ) : null}
-          <Link to={`/user/actividad/${activity.id}`} className="inline-flex rounded-sm bg-[var(--primary)] px-3 py-1.5 text-[0.82rem] font-semibold !text-white transition-colors duration-150 hover:bg-[var(--primary-strong)]">
-          Ver detalle
-        </Link>
+            <Link
+              to={`/user/actividad/${activity.id}`}
+              className="inline-flex rounded-sm border border-transparent bg-[var(--primary)] px-3 py-1.5 text-[0.82rem] font-semibold text-white transition-colors duration-150 hover:bg-[var(--primary-strong)]"
+              style={{ color: '#ffffff' }}
+            >
+              Gestionar
+            </Link>
+          ) : (
+            <Link
+              to={`/user/actividad/${activity.id}`}
+              className="inline-flex rounded-sm bg-[var(--primary)] px-3 py-1.5 text-[0.82rem] font-semibold !text-white transition-colors duration-150 hover:bg-[var(--primary-strong)]"
+              style={{ color: '#ffffff' }}
+            >
+              Ver detalle
+            </Link>
+          )}
         </div>
       </div>
     </article>
@@ -101,28 +111,34 @@ const EXTRA_CREATED_ACTIVITIES = [
   { id: "created-extra-8", title: "Foro de emprendimiento", date: "2026-06-12", place: "Auditorio", participants: 40, capacity: 60 }
 ];
 
-function PaginationFooter({ currentPage, totalPages, onPageChange }) {
+function PaginationFooter({ currentPage, totalPages, onPageChange, start = 1, end = 0, total = 0 }) {
   if (totalPages <= 1) return null;
 
   return (
-    <div className="mt-5 flex items-center justify-end gap-6 border-t border-[var(--panel-border)] px-4 py-2">
-      <button
-        onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-        disabled={currentPage === 1}
-        className="hover:cursor-pointer rounded-sm border border-[var(--primary)] bg-[var(--panel-bg)] px-3 py-2 text-[0.85rem] font-semibold text-[var(--text)] transition-colors hover:bg-[var(--gray-soft)] disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        Anterior
-      </button>
-      <span className="text-[0.85rem] font-medium text-[var(--text-muted)]">
-        Página {currentPage} de {totalPages}
-      </span>
-      <button
-        onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
-        disabled={currentPage === totalPages}
-        className="hover:cursor-pointer rounded-sm border border-[var(--primary)] bg-[var(--panel-bg)] px-3 py-2 text-[0.85rem] font-semibold text-[var(--text)] transition-colors hover:bg-[var(--gray-soft)] disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        Siguiente
-      </button>
+    <div className="flex items-center justify-between gap-3 pt-5 text-[0.82rem] text-[#6f8176] max-[760px]:flex-col max-[760px]:items-start">
+      <span>Mostrando {start}-{end} de {total}</span>
+      <div className="inline-flex items-center gap-1.5">
+        <button
+          onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+          disabled={currentPage === 1}
+          className="cursor-pointer rounded-sm border border-[var(--primary)] bg-white px-2.5 py-1 text-[0.8rem] font-semibold text-[#496053] disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Anterior
+        </button>
+        <button
+          type="button"
+          className="cursor-pointer px-2.5 py-1 text-[0.8rem] font-semibold text-[#177945]"
+        >
+          {currentPage}
+        </button>
+        <button
+          onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+          disabled={currentPage === totalPages}
+          className="cursor-pointer rounded-sm border border-[var(--primary)] bg-white px-2.5 py-1 text-[0.8rem] font-semibold text-[#496053] disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Siguiente
+        </button>
+      </div>
     </div>
   );
 }
@@ -290,15 +306,23 @@ export default function MyActivities() {
                 <EmptyState title="Sin actividades activas" message="Publica una actividad para comenzar a recibir inscripciones." actionLabel="Crear actividad" actionTo="/user/crear-actividad" />
               ) : (
                 paginatedCreated.map(activity => (
-                  <ActiveActivityRow key={activity.id} activity={activity} mode="created" />
+                  <ActivityCard
+                    key={activity.id}
+                    activity={activity}
+                    actionLabel="Gestionar"
+                    to={`/user/actividad/${activity.id}`}
+                  />
                 ))
               )}
             </div>
             {createdTotalPages > 1 && (
-              <PaginationFooter 
-                currentPage={createdPage} 
-                totalPages={createdTotalPages} 
-                onPageChange={setCreatedPage} 
+              <PaginationFooter
+                currentPage={createdPage}
+                totalPages={createdTotalPages}
+                onPageChange={setCreatedPage}
+                start={createdStart + 1}
+                end={Math.min(createdStart + ITEMS_PER_PAGE, filteredCreated.length)}
+                total={filteredCreated.length}
               />
             )}
           </div>
@@ -306,7 +330,7 @@ export default function MyActivities() {
       </section>
 
       <section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-bg)] p-5 shadow-sm">
-        <div className="mb-4 flex items-center justify-between border-b border-[var(--panel-border)] pb-3">
+        <div className="mb-4 flex items-center justify-between">
           <h2 className="m-0 text-[1.08rem] font-semibold text-[var(--text)]">Creadas finalizadas</h2>
           <select
             value={completedFilter}
@@ -333,16 +357,56 @@ export default function MyActivities() {
               {paginatedCompleted.length === 0 && completedTotalPages === 0 ? (
                 <EmptyState title="Sin actividades finalizadas" message="Las actividades que completes aparecerán aquí para referencia." actionLabel="Crear actividad" actionTo="/user/crear-actividad" />
               ) : (
-                paginatedCompleted.map(activity => (
-                  <ActiveActivityRow key={activity.id} activity={activity} mode="completed" />
-                ))
+                <div className="overflow-auto rounded-md">
+                  <table className="min-w-[920px] w-full text-[0.89rem] bg-white rounded-sm">
+                    <thead>
+                      <tr>
+                        <th className="border-b border-[#d8e6dd] bg-[var(--gray)] px-3 py-2 text-left text-[0.73rem] font-semibold text-[var(--text-muted)]">Actividad</th>
+                        <th className="border-b border-[#d8e6dd] bg-[var(--gray)] px-3 py-2 text-left text-[0.73rem] font-semibold text-[var(--text-muted)]">Inscritos</th>
+                        <th className="border-b border-[#d8e6dd] bg-[var(--gray)] px-3 py-2 text-left text-[0.73rem] font-semibold text-[var(--text-muted)]">Estado</th>
+                        <th className="border-b border-[#d8e6dd] bg-[var(--gray)] px-3 py-2 text-left text-[0.73rem] font-semibold text-[var(--text-muted)]">Calificación</th>
+                        <th className="border-b border-[#d8e6dd] bg-[var(--gray)] px-3 py-2 text-left text-[0.73rem] font-semibold text-[var(--text-muted)]">Fecha</th>
+                        <th className="border-b border-[#d8e6dd] bg-[var(--gray)] px-3 py-2 text-left text-[0.73rem] font-semibold text-[var(--text-muted)]">Hora</th>
+                        <th className="border-b border-[#d8e6dd] bg-[var(--gray)] px-3 py-2 text-left text-[0.73rem] font-semibold text-[var(--text-muted)]">Lugar</th>
+                        <th className="border-b border-[#d8e6dd] bg-[var(--gray)] px-3 py-2 text-left text-[0.73rem] font-semibold text-[var(--text-muted)]">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedCompleted.map(activity => (
+                        <tr key={activity.id}>
+                          <td className="border-b border-[#d8e6dd] px-3 py-3">
+                            <p className="m-0 text-[0.9rem] text-[var(--text)]">{activity.title}</p>
+                          </td>
+                          <td className="border-b border-[#d8e6dd] px-3 py-3 text-[var(--text)]">{(activity.participants ?? 0)}/{activity.capacity ?? "-"}</td>
+                          <td className="border-b border-[#d8e6dd] px-3 py-3 text-[var(--text)]">Finalizado</td>
+                          <td className="border-b border-[#d8e6dd] px-3 py-3">
+                            <div className="inline-flex items-center gap-0.5">
+                              {Array.from({ length: 5 }).map((_, index) => (
+                                <Star key={`${activity.id}-star-${index}`} aria-hidden="true" className={`h-3.5 w-3.5 ${index < (activity.rating ?? 5) ? "fill-[#f59e0b] text-[#f59e0b]" : "text-[#cbd5e1]"}`} />
+                              ))}
+                            </div>
+                          </td>
+                          <td className="border-b border-[#d8e6dd] px-3 py-3 text-[var(--text)]">{formatDate(activity.date)}</td>
+                          <td className="border-b border-[#d8e6dd] px-3 py-3 text-[var(--text)]">{activity.time || "-"}</td>
+                          <td className="border-b border-[#d8e6dd] px-3 py-3 text-[var(--text)]">{activity.place || "-"}</td>
+                          <td className="border-b border-[#d8e6dd] px-3 py-3">
+                            <Link to={`/user/actividad/${activity.id}`} className="inline-flex rounded-sm border border-transparent bg-[var(--primary)] px-3 py-1.5 text-[0.82rem] font-semibold text-white transition-opacity duration-150 hover:opacity-90" style={{ color: '#ffffff' }}>Ver detalles</Link>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
             {completedTotalPages > 1 && (
-              <PaginationFooter 
-                currentPage={completedPage} 
-                totalPages={completedTotalPages} 
-                onPageChange={setCompletedPage} 
+              <PaginationFooter
+                currentPage={completedPage}
+                totalPages={completedTotalPages}
+                onPageChange={setCompletedPage}
+                start={completedStart + 1}
+                end={Math.min(completedStart + ITEMS_PER_PAGE, sortedCompleted.length)}
+                total={sortedCompleted.length}
               />
             )}
           </div>

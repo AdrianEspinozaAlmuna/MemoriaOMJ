@@ -24,9 +24,9 @@ function getMonthlyLevel(percent) {
 
 function getProgressColor(percent) {
   const p = Number(percent || 0);
-  // Quartiles: <=25 baja (rojo), 26-75 media (amarillo), >75 alta (primary)
-  if (p <= 25) return "#c42f2f"; // rojo más fuerte
-  if (p <= 75) return "#e9d200"; // amarillo más llamativo
+  // Rangos solicitados: 0-29 rojo, 30-69 amarillo, >=70 verde
+  if (p <= 29) return "#c42f2f"; // rojo
+  if (p <= 69) return "#d97706"; // amarillo más llamativo
   return "var(--primary)"; // primary verde
 }
 
@@ -122,6 +122,8 @@ export default function MyAttendance() {
   const [monthlyYear, setMonthlyYear] = useState("all");
   const [historyQuery, setHistoryQuery] = useState("");
   const [historyStatusFilter, setHistoryStatusFilter] = useState("todos");
+  const [historyPage, setHistoryPage] = useState(1);
+  const PAGE_SIZE = 10;
 
   useEffect(() => {
     let mounted = true;
@@ -234,12 +236,22 @@ export default function MyAttendance() {
     });
   }, [history, historyQuery, historyStatusFilter]);
 
+  useEffect(() => {
+    // Reset page when filters or source data change
+    setHistoryPage(1);
+  }, [historyQuery, historyStatusFilter, history.length]);
+
+  const totalHistoryPages = Math.max(1, Math.ceil(filteredHistory.length / PAGE_SIZE));
+  const historyStartIndex = (historyPage - 1) * PAGE_SIZE;
+  const historyEndIndex = Math.min(historyStartIndex + PAGE_SIZE, filteredHistory.length);
+  const pagedHistory = filteredHistory.slice(historyStartIndex, historyEndIndex);
+
   return (
     <section className="max-w-7xl mx-auto px-4 py-6 space-y-7">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
         <p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Panel de usuario</p>
-        <h1 className="mt-2 mb-0 text-[clamp(1.8rem,2.5vw,2.3rem)] font-bold text-[var(--text)]">Mi asistencia</h1>
+        <h1 className="mt-2 mb-0 text-[clamp(1.8rem,2.5vw,2.3rem)] font-bold text-[var(--text)]">Mis asistencias</h1>
         <p className="mt-2 text-[1rem] text-[var(--text-muted)]">Monitorea tu avance mensual y revisa el detalle de asistencias registradas.</p>
         </div>
       </header>
@@ -327,7 +339,7 @@ export default function MyAttendance() {
                   <th className="border-b border-[#d8e6dd] bg-[var(--gray)] px-3 py-2 text-left text-[0.73rem] font-semibold text-[var(--text-muted)]">Mes</th>
                   <th className="border-b border-[#d8e6dd] bg-[var(--gray)] px-3 py-2 text-left text-[0.73rem] font-semibold text-[var(--text-muted)]">Año</th>
                   <th className="border-b border-[#d8e6dd] bg-[var(--gray)] px-3 py-2 text-left text-[0.73rem] font-semibold text-[var(--text-muted)]">Avance</th>
-                  <th className="border-b border-[#d8e6dd] bg-[var(--gray)] px-3 py-2 text-left text-[0.73rem] font-semibold text-[var(--text-muted)]">Cumplimiento</th>
+                  <th className="border-b border-[#d8e6dd] bg-[var(--gray)] px-3 py-2 text-left text-[0.73rem] font-semibold text-[var(--text-muted)]">Asistencia</th>
                 </tr>
               </thead>
               <tbody>
@@ -422,7 +434,7 @@ export default function MyAttendance() {
               </tr>
             </thead>
             <tbody>
-              {filteredHistory.map(row => (
+              {pagedHistory.map(row => (
                 <tr key={row.id}>
                   <td className="border-b border-[#d8e6dd] px-3 py-3">
                     <p className="m-0 text-[0.9rem] text-[var(--text)]">{row.name}</p>
@@ -465,12 +477,41 @@ export default function MyAttendance() {
         </div>
 
         <div className="flex items-center justify-between gap-3 pt-2 text-[0.82rem] text-[#6f8176] max-[760px]:flex-col max-[760px]:items-start">
-          <span>Mostrando 1-{filteredHistory.length} de {history.length}</span>
-          <div className="inline-flex items-center gap-1.5">
-            <button type="button" className="cursor-pointer rounded-sm border border-[var(--primary)] bg-white px-2.5 py-1 text-[0.8rem] font-semibold text-[#496053]">Anterior</button>
-            <button type="button" className="cursor-pointer rounded-sm  px-2.5 py-1 text-[0.8rem] font-semibold text-[#177945]">1</button>
-            <button type="button" className="cursor-pointer rounded-sm border border-[var(--primary)] bg-white px-2.5 py-1 text-[0.8rem] font-semibold text-[#496053]">Siguiente</button>
-          </div>
+          <span>
+            {filteredHistory.length === 0
+              ? `Mostrando 0-0 de 0`
+              : `Mostrando ${historyStartIndex + 1}-${historyEndIndex} de ${filteredHistory.length}`}
+          </span>
+
+          {filteredHistory.length > PAGE_SIZE && (
+            <div className="inline-flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setHistoryPage(p => Math.max(1, p - 1))}
+                disabled={historyPage <= 1}
+                className={`cursor-pointer rounded-sm border border-[var(--primary)] bg-white px-2.5 py-1 text-[0.8rem] font-semibold ${historyPage <= 1 ? 'opacity-50 cursor-not-allowed' : 'text-[#496053]'}`}
+              >
+                Anterior
+              </button>
+
+              <button
+                type="button"
+                className="cursor-default rounded-sm px-2.5 py-1 text-[0.8rem] font-semibold text-[#177945]"
+                aria-current="page"
+              >
+                {historyPage}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setHistoryPage(p => Math.min(totalHistoryPages, p + 1))}
+                disabled={historyPage >= totalHistoryPages}
+                className={`cursor-pointer rounded-sm border border-[var(--primary)] bg-white px-2.5 py-1 text-[0.8rem] font-semibold ${historyPage >= totalHistoryPages ? 'opacity-50 cursor-not-allowed' : 'text-[#496053]'}`}
+              >
+                Siguiente
+              </button>
+            </div>
+          )}
         </div>
         </>
         )}
