@@ -4,6 +4,18 @@ import { CalendarDays, ListChecks   , ClipboardCheck , Plus } from "lucide-react
 import ActivityCard from "../components/ActivityCard";
 import { getDashboardData } from "../services/userViewsService";
 
+function pickDemoImage(activity) {
+  const pics = [
+    "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1508700929628-666bc8bd84ea?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=1200&q=80"
+  ];
+  if (!activity) return pics[0];
+  const idx = (activity.title?.length || 1) % pics.length;
+  return pics[idx];
+}
+
 const quickActions = [
   {
     label: "Agenda al dia",
@@ -73,7 +85,9 @@ export default function UserDashboard() {
 
     getDashboardData().then(data => {
       if (!mounted) return;
-      setUpcomingActivities(data.upcomingActivities);
+      const incoming = Array.isArray(data.upcomingActivities) ? data.upcomingActivities.slice() : [];
+      const withImages = incoming.map(a => ({ ...a, image: a.image || pickDemoImage(a) }));
+      setUpcomingActivities(withImages);
       setLoading(false);
     });
 

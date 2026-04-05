@@ -143,10 +143,10 @@ export default function MyAttendance() {
       const demoNoId = "__demo_no_1";
       const demoLowStarsId = "__demo_lowstars_1";
       if (!incomingHistory.some(h => String(h.id) === demoNoId)) {
-        incomingHistory.push({ id: demoNoId, name: "Charla: No asistido (demo)", type: "Charla", date: `${currentYear}-03-10`, time: "10:00", place: "Sala Demo", status: "inasistencia" });
+        incomingHistory.push({ id: demoNoId, name: "Charla: No asistido (demo)", type: "Charla", date: `${currentYear}-03-10`, time: "10:00", hora_termino: "11:30", place: "Sala Demo", status: "inasistencia", participants: 0, capacity: 30 });
       }
       if (!incomingHistory.some(h => String(h.id) === demoLowStarsId)) {
-        incomingHistory.push({ id: demoLowStarsId, name: "Taller: Poca calificación (demo)", type: "Taller", date: `${currentYear}-02-16`, time: "17:30", place: "Aula Demo", status: "asistido", rating: 2 });
+        incomingHistory.push({ id: demoLowStarsId, name: "Taller: Poca calificación (demo)", type: "Taller", date: `${currentYear}-02-16`, time: "17:30", hora_termino: "19:30", place: "Aula Demo", status: "asistido", rating: 2, participants: 5, capacity: 20 });
       }
 
       setStats(data.stats || {});

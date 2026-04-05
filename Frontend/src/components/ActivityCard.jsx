@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { CalendarDays, Clock3, MapPin, UserRound } from "lucide-react";
+import { CalendarDays, Clock3, MapPin, UserRound, Users } from "lucide-react";
 import { ArrowRight } from "lucide-react";
 
 function formatDate(dateValue) {
@@ -31,6 +31,17 @@ function formatTime(activity) {
     minute: "2-digit",
     hour12: false
   });
+}
+
+function formatTimeRange(activity) {
+  // Try several possible field names for start/end times
+  const start = activity.hora_inicio || activity.startTime || activity.start || activity.time || null;
+  const end = activity.hora_termino || activity.endTime || activity.end || activity.finish || null;
+
+  if (start && end) return `${start} - ${end}`;
+  if (start) return start;
+  // fallback to previous formatTime
+  return formatTime(activity);
 }
 
 function CalendarIcon({ className = "h-4 w-4" }) {
@@ -72,46 +83,67 @@ function CardBody({ activity, actionLabel }) {
   const creator = getCreator(activity);
   const description = getDescription(activity);
   const placeLabel = activity.place || "Lugar por confirmar";
+  const enrolled = activity.enrolled ?? activity.participants ?? activity.inscritos ?? null;
+  const capacity = activity.capacity ?? activity.max_participantes ?? activity.capacidad ?? null;
+  const imageSrc = activity.image || activity.imageUrl || activity.img || null;
 
   return (
     <>
-      <div className="min-w-0">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h3 className="m-0 text-[1.06rem] font-semibold leading-tight text-[var(--text)] max-[760px]:text-[1rem]">{activity.title}</h3>
-            <p className="mt-1 text-[0.85rem] text-[var(--text-muted)] inline-flex items-center gap-2">
-              <UserRound className="h-3 w-3 text-[var(--primary)]" strokeWidth={1.9} />
-              {creator}
-            </p>
-          </div>
-
-          <div className="absolute top-3 right-3">
-            <span className="inline-flex items-center rounded-md bg-[var(--primary)]/10 px-3 py-1 text-[0.72rem] font-semibold text-[var(--primary-strong)]">
-              {getStatus(activity)}
-            </span>
-          </div>
+      <div className="flex items-stretch gap-4">
+        <div className="flex-shrink-0 w-36 h-24 sm:w-44 sm:h-28 overflow-hidden rounded-sm bg-[#f3f4f6]">
+          {imageSrc ? (
+            // eslint-disable-next-line jsx-a11y/img-redundant-alt
+            <img src={imageSrc} alt={`Imagen ${activity.title}`} className="h-full w-full object-cover" />
+          ) : (
+            <div className="h-full w-full flex items-center justify-center text-[0.82rem] text-[var(--text-muted)]">Imagen</div>
+          )}
         </div>
-        <p className="mt-1 mb-0 text-[0.9rem] leading-relaxed text-[var(--text-muted)]">{description}</p>
 
-        <div className="mt-2 flex items-center justify-between gap-3 max-[760px]:flex-col max-[760px]:items-start">
-          <div className="flex flex-wrap gap-x-4 gap-y-2 text-[0.85rem] font-medium text-[var(--text)] max-[760px]:text-[0.82rem]">
-            <p className="m-0 inline-flex items-center gap-2">
-              <CalendarIcon className="h-4 w-4 text-[var(--primary)]" />
-              {formatDate(activity.date)}
-            </p>
-            <p className="m-0 inline-flex items-center gap-2">
-              <PlaceIcon className="h-4 w-4 text-[var(--primary)]" />
-              {placeLabel}
-            </p>
-            <p className="m-0 inline-flex items-center gap-2">
-              <TimeIcon className="h-4 w-4 text-[var(--primary)]" />
-              {formatTime(activity)}
-            </p>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h3 className="m-0 text-[1.06rem] font-semibold leading-tight text-[var(--text)] max-[760px]:text-[1rem]">{activity.title}</h3>
+              <p className="mt-1 text-[0.85rem] text-[var(--text-muted)] inline-flex items-center gap-2">
+                <UserRound className="h-3 w-3 text-[var(--primary)]" strokeWidth={1.9} />
+                {creator}
+              </p>
+            </div>
+
+            <div className="absolute top-3 right-3">
+              <span className="inline-flex items-center rounded-md bg-[var(--primary)]/10 px-3 py-1 text-[0.72rem] font-semibold text-[var(--primary-strong)]">
+                {getStatus(activity)}
+              </span>
+            </div>
           </div>
 
-          <div className="inline-flex shrink-0 items-center gap-1 text-[1rem] font-medium text-[var(--primary)] max-[760px]:self-end">
-            <span className="inline-block border-b-2 border-transparent transition-colors duration-200 group-hover:border-[var(--primary-soft)]">{actionLabel}</span>
-            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          <p className="mt-1 mb-0 text-[0.9rem] leading-relaxed text-[var(--text-muted)]">{description}</p>
+
+          <div className="mt-2 flex items-center justify-between gap-3 max-[760px]:flex-col max-[760px]:items-start">
+            <div className="flex flex-wrap gap-x-4 gap-y-2 text-[0.85rem] font-medium text-[var(--text)] max-[760px]:text-[0.82rem]">
+              <p className="m-0 inline-flex items-center gap-2">
+                <CalendarIcon className="h-4 w-4 text-[var(--primary)]" />
+                {formatDate(activity.date)}
+              </p>
+              <p className="m-0 inline-flex items-center gap-2">
+                <PlaceIcon className="h-4 w-4 text-[var(--primary)]" />
+                {placeLabel}
+              </p>
+              <p className="m-0 inline-flex items-center gap-2">
+                <TimeIcon className="h-4 w-4 text-[var(--primary)]" />
+                {formatTimeRange(activity)}
+              </p>
+              { (enrolled !== null || capacity !== null) && (
+                <p className="m-0 inline-flex items-center gap-2">
+                  <Users className="h-4 w-4 text-[var(--primary)]" />
+                  {capacity ? `${enrolled ?? 0}/${capacity} inscritos` : `${enrolled ?? 0} inscritos`}
+                </p>
+              )}
+            </div>
+
+            <div className="inline-flex shrink-0 items-center gap-1 text-[1rem] font-medium text-[var(--primary)] max-[760px]:self-end">
+              <span className="inline-block border-b-2 border-transparent transition-colors duration-200 group-hover:border-[var(--primary)]">{actionLabel}</span>
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </div>
           </div>
         </div>
       </div>

@@ -86,29 +86,39 @@ const EXTRA_COMPLETED_ACTIVITIES = [
     id: "completed-extra-1",
     title: "Encuentro de emprendimiento local",
     date: "2026-02-11",
+    hora_inicio: "10:00",
+    hora_termino: "12:30",
     place: "Centro OMJ",
     participants: 18,
-    capacity: 24
+    capacity: 24,
+    status: "finalizada",
+    enrolled: 18
+    ,image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1200&q=80"
   },
   {
     id: "completed-extra-2",
     title: "Taller de liderazgo juvenil",
     date: "2026-01-21",
+    hora_inicio: "09:30",
+    hora_termino: "12:00",
     place: "Sala Comunitaria",
     participants: 26,
-    capacity: 30
+    capacity: 30,
+    status: "finalizada",
+    enrolled: 26
+    ,image: "https://images.unsplash.com/photo-1525182008055-f88b95ff7980?auto=format&fit=crop&w=1200&q=80"
   }
 ];
 
 const EXTRA_CREATED_ACTIVITIES = [
-  { id: "created-extra-1", title: "Ciclo de cine comunitario", date: "2026-04-10", place: "Plaza Central", participants: 12, capacity: 20 },
-  { id: "created-extra-2", title: "Clínica de primer auxilio", date: "2026-04-18", place: "Centro de Salud", participants: 8, capacity: 15 },
-  { id: "created-extra-3", title: "Taller de huertos urbanos", date: "2026-05-02", place: "Parque Norte", participants: 10, capacity: 20 },
-  { id: "created-extra-4", title: "Encuentro deportivo juvenil", date: "2026-05-09", place: "Estadio Local", participants: 22, capacity: 30 },
-  { id: "created-extra-5", title: "Feria de empleo local", date: "2026-05-16", place: "Centro OMJ", participants: 30, capacity: 50 },
-  { id: "created-extra-6", title: "Laboratorio de robótica", date: "2026-05-23", place: "Sala Tech", participants: 6, capacity: 12 },
-  { id: "created-extra-7", title: "Tarde de pintura comunitaria", date: "2026-06-01", place: "Casa Cultural", participants: 14, capacity: 20 },
-  { id: "created-extra-8", title: "Foro de emprendimiento", date: "2026-06-12", place: "Auditorio", participants: 40, capacity: 60 }
+  { id: "created-extra-1", title: "Ciclo de cine comunitario", date: "2026-04-10", hora_inicio: "18:00", hora_termino: "20:00", place: "Plaza Central", participants: 12, capacity: 20, status: "programada", enrolled: 12, image: "https://images.unsplash.com/photo-1505685296765-3a2736de412f?auto=format&fit=crop&w=1200&q=80" },
+  { id: "created-extra-2", title: "Clínica de primer auxilio", date: "2026-04-18", hora_inicio: "09:00", hora_termino: "13:00", place: "Centro de Salud", participants: 8, capacity: 15, status: "programada", enrolled: 8, image: "https://images.unsplash.com/photo-1551601651-2b0b2f14f0a9?auto=format&fit=crop&w=1200&q=80" },
+  { id: "created-extra-3", title: "Taller de huertos urbanos", date: "2026-05-02", hora_inicio: "10:00", hora_termino: "12:30", place: "Parque Norte", participants: 10, capacity: 20, status: "programada", enrolled: 10, image: "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=1200&q=80" },
+  { id: "created-extra-4", title: "Encuentro deportivo juvenil", date: "2026-05-09", hora_inicio: "16:00", hora_termino: "19:00", place: "Estadio Local", participants: 22, capacity: 30, status: "programada", enrolled: 22, image: "https://images.unsplash.com/photo-1534258936925-c58b2b2d9f49?auto=format&fit=crop&w=1200&q=80" },
+  { id: "created-extra-5", title: "Feria de empleo local", date: "2026-05-16", hora_inicio: "11:00", hora_termino: "15:00", place: "Centro OMJ", participants: 30, capacity: 50, status: "programada", enrolled: 30, image: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=80" },
+  { id: "created-extra-6", title: "Laboratorio de robótica", date: "2026-05-23", hora_inicio: "09:00", hora_termino: "12:00", place: "Sala Tech", participants: 6, capacity: 12, status: "programada", enrolled: 6, image: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80" },
+  { id: "created-extra-7", title: "Tarde de pintura comunitaria", date: "2026-06-01", hora_inicio: "15:00", hora_termino: "18:00", place: "Casa Cultural", participants: 14, capacity: 20, status: "programada", enrolled: 14, image: "https://images.unsplash.com/photo-1504198453319-5ce911bafcde?auto=format&fit=crop&w=1200&q=80" },
+  { id: "created-extra-8", title: "Foro de emprendimiento", date: "2026-06-12", hora_inicio: "09:30", hora_termino: "13:30", place: "Auditorio", participants: 40, capacity: 60, status: "programada", enrolled: 40, image: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1200&q=80" }
 ];
 
 function PaginationFooter({ currentPage, totalPages, onPageChange, start = 1, end = 0, total = 0 }) {
@@ -175,8 +185,27 @@ export default function MyActivities() {
 
     getMyActivitiesData().then(activitiesData => {
       if (!mounted) return;
-      setCreated([...(activitiesData.created ?? []), ...EXTRA_CREATED_ACTIVITIES]);
-      setCompleted([...(activitiesData.completed ?? []), ...EXTRA_COMPLETED_ACTIVITIES]);
+      const createdIncoming = Array.isArray(activitiesData.created) ? activitiesData.created.slice() : [];
+      const completedIncoming = Array.isArray(activitiesData.completed) ? activitiesData.completed.slice() : [];
+
+      const demoPics = [
+        "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1508700929628-666bc8bd84ea?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=1200&q=80"
+      ];
+
+      function pick(a) {
+        if (!a) return demoPics[0];
+        const i = (a.title?.length || 1) % demoPics.length;
+        return demoPics[i];
+      }
+
+      const createdWithImages = [...createdIncoming, ...EXTRA_CREATED_ACTIVITIES].map(a => ({ ...a, image: a.image || pick(a) }));
+      const completedWithImages = [...completedIncoming, ...EXTRA_COMPLETED_ACTIVITIES].map(a => ({ ...a, image: a.image || pick(a) }));
+
+      setCreated(createdWithImages);
+      setCompleted(completedWithImages);
       setLoading(false);
     });
 

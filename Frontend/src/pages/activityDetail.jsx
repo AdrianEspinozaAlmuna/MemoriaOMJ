@@ -26,15 +26,20 @@ const activity = {
 	title: "Laboratorio de Podcast Juvenil",
 	category: "Comunicacion",
 	date: "2026-04-18",
+	hora_inicio: "17:00",
+	hora_termino: "19:00",
 	time: "17:30",
 	place: "Sala Multimedia OMJ",
 	manager: "Sofia Munoz",
 	capacity: 30,
 	enrolled: 26,
+	image: "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=1200&q=80",
 	description:
 		"Sesion practica para crear un podcast desde cero: idea, guion, grabacion y edicion basica. Incluye dinamica grupal y cierre con presentacion de episodios piloto.",
 	requirements: ["Notebook o celular para notas", "Puntualidad", "Participacion activa"],
-	tags: ["Audio", "Creacion de contenido", "Trabajo en equipo"]
+	tags: ["Audio", "Creacion de contenido", "Trabajo en equipo"],
+	aprobado: true,
+	status: "activa"
 };
 
 export default function ActivityDetail() {
