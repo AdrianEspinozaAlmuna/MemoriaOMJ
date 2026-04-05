@@ -241,7 +241,7 @@ export default function MyActivities() {
             <div>
               <p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.06em] text-[var(--primary)]">Nueva actividad</p>
               <h2 className="mt-1 mb-0 text-[1.1rem] font-semibold text-[var(--text)]">Publica y gestiona tus propios eventos</h2>
-              <p className="mt-1 mb-0 text-[0.94rem] text-[var(--text-muted)]">Crea una actividad, espera su aprobación y hazle seguimiento detallado.</p>
+              <p className="mt-1 mb-0 text-[0.94rem] text-[var(--text-muted)]">Crea una actividad, espera su aprobación y gestiónala.</p>
             </div>
           </div>
           <Link to="/user/crear-actividad" className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-sm bg-[var(--primary)] px-4 py-2.5 text-[0.9rem] font-semibold !text-white transition-all duration-200 hover:bg-[var(--primary-strong)] hover:shadow-sm">
