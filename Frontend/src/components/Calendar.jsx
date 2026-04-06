@@ -1,7 +1,21 @@
 import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { CalendarDays, ChevronLeft, ChevronRight, Clock3, LayoutGrid, MapPin, Rows3 } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, Clock3, LayoutGrid, MapPin, Rows3, UserRound, Users } from "lucide-react";
 import Modal from "./Modal";
+
+// Demo images fallback (used when activity has no image)
+const DEMO_PICS = [
+  "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=1200&q=80",
+  "https://images.unsplash.com/photo-1508700929628-666bc8bd84ea?auto=format&fit=crop&w=1200&q=80",
+  "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1200&q=80",
+  "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=1200&q=80"
+];
+
+function pickDemoImage(activity) {
+  if (!activity) return DEMO_PICS[0];
+  const i = (activity.title?.length || 1) % DEMO_PICS.length;
+  return DEMO_PICS[i];
+}
 
 function formatDateKey(date) {
   const year = date.getFullYear();
@@ -96,6 +110,93 @@ function getActivityStatusClass(activity) {
 
   return "bg-[#4d6a5d] text-white border border-[#4d6a5d]";
 }
+
+function getActivityCreator(activity) {
+  return activity.manager || activity.createdBy || activity.author || "OMJ Curico";
+}
+
+function getActivityParticipants(activity) {
+  const enrolled = activity.enrolled ?? activity.participants ?? activity.inscritos ?? null;
+  const capacity = activity.capacity ?? activity.max_participantes ?? activity.capacidad ?? null;
+
+  if (enrolled === null && capacity === null) return null;
+  if (capacity) return `${enrolled ?? 0}/${capacity} inscritos`;
+  return `${enrolled ?? 0} inscritos`;
+}
+
+function getActivityTimeRange(activity) {
+  const start = activity.hora_inicio || activity.startTime || activity.start || activity.time || null;
+  const end = activity.hora_termino || activity.endTime || activity.end || activity.finish || null;
+
+  if (start && end) return `${start} - ${end}`;
+  if (start) return start;
+  return extractTimeLabel(activity);
+}
+
+function CompactCalendarActivityCard({ activity, onClick, showPlace = true }) {
+  const creator = getActivityCreator(activity);
+  const participantsLabel = getActivityParticipants(activity);
+  const imageSrc = activity.image || activity.imageUrl || activity.img || pickDemoImage(activity);
+  return (
+    <button
+      type="button"
+      className="group relative flex w-full items-stretch gap-4 rounded-[10px] border border-[#e8f0ea] bg-white p-2 sm:p-3 text-left shadow-sm transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-[0.6px] hover:border-[var(--primary-soft)] hover:cursor-pointer hover:shadow-[0_12px_22px_-18px_rgba(8,38,22,0.32)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#05a63d]/20"
+      onClick={() => onClick(activity)}
+    >
+      <span className={`absolute right-3 top-3 rounded-[7px] px-2 py-0.5 text-[0.7rem] font-semibold ${getActivityStatusClass(activity)}`}>
+        {getActivityStatus(activity)}
+      </span>
+
+      <div className="flex-1 flex items-start gap-3">
+        <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-[8px] border border-[#edf3ee] bg-[#f3f4f6] flex items-center justify-center text-[0.8rem] text-[#6c7f74]">
+          {imageSrc ? (
+            <img src={imageSrc} alt={`Imagen ${activity.title}`} className="h-full w-full object-cover" />
+          ) : (
+            <div className="font-semibold">OMJ</div>
+          )}
+        </div>
+
+        <div className="min-w-0 flex-1 flex flex-col justify-start">
+          <strong className="block truncate text-[0.975rem] font-semibold text-[#173126] transition-colors duration-200 group-hover:text-[#0f5131]">
+            {activity.title}
+          </strong>
+          <p className="mt-1 text-[0.78rem] text-[#4f6f5f] inline-flex items-center gap-1">
+            <UserRound className="h-3.5 w-3.5 text-[var(--primary)]" strokeWidth={2} />
+            {creator}
+          </p>
+
+          <div className="mt-2 flex flex-wrap items-center gap-3 text-[0.8rem] text-[#3f5f52]">
+            <span className="inline-flex items-center gap-1">
+              <Clock3 className="h-3.5 w-3.5 text-[var(--primary)]" strokeWidth={1.95} />
+              {getActivityTimeRange(activity)}
+            </span>
+            {showPlace && activity.place ? (
+              <span className="inline-flex items-center gap-1 max-w-[28ch] truncate">
+                <MapPin className="h-3.5 w-3.5 text-[var(--primary)]" strokeWidth={1.95} />
+                {activity.place}
+              </span>
+            ) : null}
+            {participantsLabel ? (
+              <span className="inline-flex items-center gap-1">
+                <Users className="h-3.5 w-3.5 text-[var(--primary)]" strokeWidth={1.95} />
+                {participantsLabel}
+              </span>
+            ) : null}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex w-[120px] flex-col items-end justify-between">
+        <div />
+        <div className="mt-auto inline-flex items-center gap-2 text-[0.875rem] font-semibold text-[var(--primary)]">
+          <span>Ver detalle</span>
+          <ArrowRight className="h-4 w-4" strokeWidth={2} />
+        </div>
+      </div>
+    </button>
+  );
+}
+ 
 
 function buildMonthDays(year, month) {
   const first = new Date(year, month, 1);
@@ -270,10 +371,11 @@ export default function Calendar({ activities, viewMode, monthDate, onActivityCl
         onClose={closeDayModal}
         hideHeader
         overlayClassName="bg-[rgba(18,27,35,0.22)]"
-        panelClassName="max-w-[920px] border-0 bg-transparent shadow-none"
+        /* Desktop: keep the previous panel look. Mobile: full-screen modal */
+        panelClassName="sm:max-w-[920px] sm:border-0 sm:bg-transparent sm:shadow-none max-w-full max-h-[calc(100vh-2rem)] sm:h-auto rounded-none sm:rounded-[10px] overflow-hidden"
         contentClassName="p-0"
       >
-        <div className="overflow-hidden rounded-[10px] border border-[#e5e7eb] bg-[var(--surface)] shadow-[0_10px_24px_-18px_rgba(19,38,29,0.28)]">
+        <div className="overflow-hidden rounded-[10px] sm:rounded-[10px] border border-[#e5e7eb] bg-[var(--surface)] shadow-[0_10px_24px_-18px_rgba(19,38,29,0.28)] max-h-[calc(100vh-3rem)] sm:h-auto">
           <header className="relative overflow-hidden bg-white px-5 py-4 text-[var(--text)] shadow-[inset_0_-1px_0_0_#dbe8e0]">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -310,7 +412,7 @@ export default function Calendar({ activities, viewMode, monthDate, onActivityCl
             </div>
           </header>
 
-          <div className=" bg-[var(--surface)] px-5 py-2.5">
+          <div className=" bg-[var(--surface)]  px-3 sm:px-5 py-2.5">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="inline-flex gap-1 rounded-[10px] border border-[#e5e7eb] bg-[#f8faf9] p-1">
                 <button
@@ -346,7 +448,7 @@ export default function Calendar({ activities, viewMode, monthDate, onActivityCl
             </div>
           </div>
 
-          <div className="max-h-[68vh] overflow-y-auto bg-[var(--surface)] px-5 py-4">
+          <div className="max-h-[68vh] overflow-y-auto bg-[var(--surface)] border border-[#e5e7eb] px-5 py-4">
             {selectedDayActivities.length === 0 ? (
               <div className="rounded-[10px] border border-dashed border-[#e5e7eb] bg-[#fbfcfb] p-4 text-[0.92rem] text-[var(--text-muted)]">
                 No hay actividades programadas para este dia.
@@ -356,7 +458,7 @@ export default function Calendar({ activities, viewMode, monthDate, onActivityCl
                 {groupedDayActivities.map(([hourLabel, hourActivities]) => (
                   <section
                     key={hourLabel}
-                    className="rounded-[10px] bg-[var(--gray-soft)] p-3 shadow-[0_1px_0_rgba(16,38,27,0.04)]"
+                    className="rounded-[10px] bg-[var(--gray-soft)] p-2 sm:p-3 shadow-[0_1px_0_rgba(16,38,27,0.04)] border border-[#edf3ee]"
                   >
                     <header className="mb-2 flex items-center justify-between gap-2">
                       <span className="inline-flex items-center gap-1.5 rounded-[8px] border border-[var(--primary)] bg-white px-2.5 py-1 text-[0.78rem] font-bold text-[var(--primary)]">
@@ -369,29 +471,11 @@ export default function Calendar({ activities, viewMode, monthDate, onActivityCl
                     </header>
                     <div className="grid gap-2">
                       {hourActivities.map(activity => (
-                        <button
+                        <CompactCalendarActivityCard
                           key={activity.id}
-                          type="button"
-                          className="group grid cursor-pointer gap-1 rounded-[10px] border border-[#e0e8e2] bg-white px-3 py-2 text-left transition-[transform,box-shadow,border-color,background-color] duration-200 hover:border-[#94c2a6] hover:bg-[#fcfffd] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#05a63d]/25"
-                          onClick={() => handleActivityFromDayModal(activity)}
-                        >
-                          <strong className="text-[0.92rem] text-[#1b3528] transition-colors duration-200 group-hover:text-[#0f5131]">{activity.title}</strong>
-                          <div className="flex flex-wrap items-center gap-3 text-[0.81rem] text-[#435f52] transition-colors duration-200 group-hover:text-[#2f5f46]">
-                            <span className="inline-flex items-center gap-1">
-                              <CalendarDays className="h-3.5 w-3.5" strokeWidth={1.9} />
-                              {extractTimeLabel(activity)}
-                            </span>
-                            {activity.place && (
-                              <span className="inline-flex items-center gap-1">
-                                <MapPin className="h-3.5 w-3.5" strokeWidth={1.9} />
-                                {activity.place}
-                              </span>
-                            )}
-                            <span className={`rounded-[6px] px-2 py-0.5 text-[0.72rem] font-semibold ${getActivityStatusClass(activity)}`}>
-                              {getActivityStatus(activity)}
-                            </span>
-                          </div>
-                        </button>
+                          activity={activity}
+                          onClick={handleActivityFromDayModal}
+                        />
                       ))}
                     </div>
                   </section>
@@ -402,7 +486,7 @@ export default function Calendar({ activities, viewMode, monthDate, onActivityCl
                 {groupedByRoomActivities.map(([roomLabel, roomActivities]) => (
                   <section
                     key={roomLabel}
-                    className="rounded-[10px] bg-[var(--gray-soft)] p-3 shadow-[0_1px_0_rgba(16,38,27,0.04)]"
+                    className="rounded-[10px] bg-[var(--gray-soft)] p-2 sm:p-3 shadow-[0_1px_0_rgba(16,38,27,0.04)]"
                   >
                     <header className="mb-2 flex items-center justify-between gap-2">
                       <span className="text-[var(--primary)] inline-flex max-w-full items-center gap-1.5 rounded-[8px] border border-[var(--primary)] bg-white px-2.5 py-1 text-[0.78rem] font-bold">
@@ -415,23 +499,12 @@ export default function Calendar({ activities, viewMode, monthDate, onActivityCl
                     </header>
                     <div className="grid gap-2">
                       {roomActivities.map(activity => (
-                        <button
+                        <CompactCalendarActivityCard
                           key={activity.id}
-                          type="button"
-                          className="group grid cursor-pointer gap-1 rounded-[10px] border border-[#e0e8e2] bg-white px-3 py-2 text-left transition-[transform,box-shadow,border-color,background-color] duration-200 hover:border-[#94c2a6] hover:bg-[#fcfffd] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#05a63d]/25"
-                          onClick={() => handleActivityFromDayModal(activity)}
-                        >
-                          <strong className="text-[0.92rem] text-[#1b3528] transition-colors duration-200 group-hover:text-[#0f5131]">{activity.title}</strong>
-                          <div className="flex flex-wrap items-center gap-3 text-[0.81rem] text-[#435f52] transition-colors duration-200 group-hover:text-[#2f5f46]">
-                            <span className="inline-flex items-center gap-1">
-                              <Clock3 className="h-3.5 w-3.5" strokeWidth={1.9} />
-                              {extractTimeLabel(activity)}
-                            </span>
-                            <span className={`rounded-[6px] px-2 py-0.5 text-[0.72rem] font-semibold ${getActivityStatusClass(activity)}`}>
-                              {getActivityStatus(activity)}
-                            </span>
-                          </div>
-                        </button>
+                          activity={activity}
+                          onClick={handleActivityFromDayModal}
+                          showPlace={false}
+                        />
                       ))}
                     </div>
                   </section>
