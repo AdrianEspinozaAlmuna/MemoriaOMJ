@@ -15,17 +15,31 @@ export default function Modal({
   footerClassName = "",
   closeButtonClassName = ""
 }) {
-  if (!isOpen) return null;
-  if (typeof document === "undefined") return null;
-
-  // Prevent background scrolling when modal is open (fix mobile scroll bleed)
   useEffect(() => {
-    const prevOverflow = document.body.style.overflow;
-    if (isOpen) document.body.style.overflow = "hidden";
+    if (!isOpen) return undefined;
+
+    const body = document.body;
+    const prevOverflow = body.style.overflow;
+    const prevPosition = body.style.position;
+    const prevTop = body.style.top;
+    const prevWidth = body.style.width;
+    const scrollY = window.scrollY || window.pageYOffset || 0;
+
+    body.style.overflow = "hidden";
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.width = "100%";
+
     return () => {
-      document.body.style.overflow = prevOverflow || "";
+      body.style.overflow = prevOverflow;
+      body.style.position = prevPosition;
+      body.style.top = prevTop;
+      body.style.width = prevWidth;
+      window.scrollTo(0, scrollY);
     };
   }, [isOpen]);
+  if (!isOpen) return null;
+  if (typeof document === "undefined") return null;
 
   const overlayClasses = `fixed inset-0 z-[80] grid place-items-center bg-[rgba(18,27,35,0.34)] p-2 sm:p-4 animate-[fadeIn_0.18s_ease] ${overlayClassName}`.trim();
 
@@ -48,7 +62,7 @@ export default function Modal({
             </button>
           </header>
         )}
-        <div className={contentClasses} style={{ WebkitOverflowScrolling: "touch" }}>{children}</div>
+        <div className={contentClasses}>{children}</div>
         {footer && <div className={footerClasses}>{footer}</div>}
       </div>
     </div>,
