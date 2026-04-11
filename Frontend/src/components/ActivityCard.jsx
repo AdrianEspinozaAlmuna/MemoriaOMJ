@@ -152,9 +152,9 @@ function CardBody({ activity, actionLabel }) {
 }
 
 export default function ActivityCard({ activity, actionLabel = "Ver más", onActionClick, to }) {
-  const resolvedTo = to || (activity?.id ? `/user/actividad/${activity.id}` : null);
-    const baseClassName =
-      "group block relative w-full rounded-sm border border-[#d8e3de] bg-white px-4 py-3 text-left shadow-sm transition-all duration-200 hover:-translate-y-[2px] hover:border-[var(--primary-soft)] hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/30";
+  const resolvedTo = onActionClick ? null : (to || (activity?.id ? `/user/actividad/${activity.id}` : null));
+  const baseClassName =
+    "group block relative w-full rounded-sm border border-[#d8e3de] bg-white px-4 py-3 text-left shadow-sm transition-all duration-200 hover:-translate-y-[2px] hover:border-[var(--primary-soft)] hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/30";
 
   if (resolvedTo) {
     return (

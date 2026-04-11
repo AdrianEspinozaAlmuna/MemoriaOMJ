@@ -56,10 +56,11 @@ const activities = [
 
 export default function AdminActivities() {
 	return (
-		<section className="space-y-8">
-			<header>
+		<section className="animate-[revealUp_0.7s_ease_both] space-y-8">
+			<header className="space-y-2">
+				<p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Panel de administrador</p>
 				<h1 className="m-0 text-[clamp(1.8rem,2.5vw,2.3rem)] font-bold text-[var(--text)]">Actividades</h1>
-				<p className="mt-1.5 text-[0.92rem] text-[var(--text-muted)]">Gestion general de actividades publicadas</p>
+				<p className="max-w-3xl text-[0.92rem] text-[var(--text-muted)]">Gestion general de actividades publicadas.</p>
 			</header>
 
 			<section className="grid w-full gap-4 xl:grid-cols-2">

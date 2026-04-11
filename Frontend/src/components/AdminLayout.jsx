@@ -253,8 +253,10 @@ export default function AdminLayout() {
 					</div>
 				</header>
 
-				<div className="p-5 max-[640px]:p-3.5">
-					<Outlet />
+				<div className="px-4 py-5 max-[640px]:px-3.5 max-[640px]:py-4">
+					<div className="mx-auto w-full max-w-7xl">
+						<Outlet />
+					</div>
 				</div>
 			</section>
 		</div>

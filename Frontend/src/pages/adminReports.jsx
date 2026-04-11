@@ -2,10 +2,11 @@ import React from "react";
 
 export default function AdminReports() {
 	return (
-		<section className="grid gap-4">
-			<header className="pb-0.5 pt-1.5 after:mt-3.5 after:block after:h-1 after:w-[min(210px,46vw)] after:rounded-full after:bg-[var(--header-accent)] after:opacity-45 after:content-['']">
+		<section className="animate-[revealUp_0.7s_ease_both] grid gap-4">
+			<header className="space-y-2">
+				<p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Panel de administrador</p>
 				<h1 className="m-0 text-[clamp(1.8rem,2.6vw,2.2rem)] font-bold text-[var(--text)]">Reportes</h1>
-				<p className="mt-1.5 text-[0.98rem] text-[var(--text-muted)]">Estadisticas generales de participacion y actividad</p>
+				<p className="max-w-3xl text-[0.98rem] text-[var(--text-muted)]">Estadisticas generales de participacion y actividad.</p>
 			</header>
 
 			<section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

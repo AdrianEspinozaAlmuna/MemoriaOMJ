@@ -12,6 +12,8 @@
 	--primary-soft: rgb(31, 196, 89);
 	--primary-hover: #dff8e8;
 	--primary-active: #c9f3d8;
+	--reject: #f44336;
+	--reject-hover: #cc3a2f;
 	--accent: #f2d742;
 	--border: #c7dfd0;
 	--gray: #f3f3f3;
@@ -54,6 +56,14 @@ body {
 a {
 	color: inherit;
 	text-decoration: none;
+}
+
+button:not(:disabled):hover {
+	cursor: pointer;
+}
+
+button:disabled {
+	cursor: not-allowed;
 }
 
 .container {

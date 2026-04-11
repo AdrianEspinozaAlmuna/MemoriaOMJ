@@ -1,23 +1,65 @@
 import React from "react";
-import { Activity, BarChart3, CalendarDays, Clock3, TrendingUp, Users } from "lucide-react";
+import { ArrowRight, Activity, BarChart3, CalendarDays, CheckCircle2, Clock3, TrendingUp, Users } from "lucide-react";
+import { Link } from "react-router-dom";
+import ActivityCard from "../components/ActivityCard";
 
 const summary = [
 	{ label: "Total Usuarios", value: 247 },
 	{ label: "Actividades Activas", value: 18 },
-	{ label: "Pendientes Aprobacion", value: 5 },
+	{ label: "Aprobadas Recientes", value: 5 },
 	{ label: "Asistencia Promedio", value: "82%" }
 ];
 
-const pendingActivities = [
-	{ title: "Taller de Guitarra para Principiantes", subtitle: "Por Ana Martinez - Taller" },
-	{ title: "Torneo de Ajedrez", subtitle: "Por Pedro Soto - Deporte" },
-	{ title: "Cine Foro: Peliculas Latinoamericanas", subtitle: "Por Laura Diaz - Cultural" }
+const upcomingApprovedActivities = [
+	{
+		id: "approved-001",
+		title: "Taller de Guitarra para Principiantes",
+		description: "Actividad ya aprobada y lista para realizarse esta semana.",
+		manager: "Ana Martinez",
+		category: "Taller",
+		place: "Sala de Musica",
+		date: "2026-04-17",
+		time: "16:00",
+		capacity: 18,
+		enrolled: 12,
+		state: "Aprobada",
+		image: "https://images.unsplash.com/photo-1510915361894-db8b60106cb1?auto=format&fit=crop&w=1200&q=80"
+	},
+	{
+		id: "approved-002",
+		title: "Torneo de Ajedrez",
+		description: "Competencia confirmada con cupos ya publicados.",
+		manager: "Pedro Soto",
+		category: "Deporte",
+		place: "Salon Principal",
+		date: "2026-04-21",
+		time: "18:30",
+		capacity: 24,
+		enrolled: 20,
+		state: "Aprobada",
+		image: "https://images.unsplash.com/photo-1528819622765-d6bcf132b6f4?auto=format&fit=crop&w=1200&q=80"
+	},
+	{
+		id: "approved-003",
+		title: "Cine Foro: Peliculas Latinoamericanas",
+		description: "Sesión aprobada y próxima a comenzar.",
+		manager: "Laura Diaz",
+		category: "Cultural",
+		place: "Auditorio",
+		date: "2026-04-24",
+		time: "19:00",
+		capacity: 40,
+		enrolled: 28,
+		state: "Aprobada",
+		image: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=1200&q=80"
+	}
 ];
 
-const recentUsers = [
-	{ initials: "CT", name: "Camila Torres", email: "camila@email.cl", group: "Grupo A" },
-	{ initials: "DP", name: "Diego Perez", email: "diego@email.cl", group: "Grupo B" },
-	{ initials: "VR", name: "Valentina Rojas", email: "vale@email.cl", group: "Grupo C" }
+const quickActions = [
+	{ label: "Gestionar usuarios", subtitle: "Revisa perfiles, grupos y estados activos.", to: "/admin/usuarios", icon: "users" },
+	{ label: "Aprobar actividades", subtitle: "Revisa propuestas pendientes antes de publicarlas.", to: "/admin/aprobaciones", icon: "check" },
+	{ label: "Abrir calendario", subtitle: "Consulta la agenda general y los bloques activos.", to: "/admin/calendario", icon: "calendar" },
+	{ label: "Ver reportes", subtitle: "Analiza asistencia, retención y actividad reciente.", to: "/admin/reportes", icon: "report" }
 ];
 
 function MetricIcon({ index, className = "h-[1.15rem] w-[1.15rem]" }) {
@@ -45,104 +87,83 @@ function QuickIcon({ type, className = "h-[1.2rem] w-[1.2rem]" }) {
 		return <CalendarDays aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
 	}
 
+	if (type === "check") {
+		return <CheckCircle2 aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
+	}
+
 	return <BarChart3 aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
 }
 
 export default function AdminDashboard() {
 	return (
-		<section className="space-y-8">
-			<header>
-				<h1 className="m-0 text-[clamp(1.8rem,2.5vw,2.3rem)] font-bold text-[var(--text)]">Panel de Administracion</h1>
-				<p className="mt-1.5 text-[0.92rem] text-[var(--text-muted)]">Gestiona usuarios, actividades y revisa estadisticas</p>
+		<section className="animate-[revealUp_0.7s_ease_both] space-y-8">
+			<header className="space-y-2">
+				<p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Panel de administrador</p>
+				<h1 className="m-0 text-[clamp(1.8rem,2.5vw,2.3rem)] font-bold text-[var(--text)]">Inicio</h1>
+				<p className="max-w-3xl text-[0.93rem] text-[var(--text-muted)]">Gestiona usuarios, actividades y revisa estadisticas operativas desde un solo lugar.</p>
 			</header>
 
 			<section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
 				{summary.map((card, index) => (
-					<article key={card.label} className="rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-4 shadow-sm">
+					<article key={card.label} className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-bg)] px-4 py-3.5 transition-colors">
 						<div className="flex items-center justify-between gap-2">
-							<p className="m-0 text-[0.9rem] font-medium text-[var(--text-muted)]">{card.label}</p>
-							<span className="grid h-8 w-8 place-items-center rounded-lg bg-[#e7f5ec] text-[#168845]">
+							<p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.06em] text-[var(--text)]">{card.label}</p>
+							<span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--surface-soft)] text-[var(--primary)]">
 								<MetricIcon index={index} />
 							</span>
 						</div>
-						<strong className="text-[2rem] font-bold leading-none text-[var(--text)]">{card.value}</strong>
+						<strong className="mt-2 block text-[1.7rem] font-bold leading-none text-[var(--primary)]">{card.value}</strong>
 					</article>
 				))}
 			</section>
 
-			<section className="grid gap-3.5 xl:grid-cols-[1.05fr_1fr]">
-				<article className="rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-6 shadow-sm">
-					<h2 className="m-0 text-[1rem] font-semibold text-[var(--text)]">Actividades Pendientes</h2>
-					<p className="mb-4 mt-1 text-[0.92rem] text-[var(--text-muted)]">Requieren tu aprobacion</p>
-					<div className="grid gap-2">
-						{pendingActivities.map(activity => (
-							<div key={activity.title} className="flex items-center justify-between gap-3 rounded-lg border border-[#d8e6dd] bg-white px-3 py-3">
-								<div>
-									<strong className="text-[0.95rem] text-[var(--text)]">{activity.title}</strong>
-									<p className="mt-0.5 text-[0.82rem] text-[var(--text-muted)]">{activity.subtitle}</p>
-								</div>
-								<button type="button" className="rounded-lg border border-[#c9ddd0] bg-[#f3fbf6] px-2.5 py-1.5 text-[0.8rem] font-semibold text-[#1f5137] hover:bg-[#ebf7f0]">
-									Ver
-								</button>
-							</div>
+			<section className="space-y-3.5">
+				<article className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-bg)] p-6 shadow-[0_8px_20px_-18px_rgba(16,24,40,0.22)]">
+					<h2 className="m-0 text-[1rem] font-semibold text-[var(--text)]">Próximas actividades aprobadas</h2>
+					<p className="mb-4 mt-1 text-[0.92rem] text-[var(--text-muted)]">Actividades ya validadas para las próximas fechas.</p>
+					<div className="grid gap-3.5">
+						{upcomingApprovedActivities.map(activity => (
+							<ActivityCard
+								key={activity.id}
+								activity={activity}
+								actionLabel="Ver detalle"
+								to={`/admin/actividad/${activity.id}`}
+							/>
 						))}
 					</div>
-					<button type="button" className="mt-3 w-full rounded-lg border border-[#d8e6dd] bg-white px-3 py-2.5 text-[0.9rem] font-semibold text-[var(--text)] hover:bg-[#f9fbfa]">
-						Ver todas las pendientes
-					</button>
-				</article>
-
-				<article className="rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-6 shadow-sm">
-					<h2 className="m-0 text-[1rem] font-semibold text-[var(--text)]">Usuarios Recientes</h2>
-					<p className="mb-4 mt-1 text-[0.92rem] text-[var(--text-muted)]">Ultimos registros</p>
-					<div className="grid gap-2">
-						{recentUsers.map(user => (
-							<div key={user.email} className="flex items-center justify-between gap-3 rounded-lg border border-[#d8e6dd] bg-white px-3 py-3">
-								<div style={{ display: "flex", alignItems: "center", gap: "0.65rem" }}>
-									<span className="grid h-7 w-7 place-items-center rounded-full bg-[linear-gradient(180deg,#138b47,#0f7f40)] text-[0.73rem] font-bold text-white">{user.initials}</span>
-									<div>
-										<strong className="text-[0.95rem] text-[var(--text)]">{user.name}</strong>
-										<p className="mt-0.5 text-[0.82rem] text-[var(--text-muted)]">{user.email}</p>
-									</div>
-								</div>
-								<span className="rounded-md bg-[#eef8f1] px-2 py-1 text-[0.75rem] font-semibold text-[#2e5a45]">{user.group}</span>
-							</div>
-						))}
-					</div>
-					<button type="button" className="mt-3 w-full rounded-lg border border-[#d8e6dd] bg-white px-3 py-2.5 text-[0.9rem] font-semibold text-[var(--text)] hover:bg-[#f9fbfa]">
-						Ver todos los usuarios
+					<button type="button" className="mt-3 w-full rounded-lg border border-[var(--panel-border)] bg-[var(--primary)] px-3 py-2.5 text-[0.9rem] font-semibold text-[white] hover:bg-[var(--primary-strong)]">
+						Ver todas las aprobadas
 					</button>
 				</article>
 			</section>
 
-			<section className="grid gap-3.5 xl:grid-cols-3">
-				<article className="flex items-center gap-3 rounded-xl border border-[#d8e6dd] bg-white px-4 py-4 shadow-sm">
-					<div className="grid h-[2.2rem] w-[2.6rem] place-items-center rounded-lg bg-[#e6f4ea] text-[#178845]">
-						<QuickIcon type="users" />
-					</div>
-					<div>
-						<strong className="block text-[0.95rem] text-[var(--text)]">Gestion de Usuarios</strong>
-						<p className="text-[0.85rem] text-[var(--text-muted)]">Ver y editar</p>
-					</div>
-				</article>
-				<article className="flex items-center gap-3 rounded-xl border border-[#d8e6dd] bg-white px-4 py-4 shadow-sm">
-					<div className="grid h-[2.2rem] w-[2.6rem] place-items-center rounded-lg bg-[#dff5e6] text-[#13984f]">
-						<QuickIcon type="calendar" />
-					</div>
-					<div>
-						<strong className="block text-[0.95rem] text-[var(--text)]">Calendario</strong>
-						<p className="text-[0.85rem] text-[var(--text-muted)]">Ver y modificar</p>
-					</div>
-				</article>
-				<article className="flex items-center gap-3 rounded-xl border border-[#d8e6dd] bg-white px-4 py-4 shadow-sm">
-					<div className="grid h-[2.2rem] w-[2.6rem] place-items-center rounded-lg bg-[#ecf1ff] text-[#3665db]">
-						<QuickIcon type="report" />
-					</div>
-					<div>
-						<strong className="block text-[0.95rem] text-[var(--text)]">Reportes</strong>
-						<p className="text-[0.85rem] text-[var(--text-muted)]">Estadisticas y datos</p>
-					</div>
-				</article>
+			<section className="space-y-3.5">
+				<h2 className="m-0 text-[1rem] font-semibold text-[var(--text)]">Accesos rapidos</h2>
+				<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+					{quickActions.map(action => (
+						<Link
+							key={action.label}
+							to={action.to}
+							className="group flex min-h-[220px] flex-col items-center justify-between rounded-xl border border-[var(--panel-border)] bg-[var(--panel-bg)] px-5 py-6 text-center transition-all duration-200 hover:border-[var(--primary)] hover:shadow-sm"
+						>
+							<span className={`inline-flex h-16 w-16 items-center justify-center ${action.icon === "users" ? "text-[var(--primary)]" : action.icon === "calendar" ? "text-[var(--primary)]" : action.icon === "check" ? "text-[var(--primary-strong)]" : "text-[var(--primary)]"}`}>
+								<span className="h-8 w-8">
+									<QuickIcon type={action.icon} />
+								</span>
+							</span>
+
+							<div className="mt-3 flex-1">
+								<p className="m-0 block text-[0.98rem] font-semibold leading-tight text-[var(--text)]">{action.label}</p>
+								<p className="mt-2 block text-[0.8rem] font-medium leading-relaxed text-[var(--text-muted)]">{action.subtitle}</p>
+							</div>
+
+							<span className="mt-4 inline-flex w-full items-center justify-center gap-1 rounded-sm bg-[var(--primary)] px-4 py-2.5 text-[0.85rem] font-semibold text-white transition-colors duration-200 group-hover:bg-[var(--primary-strong)]">
+								Ir
+								<ArrowRight className="h-4 w-4" aria-hidden="true" />
+							</span>
+						</Link>
+					))}
+				</div>
 			</section>
 		</section>
 	);
