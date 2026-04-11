@@ -140,7 +140,7 @@ function CompactCalendarActivityCard({ activity, onClick, showPlace = true }) {
   return (
     <button
       type="button"
-      className="group relative flex w-full items-stretch gap-4 rounded-[10px] border border-[#e8f0ea] bg-white p-2 sm:p-3 text-left shadow-sm transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-[0.6px] hover:border-[var(--primary-soft)] hover:cursor-pointer hover:shadow-[0_12px_22px_-18px_rgba(8,38,22,0.32)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#05a63d]/20"
+      className="group relative flex w-full items-stretch gap-4 rounded-[10px] border border-[#e8f0ea] bg-white p-3 text-left shadow-sm transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-[0.6px] hover:border-[var(--primary-soft)] hover:cursor-pointer hover:shadow-[0_12px_22px_-18px_rgba(8,38,22,0.32)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#05a63d]/20"
       onClick={() => onClick(activity)}
     >
       <span className={`absolute right-3 top-3 rounded-[7px] px-2 py-0.5 text-[0.7rem] font-semibold ${getActivityStatusClass(activity)}`}>
@@ -412,7 +412,7 @@ export default function Calendar({ activities, viewMode, monthDate, onActivityCl
             </div>
           </header>
 
-          <div className=" bg-[var(--surface)]  px-3 sm:px-5 py-2.5">
+          <div className=" bg-[var(--surface)]  px-5 py-2.5">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="inline-flex gap-1 rounded-[10px] border border-[#e5e7eb] bg-[#f8faf9] p-1">
                 <button
@@ -458,7 +458,7 @@ export default function Calendar({ activities, viewMode, monthDate, onActivityCl
                 {groupedDayActivities.map(([hourLabel, hourActivities]) => (
                   <section
                     key={hourLabel}
-                    className="rounded-[10px] bg-[var(--gray-soft)] p-2 sm:p-3 shadow-[0_1px_0_rgba(16,38,27,0.04)] border border-[#edf3ee]"
+                    className="rounded-[10px] bg-[var(--gray-soft)] p-3 shadow-[0_1px_0_rgba(16,38,27,0.04)] border border-[#edf3ee]"
                   >
                     <header className="mb-2 flex items-center justify-between gap-2">
                       <span className="inline-flex items-center gap-1.5 rounded-[8px] border border-[var(--primary)] bg-white px-2.5 py-1 text-[0.78rem] font-bold text-[var(--primary)]">
@@ -486,7 +486,7 @@ export default function Calendar({ activities, viewMode, monthDate, onActivityCl
                 {groupedByRoomActivities.map(([roomLabel, roomActivities]) => (
                   <section
                     key={roomLabel}
-                    className="rounded-[10px] bg-[var(--gray-soft)] p-2 sm:p-3 shadow-[0_1px_0_rgba(16,38,27,0.04)]"
+                    className="rounded-[10px] bg-[var(--gray-soft)] p-3 shadow-[0_1px_0_rgba(16,38,27,0.04)]"
                   >
                     <header className="mb-2 flex items-center justify-between gap-2">
                       <span className="text-[var(--primary)] inline-flex max-w-full items-center gap-1.5 rounded-[8px] border border-[var(--primary)] bg-white px-2.5 py-1 text-[0.78rem] font-bold">
