@@ -89,8 +89,8 @@ function CardBody({ activity, actionLabel }) {
 
   return (
     <>
-      <div className="flex items-stretch gap-4">
-        <div className="flex-shrink-0 w-36 h-24 sm:w-44 sm:h-28 overflow-hidden rounded-sm bg-[#f3f4f6]">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
+        <div className="h-40 w-full flex-shrink-0 overflow-hidden rounded-[10px] bg-[#f3f4f6] sm:h-28 sm:w-44">
           {imageSrc ? (
             // eslint-disable-next-line jsx-a11y/img-redundant-alt
             <img src={imageSrc} alt={`Imagen ${activity.title}`} className="h-full w-full object-cover" />
@@ -101,24 +101,22 @@ function CardBody({ activity, actionLabel }) {
 
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
+            <div className="min-w-0 space-y-1">
               <h3 className="m-0 text-[1.06rem] font-semibold leading-tight text-[var(--text)] max-[760px]:text-[1rem]">{activity.title}</h3>
-              <p className="mt-1 text-[0.85rem] text-[var(--text-muted)] inline-flex items-center gap-2">
+              <p className="m-0 inline-flex items-center gap-2 text-[0.85rem] text-[var(--text-muted)]">
                 <UserRound className="h-3 w-3 text-[var(--primary)]" strokeWidth={1.9} />
                 {creator}
               </p>
             </div>
 
-            <div className="absolute top-3 right-3">
-              <span className="inline-flex items-center rounded-md bg-[var(--primary)]/10 px-3 py-1 text-[0.72rem] font-semibold text-[var(--primary-strong)]">
-                {getStatus(activity)}
-              </span>
-            </div>
+            <span className="inline-flex shrink-0 items-center rounded-md bg-[var(--primary)]/10 px-3 py-1 text-[0.72rem] font-semibold text-[var(--primary-strong)]">
+              {getStatus(activity)}
+            </span>
           </div>
 
           <p className="mt-1 mb-0 text-[0.9rem] leading-relaxed text-[var(--text-muted)]">{description}</p>
 
-          <div className="mt-2 flex items-center justify-between gap-3 max-[760px]:flex-col max-[760px]:items-start">
+          <div className="mt-3 border-t border-[#e8f0ea] pt-3">
             <div className="flex flex-wrap gap-x-4 gap-y-2 text-[0.85rem] font-medium text-[var(--text)] max-[760px]:text-[0.82rem]">
               <p className="m-0 inline-flex items-center gap-2">
                 <CalendarIcon className="h-4 w-4 text-[var(--primary)]" />
@@ -139,11 +137,11 @@ function CardBody({ activity, actionLabel }) {
                 </p>
               )}
             </div>
+          </div>
 
-            <div className="inline-flex shrink-0 items-center gap-1 text-[1rem] font-medium text-[var(--primary)] max-[760px]:self-end">
-              <span className="inline-block border-b-2 border-transparent transition-colors duration-200 group-hover:border-[var(--primary)]">{actionLabel}</span>
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </div>
+          <div className="mt-3 inline-flex items-center gap-1 text-[1rem] font-medium text-[var(--primary)] max-[760px]:self-end">
+            <span className="inline-block border-b-2 border-transparent transition-colors duration-200 group-hover:border-[var(--primary)]">{actionLabel}</span>
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </div>
         </div>
       </div>
@@ -152,9 +150,9 @@ function CardBody({ activity, actionLabel }) {
 }
 
 export default function ActivityCard({ activity, actionLabel = "Ver más", onActionClick, to }) {
-  const resolvedTo = to || (activity?.id ? `/user/actividad/${activity.id}` : null);
-    const baseClassName =
-      "group block relative w-full rounded-sm border border-[#d8e3de] bg-white px-4 py-3 text-left shadow-sm transition-all duration-200 hover:-translate-y-[2px] hover:border-[var(--primary-soft)] hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/30";
+  const resolvedTo = onActionClick ? null : (to || (activity?.id ? `/user/actividad/${activity.id}` : null));
+  const baseClassName =
+    "group block relative w-full rounded-sm border border-[#d8e3de] bg-white px-4 py-3 text-left shadow-sm transition-all duration-200 hover:-translate-y-[2px] hover:border-[var(--primary-soft)] hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/30";
 
   if (resolvedTo) {
     return (

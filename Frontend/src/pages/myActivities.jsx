@@ -386,8 +386,8 @@ export default function MyActivities() {
               {paginatedCompleted.length === 0 && completedTotalPages === 0 ? (
                 <EmptyState title="Sin actividades finalizadas" message="Las actividades que completes aparecerán aquí para referencia." actionLabel="Crear actividad" actionTo="/user/crear-actividad" />
               ) : (
-                <div className="overflow-auto rounded-md">
-                  <table className="min-w-[920px] w-full text-[0.89rem] bg-white rounded-sm">
+                <div className="overflow-x-auto rounded-md">
+                  <table className="min-w-[840px] w-full text-[0.89rem] bg-white rounded-sm max-[640px]:min-w-[780px]">
                     <thead>
                       <tr>
                         <th className="border-b border-[#d8e6dd] bg-[var(--gray)] px-3 py-2 text-left text-[0.73rem] font-semibold text-[var(--text-muted)]">Actividad</th>
