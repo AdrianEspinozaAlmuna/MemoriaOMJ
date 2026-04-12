@@ -225,7 +225,7 @@ export default function AdminUsers() {
 					<h1 className="mt-2 text-[clamp(1.8rem,2.5vw,2.3rem)] font-bold text-[var(--text)]">Gestion de usuarios</h1>
 					<p className="mt-2 text-[0.92rem] text-[var(--text-muted)]">Administra los usuarios registrados en la plataforma.</p>
 				</div>
-				<button type="button" className="inline-flex items-center gap-2 rounded-lg border border-[var(--primary)] bg-[var(--primary)] px-3.5 py-2 text-[0.9rem] font-semibold text-white hover:bg-[#0a7f3d]" onClick={openModal}>
+				<button type="button" className="inline-flex items-center gap-2 rounded-sm border border-[var(--primary)] bg-[var(--primary)] px-3.5 py-2 text-[0.9rem] font-semibold text-white hover:bg-[#0a7f3d]" onClick={openModal}>
 					<UserRoundPlus aria-hidden="true" focusable="false" className="h-4 w-4" strokeWidth={1.9} />
 					Agregar Usuario
 				</button>
@@ -266,8 +266,8 @@ export default function AdminUsers() {
 						</label>
 					</div>
 				</div>
-				<div className="overflow-auto">
-					<table className="min-w-[920px] w-full text-[0.89rem]">
+				<div className="overflow-x-auto rounded-[10px]">
+					<table className="min-w-[840px] w-full text-[0.89rem] max-[640px]:min-w-[780px]">
 						<thead>
 							<tr>
 								<th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3 py-2 text-left text-[0.73rem] font-semibold text-[var(--text-muted)]">Nombre</th>

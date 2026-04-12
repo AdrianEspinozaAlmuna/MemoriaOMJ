@@ -202,7 +202,7 @@ export default function AdminLayout() {
 					<div className="relative flex items-center gap-2" ref={menuRef}>
 						<button
 							type="button"
-							className="relative inline-flex h-[2.15rem] w-[2.15rem] items-center justify-center cursor-pointer rounded-lg bg-[#eef7f1] transition-colors duration-200 hover:bg-[#e2f4e9] focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(5,166,61,0.15)]"
+							className="relative inline-flex h-[2.15rem] w-[2.15rem] items-center justify-center cursor-pointer rounded-lg border border-[#d8e6dd] bg-[#f7fbf8] transition-colors duration-200 hover:bg-[#ecf6ef] focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(5,166,61,0.15)]"
 							aria-label="Notificaciones"
 							onClick={() => {
 								setNotificationsOpen(previous => !previous);
@@ -215,14 +215,22 @@ export default function AdminLayout() {
 						</button>
 
 						{notificationsOpen && (
-							<div className="absolute right-[3.25rem] top-[calc(100%+0.4rem)] z-[21] w-[min(360px,82vw)] rounded-xl border border-[#d7e4dc] bg-white p-2 shadow-[0_14px_26px_-20px_rgba(11,38,24,0.35)] max-[640px]:right-0 max-[640px]:w-[min(320px,calc(100vw-1.2rem))]" role="dialog" aria-label="Notificaciones">
-								<p className="mb-2 text-[0.86rem] font-bold text-[#2b4338]">Notificaciones</p>
-								<div className="grid gap-2">
+							<div className="absolute right-[3.25rem] top-[calc(100%+0.4rem)] z-[21] w-[min(380px,82vw)] overflow-hidden rounded-[14px] border border-[#d7e4dc] bg-white shadow-[0_18px_32px_-24px_rgba(11,38,24,0.38)] max-[640px]:right-0 max-[640px]:w-[min(320px,calc(100vw-1.2rem))]" role="dialog" aria-label="Notificaciones">
+								<div className="border-b border-[#e1ebe4] bg-[linear-gradient(180deg,#f8fbf9,rgba(248,251,249,0.9))] px-4 py-3">
+									<p className="m-0 text-[0.78rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Centro de alertas</p>
+									<p className="mt-1 m-0 text-[0.92rem] font-semibold text-[#244235]">Notificaciones recientes</p>
+								</div>
+								<div className="grid gap-0 bg-white">
 									{notifications.map(item => (
-										<article key={item.id} className="grid gap-0.5 rounded-[10px] border border-[#e2e8ed] bg-[#fbfcfd] px-2 py-2">
-											<strong className="text-[0.86rem] text-[#2e3b47]">{item.title}</strong>
-											<small className="text-[0.79rem] text-[#657381]">{item.detail}</small>
-											<span className="text-[0.74rem] font-semibold text-[#5f7a6a]">{item.time}</span>
+										<article key={item.id} className="grid grid-cols-[auto_1fr_auto] items-start gap-3 border-b border-[#e7eee9] px-4 py-3 last:border-b-0">
+											<span className="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#eef7f1] text-[var(--primary)]">
+												<Bell aria-hidden="true" focusable="false" className="h-4 w-4" strokeWidth={1.9} />
+											</span>
+											<div className="min-w-0">
+												<strong className="block text-[0.9rem] leading-tight text-[#214234]">{item.title}</strong>
+												<small className="mt-1 block text-[0.8rem] leading-relaxed text-[#60716a]">{item.detail}</small>
+											</div>
+											<span className="inline-flex shrink-0 rounded-md bg-[#eef8f1] px-2 py-1 text-[0.72rem] font-semibold text-[#5f7a6a]">{item.time}</span>
 										</article>
 									))}
 								</div>
@@ -231,7 +239,7 @@ export default function AdminLayout() {
 
 						<button
 							type="button"
-							className="inline-flex hover:cursor-pointer items-center gap-2 rounded-xl bg-[#eef7f1] px-2 py-1.5 text-[0.89rem] font-semibold leading-none text-[#2e4c3d] transition-colors duration-200 hover:bg-[#e2f4e9] focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(5,166,61,0.15)]"
+							className="inline-flex hover:cursor-pointer items-center gap-2 rounded-xl bg-[var(--gray-soft)] px-2 py-1.5 text-[0.89rem] font-semibold leading-none text-[#2e4c3d] transition-colors duration-200 hover:bg-[var(--gray)] focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(5,166,61,0.15)]"
 							onClick={() => {
 								setMenuOpen(previous => !previous);
 								setNotificationsOpen(false);
