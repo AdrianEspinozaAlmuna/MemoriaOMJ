@@ -251,8 +251,8 @@ export default function MyAttendance() {
 
   const attendanceSplitData = useMemo(() => {
     return [
-      { name: "Asistido", value: attendanceSummary.attended, color: "#05a63d" },
-      { name: "No asistido", value: attendanceSummary.missed, color: "#d1695a" }
+      { name: "Asistido", value: attendanceSummary.attended, color: "var(--primary)" },
+      { name: "No asistido", value: attendanceSummary.missed, color: "var(--reject)" }
     ].filter(item => item.value > 0);
   }, [attendanceSummary.attended, attendanceSummary.missed]);
 

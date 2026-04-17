@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Bell } from "lucide-react";
+import { Bell, UserRound } from "lucide-react";
 import { Link, NavLink } from "react-router-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -36,7 +36,6 @@ export default function Navbar() {
   const isAuthenticated = !!user;
   const rol = user?.rol || null;
 	const displayName = user?.nombre || "Usuario";
-	const userInitial = displayName.charAt(0).toUpperCase();
 
 	useEffect(() => {
 		function handleDocumentClick(event) {
@@ -191,7 +190,7 @@ export default function Navbar() {
 						<div className="relative">
 							<button
 								type="button"
-								className="relative inline-flex h-[2.15rem] w-[2.15rem] items-center justify-center cursor-pointer rounded-md border border-[#d8e6dd] bg-[#f7fbf8] transition-colors duration-200 hover:bg-[#ecf6ef]"
+								className="relative inline-flex h-[2.15rem] w-[2.15rem] items-center justify-center cursor-pointer rounded-md bg-[white] transition-colors duration-200 hover:bg-[#ecf6ef]"
 								aria-label="Notificaciones"
 								onClick={() => {
 									setNotificationsOpen(previous => !previous);
@@ -232,7 +231,7 @@ export default function Navbar() {
 						<div className="relative">
 							<button
 								type="button"
-								className="inline-flex hover:cursor-pointer items-center gap-2 rounded-xl bg-[var(--gray)] px-2 py-1.5 text-[0.89rem] font-semibold leading-none text-[#2e4c3d] transition-colors duration-200 hover:bg-[#e2f4e9] focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(5,166,61,0.15)] max-[860px]:h-[2.15rem] max-[860px]:min-w-[2.15rem] max-[860px]:justify-center max-[860px]:p-[0.18rem]"
+								className="inline-flex h-[2.15rem] items-center gap-2 rounded-md bg-[white] px-2.5 text-[0.89rem] font-semibold leading-none text-[#2e4c3d] transition-colors duration-200 hover:bg-[#ecf6ef] focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(5,166,61,0.15)] max-[860px]:min-w-[2.15rem] max-[860px]:justify-center max-[860px]:px-0"
 								onClick={() => {
 									setMenuOpen(previous => !previous);
 									setNotificationsOpen(false);
@@ -240,7 +239,7 @@ export default function Navbar() {
 								aria-expanded={menuOpen}
 								aria-haspopup="menu"
 							>
-								<span className="grid h-7 w-7 place-items-center rounded-full bg-[linear-gradient(180deg,#138b47,#0f7f40)] text-[0.73rem] font-bold text-[#f8fafc]" aria-hidden="true">{userInitial}</span>
+								<UserRound aria-hidden="true" focusable="false" className="h-4 w-4 text-[#2e4c3d]" strokeWidth={1.9} />
 								<span className="max-w-[9.2rem] overflow-hidden text-ellipsis whitespace-nowrap max-[860px]:hidden">{displayName}</span>
 							</button>
 

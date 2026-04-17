@@ -225,7 +225,7 @@ export default function ActivityDetail() {
 						<div className="overflow-hidden rounded-lg border border-[#e0e9e2] bg-white">
 							<div className="divide-y divide-[#e5ede8]">
 								{participants.map(person => (
-									<div key={person.id} className="relative grid grid-cols-[auto_1fr_auto_auto] items-center gap-3 px-3.5 py-3">
+									<div key={person.id} className="relative grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3 px-3.5 py-3 sm:grid-cols-[auto_1fr_auto_auto] sm:items-center">
 										<span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-[#d7e4dd] bg-transparent text-[0.7rem] font-bold text-[#2f5c45]">
 											{person.name
 												.split(" ")
@@ -233,12 +233,19 @@ export default function ActivityDetail() {
 												.map(n => n[0])
 												.join("")}
 										</span>
-										<div className="min-w-0">
-											<p className="m-0 truncate text-[0.91rem] font-semibold text-[var(--text)]">{person.name}</p>
-											<p className="m-0 mt-0.5 text-[0.8rem] text-[var(--text-muted)]">{person.age} años</p>
+										<div className="min-w-0 pr-1">
+											<p className="m-0 break-words text-[0.91rem] font-semibold leading-snug text-[var(--text)] sm:truncate">{person.name}</p>
+											<p className="m-0 mt-0.5 text-[0.8rem] text-[var(--text-muted)]">
+												{person.age} años
+												<span className={`sm:hidden ${
+													person.status === "Confirmado" ? "text-[#177945]" : "text-[#b87015]"
+												}`}>
+													{" "}· {person.status}
+												</span>
+											</p>
 										</div>
 										<span
-											className={`flex-shrink-0 rounded-full px-2.5 py-1 text-[0.72rem] font-semibold whitespace-nowrap ${
+											className={`hidden flex-shrink-0 rounded-full px-2.5 py-1 text-[0.72rem] font-semibold whitespace-nowrap sm:inline-flex ${
 												person.status === "Confirmado"
 													? "bg-[#e7f5ec] text-[#177945]"
 													: "bg-[#fff3de] text-[#b87015]"
@@ -257,7 +264,6 @@ export default function ActivityDetail() {
 
 										{activeParticipantMenu === person.id && (
 											<div className="absolute right-3 top-[calc(100%_-_8px)] z-20 w-[190px] rounded-md border border-[#dce7e0] bg-white p-1.5 shadow-[0_14px_24px_-20px_rgba(10,43,26,0.55)]">
-												<button type="button" className="w-full rounded-md px-2.5 py-2 text-left text-[0.82rem] font-medium text-[#274634] hover:bg-[#f4faf7]">Ver perfil</button>
 												<button type="button" className="w-full rounded-md px-2.5 py-2 text-left text-[0.82rem] font-medium text-[#274634] hover:bg-[#f4faf7]">Marcar asistencia manual</button>
 												<button type="button" className="w-full rounded-md px-2.5 py-2 text-left text-[0.82rem] font-medium text-[#8a3b2a] hover:bg-[#fff4ef]">Expulsar de la actividad</button>
 											</div>
@@ -369,17 +375,11 @@ export default function ActivityDetail() {
 										{isEnrolled && (
 											<button
 												type="button"
-												className="w-full rounded-sm border border-[var(--primary)] bg-[white] px-4 py-2.5 text-[0.88rem] font-semibold text-[var(--primary)] transition-all hover:bg-[#ecf7f0]"
+												className="w-full rounded-sm border-2 border-[var(--primary-soft)] bg-[white] px-4 py-2.5 text-[0.88rem] font-semibold text-[var(--primary)] transition-all hover:bg-[#ecf7f0]"
 											>
 												Marcar asistencia
 											</button>
 										)}
-										<button
-											type="button"
-											className="w-full rounded-sm border border-[var(--reject)] bg-[#fff3ef] px-4 py-2.5 text-[0.88rem] font-semibold text-[var(--reject)] transition-all hover:bg-[#ffe9e2]"
-										>
-											Reportar problema
-										</button>
 									</>
 								)}
 							</div>
