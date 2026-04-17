@@ -1,5 +1,19 @@
 import React from "react";
-import { Activity, BarChart3, CalendarDays, PieChart, Star, TrendingUp, Users } from "lucide-react";
+import { Activity, BarChart3, CalendarDays, PieChart as PieChartIcon, Star, TrendingUp, Users } from "lucide-react";
+import {
+	ResponsiveContainer,
+	LineChart,
+	Line,
+	CartesianGrid,
+	XAxis,
+	YAxis,
+	Tooltip,
+	PieChart,
+	Pie,
+	Cell,
+	BarChart,
+	Bar
+} from "recharts";
 
 const summaryCards = [
 	{ label: "Asistencia mensual", value: "84%", icon: TrendingUp },
@@ -26,9 +40,9 @@ const byCategory = [
 ];
 
 const statusSplit = [
-	{ name: "Aprobadas", value: 61, color: "var(--primary)" },
-	{ name: "Pendientes", value: 24, color: "var(--accent)" },
-	{ name: "Rechazadas", value: 15, color: "var(--reject)" }
+	{ name: "Aprobadas", value: 61, color: "#05a63d" },
+	{ name: "Pendientes", value: 24, color: "#d89c28" },
+	{ name: "Rechazadas", value: 15, color: "#d1695a" }
 ];
 
 const reportRows = [
@@ -53,57 +67,68 @@ const weeklyActivity = [
 	{ day: "Sab", value: 7 }
 ];
 
-const maxWeeklyValue = Math.max(...weeklyActivity.map(item => item.value));
-
-function AttendancePolyline() {
-	const max = Math.max(...monthlyAttendance.map(point => point.value));
-	const min = Math.min(...monthlyAttendance.map(point => point.value));
-	const span = Math.max(1, max - min);
-	const width = 360;
-	const height = 160;
-	const stepX = width / (monthlyAttendance.length - 1);
-
-	const points = monthlyAttendance
-		.map((point, index) => {
-			const x = index * stepX;
-			const normalized = (point.value - min) / span;
-			const y = height - normalized * 120 - 20;
-			return `${x},${y}`;
-		})
-		.join(" ");
+function ChartTooltip({ active, payload, label, unit = "" }) {
+	if (!active || !payload || payload.length === 0) {
+		return null;
+	}
 
 	return (
-		<svg viewBox="0 0 360 160" className="h-[180px] w-full" role="img" aria-label="Tendencia de asistencia mensual">
-			<defs>
-				<linearGradient id="attendanceFill" x1="0" y1="0" x2="0" y2="1">
-					<stop offset="0%" stopColor="rgba(5,166,61,0.22)" />
-					<stop offset="100%" stopColor="rgba(5,166,61,0.02)" />
-				</linearGradient>
-			</defs>
-			<polyline points={points} fill="none" stroke="#12934f" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-			<polygon points={`0,160 ${points} 360,160`} fill="url(#attendanceFill)" />
-			{monthlyAttendance.map((point, index) => {
-				const x = index * stepX;
-				const normalized = (point.value - min) / span;
-				const y = height - normalized * 120 - 20;
-				return <circle key={point.month} cx={x} cy={y} r="4" fill="#0d7e41" />;
-			})}
-		</svg>
+		<div className="rounded-md border border-[#d8e6dd] bg-white px-2.5 py-1.5 text-[0.78rem] shadow-sm">
+			<p className="m-0 font-semibold text-[var(--text)]">{label}</p>
+			<p className="m-0 text-[var(--text-muted)]">{payload[0].value}{unit}</p>
+		</div>
+	);
+}
+
+function AttendanceChart() {
+	return (
+		<div className="h-[220px] w-full">
+			<ResponsiveContainer width="100%" height="100%">
+				<LineChart data={monthlyAttendance} margin={{ top: 12, right: 12, left: 4, bottom: 8 }}>
+					<defs>
+						<linearGradient id="attendanceAreaFill" x1="0" y1="0" x2="0" y2="1">
+							<stop offset="0%" stopColor="rgba(5,166,61,0.24)" />
+							<stop offset="100%" stopColor="rgba(5,166,61,0.02)" />
+						</linearGradient>
+					</defs>
+					<CartesianGrid stroke="#edf4ef" strokeDasharray="3 3" vertical={false} />
+					<XAxis dataKey="month" tick={{ fill: "#607367", fontSize: 12 }} tickLine={false} axisLine={false} />
+					<YAxis tick={{ fill: "#607367", fontSize: 12 }} tickLine={false} axisLine={false} width={34} />
+					<Tooltip content={<ChartTooltip unit="%" />} cursor={{ stroke: "#9dd8b5", strokeWidth: 1 }} />
+					<Line
+						type="monotone"
+						dataKey="value"
+						stroke="#12934f"
+						strokeWidth={3}
+						dot={{ r: 4, stroke: "#0d7e41", strokeWidth: 2, fill: "#ffffff" }}
+						activeDot={{ r: 5 }}
+						fill="url(#attendanceAreaFill)"
+					/>
+				</LineChart>
+			</ResponsiveContainer>
+		</div>
 	);
 }
 
 function StatusDonut() {
-	const gradient = `conic-gradient(${statusSplit.map((item, index) => {
-		const previous = statusSplit.slice(0, index).reduce((acc, current) => acc + current.value, 0);
-		return `${item.color} ${previous}% ${previous + item.value}%`;
-	}).join(",")})`;
+	const total = statusSplit.reduce((acc, current) => acc + current.value, 0);
 
 	return (
 		<div className="grid gap-4 sm:grid-cols-[auto_1fr] sm:items-center">
-			<div className="mx-auto h-[148px] w-[148px] rounded-full" style={{ background: gradient }}>
-				<div className="mx-auto mt-[24px] grid h-[100px] w-[100px] place-items-center rounded-full bg-white text-center">
+			<div className="mx-auto h-[170px] w-[170px]">
+				<ResponsiveContainer width="100%" height="100%">
+					<PieChart>
+						<Pie data={statusSplit} dataKey="value" innerRadius={48} outerRadius={72} paddingAngle={2} stroke="none">
+							{statusSplit.map(item => (
+								<Cell key={item.name} fill={item.color} />
+							))}
+						</Pie>
+						<Tooltip content={<ChartTooltip unit="%" />} />
+					</PieChart>
+				</ResponsiveContainer>
+				<div className="pointer-events-none -mt-[102px] grid place-items-center text-center">
 					<p className="m-0 text-[0.74rem] font-semibold uppercase tracking-[0.06em] text-[var(--text-muted)]">Total</p>
-					<p className="m-0 text-[1.4rem] font-bold text-[var(--text)]">100%</p>
+					<p className="m-0 text-[1.4rem] font-bold text-[var(--text)]">{total}%</p>
 				</div>
 			</div>
 			<div className="grid gap-2">
@@ -117,6 +142,38 @@ function StatusDonut() {
 					</div>
 				))}
 			</div>
+		</div>
+	);
+}
+
+function CategoryBarChart() {
+	return (
+		<div className="h-[210px] w-full">
+			<ResponsiveContainer width="100%" height="100%">
+				<BarChart data={byCategory} margin={{ top: 8, right: 4, left: -8, bottom: 6 }}>
+					<CartesianGrid stroke="#edf4ef" strokeDasharray="3 3" vertical={false} />
+					<XAxis dataKey="name" tick={{ fill: "#607367", fontSize: 12 }} tickLine={false} axisLine={false} />
+					<YAxis tick={{ fill: "#607367", fontSize: 12 }} tickLine={false} axisLine={false} width={30} />
+					<Tooltip content={<ChartTooltip />} cursor={{ fill: "rgba(5,166,61,0.06)" }} />
+					<Bar dataKey="value" fill="#149a54" radius={[8, 8, 0, 0]} maxBarSize={34} />
+				</BarChart>
+			</ResponsiveContainer>
+		</div>
+	);
+}
+
+function WeeklyBarChart() {
+	return (
+		<div className="h-[210px] w-full">
+			<ResponsiveContainer width="100%" height="100%">
+				<BarChart data={weeklyActivity} margin={{ top: 8, right: 4, left: -8, bottom: 6 }}>
+					<CartesianGrid stroke="#edf4ef" strokeDasharray="3 3" vertical={false} />
+					<XAxis dataKey="day" tick={{ fill: "#607367", fontSize: 12 }} tickLine={false} axisLine={false} />
+					<YAxis tick={{ fill: "#607367", fontSize: 12 }} tickLine={false} axisLine={false} width={26} />
+					<Tooltip content={<ChartTooltip />} cursor={{ fill: "rgba(30,155,87,0.07)" }} />
+					<Bar dataKey="value" fill="#1e9b57" radius={[8, 8, 0, 0]} maxBarSize={30} />
+				</BarChart>
+			</ResponsiveContainer>
 		</div>
 	);
 }
@@ -156,17 +213,12 @@ export default function AdminReports() {
 							+6 pts ultimos 3 meses
 						</span>
 					</div>
-					<AttendancePolyline />
-					<div className="mt-2 grid grid-cols-6 gap-1 text-center text-[0.76rem] text-[var(--text-muted)]">
-						{monthlyAttendance.map(point => (
-							<span key={point.month}>{point.month}</span>
-						))}
-					</div>
+					<AttendanceChart />
 				</article>
 
 				<article className="rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-5 shadow-sm">
 					<div className="mb-3 flex items-center gap-2">
-						<PieChart className="h-4 w-4 text-[var(--primary)]" />
+						<PieChartIcon className="h-4 w-4 text-[var(--primary)]" />
 						<h2 className="m-0 text-[1rem] font-semibold text-[var(--text)]">Estado de actividades</h2>
 					</div>
 					<StatusDonut />
@@ -179,19 +231,7 @@ export default function AdminReports() {
 						<BarChart3 className="h-4 w-4 text-[var(--primary)]" />
 						<h2 className="m-0 text-[1rem] font-semibold text-[var(--text)]">Actividades por categoria</h2>
 					</div>
-					<div className="grid gap-3">
-						{byCategory.map(item => (
-							<div key={item.name} className="grid gap-1.5">
-								<div className="flex items-center justify-between text-[0.86rem]">
-									<span className="text-[var(--text)]">{item.name}</span>
-									<strong className="text-[var(--text)]">{item.value}</strong>
-								</div>
-								<div className="h-2 rounded-full bg-[#ecf4ef]">
-									<div className="h-2 rounded-full bg-[linear-gradient(90deg,var(--primary),var(--primary-strong))]" style={{ width: `${Math.max(14, (item.value / 24) * 100)}%` }} />
-								</div>
-							</div>
-						))}
-					</div>
+					<CategoryBarChart />
 				</article>
 
 				<article className="rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-5 shadow-sm">
@@ -199,19 +239,7 @@ export default function AdminReports() {
 						<CalendarDays className="h-4 w-4 text-[var(--primary)]" />
 						<h2 className="m-0 text-[1rem] font-semibold text-[var(--text)]">Actividad semanal</h2>
 					</div>
-					<div className="grid gap-3">
-						{weeklyActivity.map(item => (
-							<div key={item.day} className="grid gap-1.5 text-[0.84rem]">
-								<div className="flex items-center justify-between gap-3">
-									<span className="text-[var(--text-muted)]">{item.day}</span>
-									<strong className="text-right text-[var(--text)]">{item.value}</strong>
-								</div>
-								<div className="h-2 rounded-full bg-[#edf5f0]">
-									<div className="h-2 rounded-full bg-[#1e9b57]" style={{ width: `${(item.value / maxWeeklyValue) * 100}%` }} />
-								</div>
-							</div>
-						))}
-					</div>
+					<WeeklyBarChart />
 
 				</article>
 			</section>

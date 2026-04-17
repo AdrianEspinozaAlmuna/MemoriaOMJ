@@ -201,7 +201,7 @@ export default function AdminApprovals() {
 						) : (
 							<button
 								type="button"
-								className="inline-flex items-center justify-center rounded-[11px] border border-[#d16b5d] bg-[linear-gradient(180deg,#d97a6d,#be5c4f)] px-4 py-2.5 text-[0.92rem] font-semibold text-white shadow-[0_14px_24px_-16px_rgba(190,92,79,0.75)] transition-all duration-200 hover:-translate-y-[1px] hover:brightness-105"
+								className="inline-flex items-center justify-center rounded-[11px] border border-[#d16b5d] bg-[var(--reject)] hover:bg-[var(--reject-hover)] px-4 py-2.5 text-[0.92rem] font-semibold text-white transition-all duration-200"
 								onClick={confirmReject}
 							>
 								Guardar rechazo
@@ -260,13 +260,13 @@ export default function AdminApprovals() {
 						</div>
 
 						{rejecting && (
-							<div className="grid gap-2 rounded-[14px] border border-[#f0cbc2] bg-[#fff8f6] p-4">
+							<div className="grid gap-2 rounded-[14px] border border-[var(--reject-hover)] bg-[#fff8f6] p-4">
 								<label htmlFor="reject-reason" className="text-[0.82rem] font-semibold text-[var(--text)]">
 									Explica por que se rechaza la propuesta
 								</label>
 								<textarea
 									id="reject-reason"
-									className="min-h-28 w-full resize-y rounded-[10px] border border-[#d8c7c1] bg-white px-3 py-2.5 text-[0.92rem] outline-none transition-shadow duration-200 focus:border-[var(--primary)] focus:shadow-[0_0_0_3px_rgba(5,166,61,0.1)]"
+									className="min-h-28 w-full resize-y rounded-[10px] border border-[#d8c7c1] bg-white px-3 py-2.5 text-[0.92rem] outline-none transition-shadow duration-200 focus:border-[var(--reject-hover)]"
 									value={rejectReason}
 									onChange={event => {
 										setRejectReason(event.target.value);

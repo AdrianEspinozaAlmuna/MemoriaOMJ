@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { CalendarDays, CheckCircle2, Filter, Search, Star, TrendingUp, UserRound, XCircle } from "lucide-react";
+import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, PieChart, Pie, Cell } from "recharts";
 import { getAttendanceData } from "../services/userViewsService";
 
 function parseMonthlyData(data = "") {
@@ -109,6 +110,19 @@ function StatCard({ label, value, helper, icon: Icon }) {
       <p className="mt-2 mb-0 text-[1.7rem] font-bold leading-none text-[var(--primary)]">{value}</p>
       <p className="mt-2 mb-0 text-[0.87rem] text-[var(--text-muted)]">{helper}</p>
     </article>
+  );
+}
+
+function ChartTooltip({ active, payload, label, unit = "" }) {
+  if (!active || !payload || payload.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="rounded-md border border-[#d8e6dd] bg-white px-2.5 py-1.5 text-[0.78rem] shadow-sm">
+      <p className="m-0 font-semibold text-[var(--text)]">{label}</p>
+      <p className="m-0 text-[var(--text-muted)]">{payload[0].value}{unit}</p>
+    </div>
   );
 }
 
@@ -226,6 +240,22 @@ export default function MyAttendance() {
     });
   }, [monthlyRows, monthlyQuery, monthlyFilter, monthlyYear]);
 
+  const monthlyTrendData = useMemo(() => {
+    return filteredMonthlyRows
+      .map(row => ({
+        month: row.month,
+        percent: row.parsed.percent
+      }))
+      .slice(-12);
+  }, [filteredMonthlyRows]);
+
+  const attendanceSplitData = useMemo(() => {
+    return [
+      { name: "Asistido", value: attendanceSummary.attended, color: "#05a63d" },
+      { name: "No asistido", value: attendanceSummary.missed, color: "#d1695a" }
+    ].filter(item => item.value > 0);
+  }, [attendanceSummary.attended, attendanceSummary.missed]);
+
   const filteredHistory = useMemo(() => {
     return history.filter(row => {
       const searchBlob = `${row.name || ""} ${row.type || ""} ${row.place || ""}`.toLowerCase();
@@ -269,6 +299,79 @@ export default function MyAttendance() {
             {attendanceStatCards.map(item => (
               <StatCard key={item.label} label={item.label} value={item.value} helper={item.helper} icon={item.icon} />
             ))}
+          </div>
+        )}
+
+        {!loading && (
+          <div className="mt-5 grid gap-4 lg:grid-cols-2">
+            <article className="rounded-lg border border-[#d8e6dd] bg-white p-4">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <h3 className="m-0 text-[0.94rem] font-semibold text-[var(--text)]">Tendencia mensual</h3>
+                <span className="text-[0.78rem] font-semibold text-[var(--text-muted)]">% asistencia</span>
+              </div>
+              {monthlyTrendData.length === 0 ? (
+                <div className="grid h-[210px] place-items-center rounded-md border border-dashed border-[#d8e6dd] bg-[#f9fbfa] text-[0.86rem] text-[var(--text-muted)]">
+                  Sin datos para graficar
+                </div>
+              ) : (
+                <div className="h-[210px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={monthlyTrendData} margin={{ top: 10, right: 10, left: -6, bottom: 4 }}>
+                      <CartesianGrid stroke="#edf4ef" strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="month" tick={{ fill: "#607367", fontSize: 12 }} tickLine={false} axisLine={false} />
+                      <YAxis tick={{ fill: "#607367", fontSize: 12 }} tickLine={false} axisLine={false} width={30} domain={[0, 100]} />
+                      <Tooltip content={<ChartTooltip unit="%" />} cursor={{ stroke: "#9dd8b5", strokeWidth: 1 }} />
+                      <Line
+                        type="monotone"
+                        dataKey="percent"
+                        stroke="#149a54"
+                        strokeWidth={3}
+                        dot={{ r: 4, stroke: "#0d7e41", strokeWidth: 2, fill: "#ffffff" }}
+                        activeDot={{ r: 5 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </article>
+
+            <article className="rounded-lg border border-[#d8e6dd] bg-white p-4">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <h3 className="m-0 text-[0.94rem] font-semibold text-[var(--text)]">Distribucion de asistencia</h3>
+                <span className="text-[0.78rem] font-semibold text-[var(--text-muted)]">Historial</span>
+              </div>
+              {attendanceSplitData.length === 0 ? (
+                <div className="grid h-[210px] place-items-center rounded-md border border-dashed border-[#d8e6dd] bg-[#f9fbfa] text-[0.86rem] text-[var(--text-muted)]">
+                  Sin datos para graficar
+                </div>
+              ) : (
+                <div className="grid items-center gap-3 sm:grid-cols-[200px_1fr]">
+                  <div className="mx-auto h-[210px] w-[200px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={attendanceSplitData} dataKey="value" nameKey="name" innerRadius={48} outerRadius={72} paddingAngle={2} stroke="none">
+                          {attendanceSplitData.map(item => (
+                            <Cell key={item.name} fill={item.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip content={<ChartTooltip />} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="grid gap-2">
+                    {attendanceSplitData.map(item => (
+                      <div key={item.name} className="flex items-center justify-between rounded-md border border-[#deebe3] bg-[#fbfefc] px-3 py-2">
+                        <span className="inline-flex items-center gap-2 text-[0.88rem] text-[var(--text)]">
+                          <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                          {item.name}
+                        </span>
+                        <strong className="text-[0.9rem] text-[var(--text)]">{item.value}</strong>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </article>
           </div>
         )}
       </section>

@@ -117,31 +117,33 @@ function CardBody({ activity, actionLabel }) {
           <p className="mt-1 mb-0 text-[0.9rem] leading-relaxed text-[var(--text-muted)]">{description}</p>
 
           <div className="mt-3 border-t border-[#e8f0ea] pt-3">
-            <div className="flex flex-wrap gap-x-4 gap-y-2 text-[0.85rem] font-medium text-[var(--text)] max-[760px]:text-[0.82rem]">
-              <p className="m-0 inline-flex items-center gap-2">
-                <CalendarIcon className="h-4 w-4 text-[var(--primary)]" />
-                {formatDate(activity.date)}
-              </p>
-              <p className="m-0 inline-flex items-center gap-2">
-                <PlaceIcon className="h-4 w-4 text-[var(--primary)]" />
-                {placeLabel}
-              </p>
-              <p className="m-0 inline-flex items-center gap-2">
-                <TimeIcon className="h-4 w-4 text-[var(--primary)]" />
-                {formatTimeRange(activity)}
-              </p>
-              { (enrolled !== null || capacity !== null) && (
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[0.85rem] font-medium text-[var(--text)] max-[760px]:text-[0.82rem]">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                 <p className="m-0 inline-flex items-center gap-2">
-                  <Users className="h-4 w-4 text-[var(--primary)]" />
-                  {capacity ? `${enrolled ?? 0}/${capacity} inscritos` : `${enrolled ?? 0} inscritos`}
+                  <CalendarIcon className="h-4 w-4 text-[var(--primary)]" />
+                  {formatDate(activity.date)}
                 </p>
-              )}
-            </div>
-          </div>
+                <p className="m-0 inline-flex items-center gap-2">
+                  <PlaceIcon className="h-4 w-4 text-[var(--primary)]" />
+                  {placeLabel}
+                </p>
+                <p className="m-0 inline-flex items-center gap-2">
+                  <TimeIcon className="h-4 w-4 text-[var(--primary)]" />
+                  {formatTimeRange(activity)}
+                </p>
+                {(enrolled !== null || capacity !== null) && (
+                  <p className="m-0 inline-flex items-center gap-2">
+                    <Users className="h-4 w-4 text-[var(--primary)]" />
+                    {capacity ? `${enrolled ?? 0}/${capacity} inscritos` : `${enrolled ?? 0} inscritos`}
+                  </p>
+                )}
+              </div>
 
-          <div className="mt-3 inline-flex items-center gap-1 text-[1rem] font-medium text-[var(--primary)] max-[760px]:self-end">
-            <span className="inline-block border-b-2 border-transparent transition-colors duration-200 group-hover:border-[var(--primary)]">{actionLabel}</span>
-            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              <div className="ml-auto inline-flex items-center gap-1 text-[1rem] font-medium text-[var(--primary)] max-[760px]:w-full max-[760px]:justify-end">
+                <span className="inline-block border-b-2 border-transparent transition-colors duration-200 group-hover:border-[var(--primary)]">{actionLabel}</span>
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </div>
+            </div>
           </div>
         </div>
       </div>
