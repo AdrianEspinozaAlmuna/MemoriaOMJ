@@ -1,3 +1,5 @@
+import api from "./api";
+
 const WAIT_TIME = 420;
 
 const dashboardPayload = {
@@ -331,33 +333,212 @@ function mockResponse(payload) {
   });
 }
 
-export function getDashboardData() {
-  return mockResponse(dashboardPayload);
+function toUiActivity(item = {}) {
+  return {
+    id: String(item.id ?? item.id_actividad ?? ""),
+    title: item.title || item.titulo || "Actividad",
+    date: item.date || item.fecha || null,
+    time: item.time || item.hora_inicio || null,
+    hora_inicio: item.hora_inicio || item.time || null,
+    hora_termino: item.hora_termino || null,
+    place: item.place || item.lugar || "Lugar por confirmar",
+    description: item.description || item.descripcion || "",
+    manager: item.manager || null,
+    status: item.status || "disponible",
+    state: item.estado || null,
+    capacity: item.capacity ?? item.max_participantes ?? null,
+    enrolled: item.enrolled ?? item.inscritos ?? 0,
+    chat_bidireccional: item.chat_bidireccional ?? true,
+    approved: item.approved ?? item.aprobado ?? false
+  };
 }
 
-export function getCalendarData() {
-  return mockResponse(calendarActivities);
+export async function getDashboardData() {
+  try {
+    const { data } = await api.get("/activities");
+    const activities = Array.isArray(data) ? data.map(toUiActivity) : [];
+    const upcomingActivities = activities
+      .filter(item => item.status === "inscrito" || item.status === "disponible")
+      .slice(0, 6);
+
+    const enrolledCount = activities.filter(item => item.status === "inscrito").length;
+
+    return {
+      metrics: [
+        { key: "enrolled", label: "Actividades inscritas", value: enrolledCount },
+        { key: "monthAttendance", label: "Asistencias este mes", value: 0 },
+        { key: "attendanceRate", label: "Tasa de asistencia", value: "0%" }
+      ],
+      upcomingActivities
+    };
+  } catch (_error) {
+    return mockResponse(dashboardPayload);
+  }
 }
 
-export function getMyActivitiesSummary() {
-  return mockResponse(myActivitiesSummary);
+export async function getCalendarData() {
+  try {
+    const { data } = await api.get("/activities");
+    const activities = Array.isArray(data) ? data.map(toUiActivity) : [];
+    return activities;
+  } catch (_error) {
+    return mockResponse(calendarActivities);
+  }
 }
 
-export function getMyActivitiesData() {
-  return mockResponse(myActivitiesPayload);
+export async function getMyActivitiesSummary() {
+  try {
+    const data = await getMyActivitiesData();
+    const participating = Array.isArray(data.participating) ? data.participating.length : 0;
+    const created = Array.isArray(data.created) ? data.created.length : 0;
+
+    return {
+      cards: [
+        { key: "totalEnrolled", label: "Participando", value: participating },
+        { key: "totalCreated", label: "Creadas por mi", value: created },
+        { key: "rate", label: "Tasa de asistencia", value: "0%" }
+      ]
+    };
+  } catch (_error) {
+    return mockResponse(myActivitiesSummary);
+  }
+}
+
+export async function getMyActivitiesData() {
+  try {
+    const [{ data: allActivities }, { data: createdActivities }] = await Promise.all([
+      api.get("/activities"),
+      api.get("/activities", { params: { onlyMine: "1", includePending: "1" } })
+    ]);
+
+    const all = Array.isArray(allActivities) ? allActivities.map(toUiActivity) : [];
+    const created = Array.isArray(createdActivities) ? createdActivities.map(toUiActivity) : [];
+
+    const participating = all.filter(item => item.status === "inscrito");
+    const completed = participating.filter(item => item.state === "finalizada");
+    const upcoming = participating.filter(item => item.state !== "finalizada");
+
+    return {
+      participating,
+      created,
+      upcoming,
+      completed
+    };
+  } catch (_error) {
+    return mockResponse(myActivitiesPayload);
+  }
 }
 
 export function getAttendanceData() {
   return mockResponse(attendancePayload);
 }
 
-export function submitActivityProposal(payload) {
-  return mockResponse({
-    ok: true,
-    message: "Propuesta enviada correctamente.",
-    proposal: {
-      id: `prop-${Date.now()}`,
-      ...payload
+export async function submitActivityProposal(payload) {
+  try {
+    const { data } = await api.post("/activities", payload);
+    return {
+      ok: true,
+      message: data?.message || "Propuesta enviada correctamente.",
+      proposal: data?.activity || data
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      message: error?.response?.data?.message || "No se pudo enviar la propuesta."
+    };
+  }
+}
+
+export async function getAdminActivities(options = {}) {
+  const { approved, estado } = options;
+
+  try {
+    const params = {};
+    if (typeof approved === "boolean") {
+      params.aprobado = String(approved);
     }
-  });
+    if (estado) {
+      params.estado = estado;
+    }
+
+    const { data } = await api.get("/activities/admin", { params });
+    return Array.isArray(data) ? data.map(toUiActivity) : [];
+  } catch (_error) {
+    const fallback = Array.isArray(calendarActivities)
+      ? calendarActivities.map(item => toUiActivity(item))
+      : [];
+
+    return fallback.filter(item => {
+      if (typeof approved === "boolean" && item.approved !== approved) {
+        return false;
+      }
+      if (estado && item.state !== estado) {
+        return false;
+      }
+      return true;
+    });
+  }
+}
+
+export async function reviewActivity(idActividad, payload = {}) {
+  try {
+    const { data } = await api.patch(`/activities/${idActividad}/review`, payload);
+    return {
+      ok: true,
+      message: data?.message || "Actividad actualizada correctamente.",
+      activity: data?.activity ? toUiActivity(data.activity) : null
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      message: error?.response?.data?.message || "No se pudo actualizar la actividad."
+    };
+  }
+}
+
+export async function getActivityDetail(activityId) {
+  try {
+    const { data } = await api.get(`/activities/${activityId}`);
+    return {
+      ok: true,
+      activity: data
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      message: error?.response?.data?.message || "No se pudo cargar el detalle de la actividad."
+    };
+  }
+}
+
+export async function enrollInActivity(activityId) {
+  try {
+    const { data } = await api.post(`/activities/${activityId}/enroll`);
+    return {
+      ok: true,
+      enrolled: Boolean(data?.enrolled),
+      message: data?.message || "Inscripción realizada correctamente."
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      message: error?.response?.data?.message || "No se pudo completar la inscripción."
+    };
+  }
+}
+
+export async function cancelActivityEnrollment(activityId) {
+  try {
+    const { data } = await api.delete(`/activities/${activityId}/enroll`);
+    return {
+      ok: true,
+      enrolled: Boolean(data?.enrolled),
+      message: data?.message || "Inscripción cancelada correctamente."
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      message: error?.response?.data?.message || "No se pudo cancelar la inscripción."
+    };
+  }
 }

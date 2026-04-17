@@ -157,7 +157,7 @@ export default function AdminLayout() {
 						>
 							<SidebarIcon name={link.icon} className="h-4 w-4" />
 							<span>{link.label}</span>
-							{link.label === "Aprobaciones" && <span className="ml-auto rounded-full bg-[#6f7d72] px-1.5 py-[1px] text-[0.74rem] font-bold text-white">5</span>}
+							{link.label === "Aprobaciones"}
 						</NavLink>
 					))}
 				</nav>

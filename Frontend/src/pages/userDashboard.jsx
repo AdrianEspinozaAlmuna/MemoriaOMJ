@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { CalendarDays, ListChecks   , ClipboardCheck , Plus } from "lucide-react";
 import ActivityCard from "../components/ActivityCard";
 import { getDashboardData } from "../services/userViewsService";
+import { parseDateForChile } from "../utils/chileDate";
 
 function pickDemoImage(activity) {
   const pics = [
@@ -76,7 +77,11 @@ export default function UserDashboard() {
 
   const nextFiveUpcoming = useMemo(() => {
     return [...(upcomingActivities || [])]
-      .sort((a, b) => new Date(a.date) - new Date(b.date))
+      .sort((a, b) => {
+        const dateA = parseDateForChile(a.date);
+        const dateB = parseDateForChile(b.date);
+        return (dateA?.getTime() || 0) - (dateB?.getTime() || 0);
+      })
       .slice(0, 5);
   }, [upcomingActivities]);
 

@@ -3,9 +3,10 @@ import { Link } from "react-router-dom";
 import { BarChart3, CalendarDays, MapPin, Percent, Plus, Star, TrendingUp, Users, UsersRound } from "lucide-react";
 import { getMyActivitiesData } from "../services/userViewsService";
 import ActivityCard from "../components/ActivityCard";
+import { formatDateForChile, parseDateForChile } from "../utils/chileDate";
 
 function formatDate(dateValue) {
-  return new Date(dateValue).toLocaleDateString("es-CL", {
+  return formatDateForChile(dateValue, {
     weekday: "short",
     day: "2-digit",
     month: "short"
@@ -81,45 +82,37 @@ function ActiveActivityRow({ activity, mode = "created" }) {
   );
 }
 
-const EXTRA_COMPLETED_ACTIVITIES = [
-  {
-    id: "completed-extra-1",
-    title: "Encuentro de emprendimiento local",
-    date: "2026-02-11",
-    hora_inicio: "10:00",
-    hora_termino: "12:30",
-    place: "Centro OMJ",
-    participants: 18,
-    capacity: 24,
-    status: "finalizada",
-    enrolled: 18
-    ,image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1200&q=80"
-  },
-  {
-    id: "completed-extra-2",
-    title: "Taller de liderazgo juvenil",
-    date: "2026-01-21",
-    hora_inicio: "09:30",
-    hora_termino: "12:00",
-    place: "Sala Comunitaria",
-    participants: 26,
-    capacity: 30,
-    status: "finalizada",
-    enrolled: 26
-    ,image: "https://images.unsplash.com/photo-1525182008055-f88b95ff7980?auto=format&fit=crop&w=1200&q=80"
-  }
+const STATUS_FILTERS = [
+  { value: "all", label: "Todas", className: "border-[#d8e6dd] bg-white text-[#496053]" },
+  { value: "pendiente", label: "Pendiente", className: "border-[#f3d39a] bg-[#fff4de] text-[#a86612]" },
+  { value: "programada", label: "Programada", className: "border-[#bfe4cd] bg-[#e7f5ec] text-[#177945]" },
+  { value: "en_curso", label: "En curso", className: "border-[#bfd9f5] bg-[#e9f3ff] text-[#1d4f91]" },
+  { value: "finalizada", label: "Finalizada", className: "border-[#d5dae1] bg-[#f1f3f5] text-[#475467]" },
+  { value: "cancelada", label: "Cancelada", className: "border-[#f1c8be] bg-[#fff1ed] text-[#8a3b2a]" }
 ];
 
-const EXTRA_CREATED_ACTIVITIES = [
-  { id: "created-extra-1", title: "Ciclo de cine comunitario", date: "2026-04-10", hora_inicio: "18:00", hora_termino: "20:00", place: "Plaza Central", participants: 12, capacity: 20, status: "programada", enrolled: 12, image: "https://images.unsplash.com/photo-1505685296765-3a2736de412f?auto=format&fit=crop&w=1200&q=80" },
-  { id: "created-extra-2", title: "Clínica de primer auxilio", date: "2026-04-18", hora_inicio: "09:00", hora_termino: "13:00", place: "Centro de Salud", participants: 8, capacity: 15, status: "programada", enrolled: 8, image: "https://images.unsplash.com/photo-1551601651-2b0b2f14f0a9?auto=format&fit=crop&w=1200&q=80" },
-  { id: "created-extra-3", title: "Taller de huertos urbanos", date: "2026-05-02", hora_inicio: "10:00", hora_termino: "12:30", place: "Parque Norte", participants: 10, capacity: 20, status: "programada", enrolled: 10, image: "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=1200&q=80" },
-  { id: "created-extra-4", title: "Encuentro deportivo juvenil", date: "2026-05-09", hora_inicio: "16:00", hora_termino: "19:00", place: "Estadio Local", participants: 22, capacity: 30, status: "programada", enrolled: 22, image: "https://images.unsplash.com/photo-1534258936925-c58b2b2d9f49?auto=format&fit=crop&w=1200&q=80" },
-  { id: "created-extra-5", title: "Feria de empleo local", date: "2026-05-16", hora_inicio: "11:00", hora_termino: "15:00", place: "Centro OMJ", participants: 30, capacity: 50, status: "programada", enrolled: 30, image: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=80" },
-  { id: "created-extra-6", title: "Laboratorio de robótica", date: "2026-05-23", hora_inicio: "09:00", hora_termino: "12:00", place: "Sala Tech", participants: 6, capacity: 12, status: "programada", enrolled: 6, image: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=80" },
-  { id: "created-extra-7", title: "Tarde de pintura comunitaria", date: "2026-06-01", hora_inicio: "15:00", hora_termino: "18:00", place: "Casa Cultural", participants: 14, capacity: 20, status: "programada", enrolled: 14, image: "https://images.unsplash.com/photo-1504198453319-5ce911bafcde?auto=format&fit=crop&w=1200&q=80" },
-  { id: "created-extra-8", title: "Foro de emprendimiento", date: "2026-06-12", hora_inicio: "09:30", hora_termino: "13:30", place: "Auditorio", participants: 40, capacity: 60, status: "programada", enrolled: 40, image: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1200&q=80" }
-];
+function getActivityState(activity) {
+  const value = activity?.state || activity?.status || "";
+  return String(value).toLowerCase();
+}
+
+function getStateLabel(state) {
+  if (state === "en_curso") return "En curso";
+  if (state === "finalizada") return "Finalizada";
+  if (state === "programada") return "Programada";
+  if (state === "pendiente") return "Pendiente";
+  if (state === "cancelada") return "Cancelada";
+  return "Sin estado";
+}
+
+function getStatePillClass(state) {
+  if (state === "pendiente") return "border-[#f3d39a] bg-[#fff4de] text-[#a86612]";
+  if (state === "programada") return "border-[#bfe4cd] bg-[#e7f5ec] text-[#177945]";
+  if (state === "en_curso") return "border-[#bfd9f5] bg-[#e9f3ff] text-[#1d4f91]";
+  if (state === "finalizada") return "border-[#d5dae1] bg-[#f1f3f5] text-[#475467]";
+  if (state === "cancelada") return "border-[#f1c8be] bg-[#fff1ed] text-[#8a3b2a]";
+  return "border-[#d8e6dd] bg-white text-[#496053]";
+}
 
 function PaginationFooter({ currentPage, totalPages, onPageChange, start = 1, end = 0, total = 0 }) {
   if (totalPages <= 1) return null;
@@ -176,7 +169,7 @@ export default function MyActivities() {
   const [completed, setCompleted] = useState([]);
   const [createdPage, setCreatedPage] = useState(1);
   const [completedPage, setCompletedPage] = useState(1);
-  const [createdFilter, setCreatedFilter] = useState("todos");
+  const [createdFilter, setCreatedFilter] = useState("all");
   const [completedFilter, setCompletedFilter] = useState("todas");
   const ITEMS_PER_PAGE = 5;
 
@@ -188,24 +181,8 @@ export default function MyActivities() {
       const createdIncoming = Array.isArray(activitiesData.created) ? activitiesData.created.slice() : [];
       const completedIncoming = Array.isArray(activitiesData.completed) ? activitiesData.completed.slice() : [];
 
-      const demoPics = [
-        "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=1200&q=80",
-        "https://images.unsplash.com/photo-1508700929628-666bc8bd84ea?auto=format&fit=crop&w=1200&q=80",
-        "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1200&q=80",
-        "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=1200&q=80"
-      ];
-
-      function pick(a) {
-        if (!a) return demoPics[0];
-        const i = (a.title?.length || 1) % demoPics.length;
-        return demoPics[i];
-      }
-
-      const createdWithImages = [...createdIncoming, ...EXTRA_CREATED_ACTIVITIES].map(a => ({ ...a, image: a.image || pick(a) }));
-      const completedWithImages = [...completedIncoming, ...EXTRA_COMPLETED_ACTIVITIES].map(a => ({ ...a, image: a.image || pick(a) }));
-
-      setCreated(createdWithImages);
-      setCompleted(completedWithImages);
+      setCreated(createdIncoming);
+      setCompleted(completedIncoming);
       setLoading(false);
     });
 
@@ -217,12 +194,15 @@ export default function MyActivities() {
   // Filtrado y sorting creadas
   const filteredCreated = useMemo(() => {
     let filtered = [...created];
-    if (createdFilter === "activas") {
-      filtered = filtered.filter(a => a.participants < a.capacity);
-    } else if (createdFilter === "llenas") {
-      filtered = filtered.filter(a => a.participants >= a.capacity);
+    if (createdFilter !== "all") {
+      filtered = filtered.filter(a => getActivityState(a) === createdFilter);
     }
-    return filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    return filtered.sort((a, b) => {
+      const dateA = parseDateForChile(a.date);
+      const dateB = parseDateForChile(b.date);
+      return (dateA?.getTime() || 0) - (dateB?.getTime() || 0);
+    });
   }, [created, createdFilter]);
 
   // Sorting completadas
@@ -231,24 +211,30 @@ export default function MyActivities() {
     const now = new Date();
     if (completedFilter === "ultimos-30") {
       filtered = filtered.filter(item => {
-        const date = new Date(item.date);
+        const date = parseDateForChile(item.date);
+        if (!date) return false;
         const diffDays = (now - date) / (1000 * 60 * 60 * 24);
         return diffDays <= 30;
       });
     } else if (completedFilter === "anteriores") {
       filtered = filtered.filter(item => {
-        const date = new Date(item.date);
+        const date = parseDateForChile(item.date);
+        if (!date) return false;
         const diffDays = (now - date) / (1000 * 60 * 60 * 24);
         return diffDays > 30;
       });
     }
-    return filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+    return filtered.sort((a, b) => {
+      const dateA = parseDateForChile(a.date);
+      const dateB = parseDateForChile(b.date);
+      return (dateB?.getTime() || 0) - (dateA?.getTime() || 0);
+    });
   }, [completed, completedFilter]);
 
   const participationStats = useMemo(() => {
     const totalCreated = created.length;
-    const totalParticipants = created.reduce((acc, item) => acc + Number(item.participants || 0), 0);
-    const totalCapacity = created.reduce((acc, item) => acc + Number(item.capacity || 0), 0);
+    const totalParticipants = created.reduce((acc, item) => acc + Number(item.participants ?? item.enrolled ?? item.inscritos ?? 0), 0);
+    const totalCapacity = created.reduce((acc, item) => acc + Number(item.capacity ?? item.max_participantes ?? 0), 0);
     const occupancy = totalCapacity > 0 ? Math.round((totalParticipants / totalCapacity) * 100) : 0;
     const avgParticipants = totalCreated > 0 ? Math.round(totalParticipants / totalCreated) : 0;
 
@@ -309,18 +295,25 @@ export default function MyActivities() {
       <section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-bg)] p-5 shadow-sm">
         <div className="mb-4 flex items-center justify-between border-b border-[var(--panel-border)] pb-3 ">
           <h2 className="m-0 text-[1.08rem] font-semibold text-[var(--text)]">Mis actividades activas</h2>
-          <select 
-            value={createdFilter} 
-            onChange={e => {
-              setCreatedFilter(e.target.value);
-              setCreatedPage(1);
-            }}
-            className="hover:cursor-pointer w-full sm:w-[210px] rounded-sm border border-[var(--panel-border)] bg-[var(--panel-bg)] px-3 py-1.5 text-[0.9rem] font-medium text-[var(--text)] outline-none transition-colors focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20"
-          >
-            <option value="todos">Todas</option>
-            <option value="activas">Con cupos disponibles</option>
-            <option value="llenas">Llenas</option>
-          </select>
+        </div>
+        <div className="mb-4 flex flex-wrap gap-2">
+          {STATUS_FILTERS.map(filter => {
+            const isActive = createdFilter === filter.value;
+
+            return (
+              <button
+                key={filter.value}
+                type="button"
+                onClick={() => {
+                  setCreatedFilter(filter.value);
+                  setCreatedPage(1);
+                }}
+                className={`rounded-full border px-3 py-1.5 text-[0.8rem] font-semibold transition-colors ${filter.className} ${isActive ? "ring-2 ring-[var(--primary)]/35" : "hover:opacity-90"}`}
+              >
+                {filter.label}
+              </button>
+            );
+          })}
         </div>
         {loading ? (
           <div className="space-y-3">
@@ -406,8 +399,12 @@ export default function MyActivities() {
                           <td className="border-b border-[#d8e6dd] px-3 py-3">
                             <p className="m-0 text-[0.9rem] text-[var(--text)]">{activity.title}</p>
                           </td>
-                          <td className="border-b border-[#d8e6dd] px-3 py-3 text-[var(--text)]">{(activity.participants ?? 0)}/{activity.capacity ?? "-"}</td>
-                          <td className="border-b border-[#d8e6dd] px-3 py-3 text-[var(--text)]">Finalizado</td>
+                          <td className="border-b border-[#d8e6dd] px-3 py-3 text-[var(--text)]">{(activity.participants ?? activity.enrolled ?? 0)}/{activity.capacity ?? "-"}</td>
+                          <td className="border-b border-[#d8e6dd] px-3 py-3 text-[var(--text)]">
+                            <span className={`inline-flex rounded-full border px-2.5 py-1 text-[0.75rem] font-semibold ${getStatePillClass(getActivityState(activity))}`}>
+                              {getStateLabel(getActivityState(activity))}
+                            </span>
+                          </td>
                           <td className="border-b border-[#d8e6dd] px-3 py-3">
                             <div className="inline-flex items-center gap-0.5">
                               {Array.from({ length: 5 }).map((_, index) => (

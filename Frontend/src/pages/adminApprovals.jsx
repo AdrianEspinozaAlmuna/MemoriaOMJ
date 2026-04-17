@@ -1,7 +1,9 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { CalendarDays, Clock3, ListChecks, MapPin, UserRound } from "lucide-react";
 import Modal from "../components/Modal";
 import ActivityCard from "../components/ActivityCard";
+import { getAdminActivities, reviewActivity } from "../services/userViewsService";
+import { formatDateForChile } from "../utils/chileDate";
 
 function MetaIcon({ name, className = "h-4 w-4" }) {
 	if (name === "user") {
@@ -23,66 +25,64 @@ function MetaIcon({ name, className = "h-4 w-4" }) {
 	return <ListChecks aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
 }
 
-const approvals = [
-	{
-		id: "ap-001",
-		title: "Taller de Voguing",
-		description: "Aprende esta forma de baile urbano originada en la cultura ballroom.",
-		by: "Ana Martinez",
-		type: "Baile Urbano",
-		place: "Sala de Danza Principal",
-		date: "2026-04-19",
-		time: "16:00",
-		capacity: 20,
-		enrolled: 14,
-		status: "Pendiente"
-	},
-	{
-		id: "ap-002",
-		title: "Merengue Dominicano",
-		description: "Taller intensivo de merengue dominicano.",
-		by: "Pedro Soto",
-		type: "Baile Latino",
-		place: "Sala de Danza Secundaria",
-		date: "2026-04-21",
-		time: "14:00",
-		capacity: 30,
-		enrolled: 18,
-		status: "Pendiente"
-	},
-	{
-		id: "ap-003",
-		title: "Laboratorio de Podcast",
-		description: "Actividad ya revisada por el equipo de administracion.",
-		by: "Sofia Munoz",
-		type: "Cultural",
-		place: "Sala Multimedia",
-		date: "2026-04-26",
-		time: "11:30",
-		capacity: 24,
-		enrolled: 20,
-		status: "Aprobada"
-	}
-];
+function getStatusKey(item) {
+	return String(item?.estado || item?.status || "").toLowerCase();
+}
+
+function getStatusLabel(item) {
+	const statusKey = getStatusKey(item);
+	if (statusKey === "pendiente") return "Pendiente";
+	if (statusKey === "aprobada") return "Aprobada";
+	if (statusKey === "rechazada" || statusKey === "cancelada") return "Rechazada";
+	return item?.status || item?.estado || "Pendiente";
+}
 
 export default function AdminApprovals() {
-	const [items, setItems] = useState(approvals);
+	const [items, setItems] = useState([]);
 	const [activeItem, setActiveItem] = useState(null);
 	const [modalOpen, setModalOpen] = useState(false);
 	const [rejecting, setRejecting] = useState(false);
 	const [rejectReason, setRejectReason] = useState("");
 	const [rejectError, setRejectError] = useState("");
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState("");
+	const [actionMessage, setActionMessage] = useState("");
+
+	useEffect(() => {
+		let mounted = true;
+
+		async function loadPendingApprovals() {
+			setLoading(true);
+			setError("");
+			const data = await getAdminActivities({ approved: false, estado: "pendiente" });
+
+			if (!mounted) return;
+			setItems(Array.isArray(data) ? data : []);
+			setLoading(false);
+		}
+
+		loadPendingApprovals().catch(() => {
+			if (!mounted) return;
+			setItems([]);
+			setError("No se pudieron cargar las aprobaciones pendientes.");
+			setLoading(false);
+		});
+
+		return () => {
+			mounted = false;
+		};
+	}, []);
 
 	const counters = useMemo(() => {
 		return {
-			Pendiente: items.filter(item => item.status === "Pendiente").length,
-			Aprobada: items.filter(item => item.status === "Aprobada").length,
-			Rechazada: items.filter(item => item.status === "Rechazada").length
+			Pendiente: items.filter(item => getStatusKey(item) === "pendiente").length,
+			Aprobada: items.filter(item => getStatusKey(item) === "aprobada").length,
+			Rechazada: items.filter(item => ["rechazada", "cancelada"].includes(getStatusKey(item))).length
 		};
 	}, [items]);
 
 	const filteredItems = useMemo(() => {
-		return items.filter(item => item.status === "Pendiente");
+		return items.filter(item => getStatusKey(item) === "pendiente");
 	}, [items]);
 
 	function openItemModal(item) {
@@ -101,14 +101,17 @@ export default function AdminApprovals() {
 		setRejectError("");
 	}
 
-	function handleApprove() {
+	async function handleApprove() {
 		if (!activeItem) return;
-		setItems(previous =>
-			previous.map(item => {
-				if (item.id !== activeItem.id) return item;
-				return { ...item, status: "Aprobada" };
-			})
-		);
+
+		const response = await reviewActivity(activeItem.id, { action: "approve" });
+		if (!response.ok) {
+			setRejectError(response.message || "No se pudo aprobar la actividad.");
+			return;
+		}
+
+		setItems(previous => previous.filter(item => item.id !== activeItem.id));
+		setActionMessage("Actividad aprobada correctamente. Ya aparece en Actividades disponibles.");
 		closeItemModal();
 	}
 
@@ -118,7 +121,7 @@ export default function AdminApprovals() {
 		setRejectError("");
 	}
 
-	function confirmReject() {
+	async function confirmReject() {
 		if (!rejectReason.trim()) {
 			setRejectError("Debes indicar un motivo de rechazo.");
 			return;
@@ -126,12 +129,18 @@ export default function AdminApprovals() {
 
 		if (!activeItem) return;
 
-		setItems(previous =>
-			previous.map(item => {
-				if (item.id !== activeItem.id) return item;
-				return { ...item, status: "Rechazado", reason: rejectReason.trim() };
-			})
-		);
+		const response = await reviewActivity(activeItem.id, {
+			action: "reject",
+			reason: rejectReason.trim()
+		});
+
+		if (!response.ok) {
+			setRejectError(response.message || "No se pudo rechazar la actividad.");
+			return;
+		}
+
+		setItems(previous => previous.filter(item => item.id !== activeItem.id));
+		setActionMessage("Actividad rechazada correctamente.");
 
 		closeItemModal();
 	}
@@ -144,25 +153,43 @@ export default function AdminApprovals() {
 				<p className="max-w-3xl text-[0.92rem] text-[var(--text-muted)]">Revisa y aprueba propuestas de actividades antes de publicarlas.</p>
 			</header>
 
+			{actionMessage && (
+				<article className="rounded-xl border border-[#d8e6dd] bg-[#f4fbf6] p-3.5 shadow-sm">
+					<p className="m-0 text-[0.9rem] font-medium text-[#1f5f36]">{actionMessage}</p>
+				</article>
+			)}
+
+			{error && (
+				<article className="rounded-xl border border-[#f0d5cf] bg-[#fff4f2] p-3.5 shadow-sm">
+					<p className="m-0 text-[0.9rem] font-medium text-[#9f3b2d]">{error}</p>
+				</article>
+			)}
+
 			<section className="grid w-full gap-3.5" aria-live="polite">
-				{filteredItems.length === 0 && (
+				{loading && (
+					<article className="rounded-xl border border-[#d8e6dd] bg-white p-5 shadow-sm">
+						<p className="text-[0.92rem] text-[var(--text-muted)]">Cargando aprobaciones pendientes...</p>
+					</article>
+				)}
+
+				{!loading && filteredItems.length === 0 && (
 					<article className="rounded-xl border border-[#d8e6dd] bg-white p-5 shadow-sm">
 						<p className="text-[0.92rem] text-[var(--text-muted)]">No hay actividades pendientes.</p>
 					</article>
 				)}
 
-				{filteredItems.map(item => (
+				{!loading && filteredItems.map(item => (
 					<ActivityCard
 						key={item.id}
 						activity={{
 							...item,
-							manager: item.by,
-							category: item.type,
+							manager: item.manager,
+							category: item.category,
 							date: item.date,
 							time: item.time,
 							capacity: item.capacity,
 							enrolled: item.enrolled,
-							state: item.status,
+							state: getStatusLabel(item),
 							image: item.image
 						}}
 						actionLabel="Revisar"
@@ -234,10 +261,10 @@ export default function AdminApprovals() {
 						<div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
 							<div className="space-y-3 rounded-[12px] border border-[#dce7df] bg-[#fcfefd] p-4">
 								<div className="grid gap-1.5 sm:grid-cols-2">
-									<p className="m-0 text-[0.9rem] text-[var(--text-muted)]"><strong className="text-[var(--text)]">Propuesto por:</strong> {activeItem.by}</p>
-									<p className="m-0 text-[0.9rem] text-[var(--text-muted)]"><strong className="text-[var(--text)]">Tipo:</strong> {activeItem.type}</p>
+										<p className="m-0 text-[0.9rem] text-[var(--text-muted)]"><strong className="text-[var(--text)]">Propuesto por:</strong> {activeItem.manager || "Sin encargado"}</p>
+										<p className="m-0 text-[0.9rem] text-[var(--text-muted)]"><strong className="text-[var(--text)]">Tipo:</strong> {activeItem.category || "General"}</p>
 									<p className="m-0 text-[0.9rem] text-[var(--text-muted)]"><strong className="text-[var(--text)]">Lugar:</strong> {activeItem.place}</p>
-									<p className="m-0 text-[0.9rem] text-[var(--text-muted)]"><strong className="text-[var(--text)]">Fecha:</strong> {activeItem.date}</p>
+									<p className="m-0 text-[0.9rem] text-[var(--text-muted)]"><strong className="text-[var(--text)]">Fecha:</strong> {formatDateForChile(activeItem.date, { day: "2-digit", month: "long", year: "numeric" })}</p>
 									<p className="m-0 text-[0.9rem] text-[var(--text-muted)]"><strong className="text-[var(--text)]">Hora:</strong> {activeItem.time}</p>
 									<p className="m-0 text-[0.9rem] text-[var(--text-muted)]"><strong className="text-[var(--text)]">Cupos:</strong> {activeItem.enrolled}/{activeItem.capacity}</p>
 								</div>
@@ -247,8 +274,8 @@ export default function AdminApprovals() {
 
 							<div className="grid content-start gap-3 rounded-[12px] border border-[#dce7df] bg-[#f8fbf9] px-4 py-4">
 								<p className="m-0 text-[0.78rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Estado actual</p>
-								<span className={`inline-flex w-fit items-center rounded-md px-2.5 py-1 text-[0.82rem] font-semibold ${activeItem.status === "Pendiente" ? "bg-[#fff3de] text-[#b87015]" : activeItem.status === "Aprobada" ? "bg-[#e7f5ec] text-[#177945]" : "bg-[#fee8e5] text-[#ad4334]"}`}>
-									{activeItem.status}
+								<span className="inline-flex w-fit items-center rounded-md bg-[#fff3de] px-2.5 py-1 text-[0.82rem] font-semibold text-[#b87015]">
+									{getStatusLabel(activeItem)}
 								</span>
 								<p className="m-0 text-[0.88rem] text-[var(--text-muted)]">Esta revisión impacta directamente en la publicación de la actividad dentro del calendario del sistema.</p>
 								<div className="grid gap-2 rounded-[12px] border border-[#dce7df] bg-white p-3">

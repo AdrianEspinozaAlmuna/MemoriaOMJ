@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, ChevronLeft, ChevronRight, Clock3, LayoutGrid, MapPin, Rows3, UserRound, Users } from "lucide-react";
 import Modal from "./Modal";
+import { parseDateForChile } from "../utils/chileDate";
 
 // Demo images fallback (used when activity has no image)
 const DEMO_PICS = [
@@ -47,8 +48,12 @@ function extractTimeLabel(activity) {
   if (activity.time) return activity.time;
   if (!activity.date) return "Sin hora";
 
-  const parsedDate = new Date(activity.date);
-  if (Number.isNaN(parsedDate.getTime())) return "Sin hora";
+  if (typeof activity.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(activity.date)) {
+    return "Sin hora";
+  }
+
+  const parsedDate = parseDateForChile(activity.date);
+  if (!parsedDate) return "Sin hora";
 
   const hasExplicitTime = parsedDate.getHours() !== 0 || parsedDate.getMinutes() !== 0;
   if (!hasExplicitTime) return "Sin hora";

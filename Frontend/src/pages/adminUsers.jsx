@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Pencil, ShieldCheck, UserCheck, UserPlus, UserRoundPlus, Users } from "lucide-react";
 import Modal from "../components/Modal";
+import { formatDateForChile } from "../utils/chileDate";
 
 const initialUsers = [
 	{ id: 1, nombre: "Camila", apellido: "Torres", rut: "12345678-9", mail: "camila@email.cl", telefono: "987654321", estado: true, rol: "participante", fechaRegistro: "2025-04-10" },
@@ -299,7 +300,7 @@ export default function AdminUsers() {
 									<td className="border-b border-[#d8e6dd] px-3 py-3 text-[var(--text)]">{user.rut}</td>
 									<td className="border-b border-[#d8e6dd] px-3 py-3 text-[var(--text)]">{user.mail}</td>
 									<td className="border-b border-[#d8e6dd] px-3 py-3 text-[var(--text)]">{user.telefono || "-"}</td>
-									<td className="border-b border-[#d8e6dd] px-3 py-3 text-[var(--text)]">{user.fechaRegistro}</td>
+									<td className="border-b border-[#d8e6dd] px-3 py-3 text-[var(--text)]">{formatDateForChile(user.fechaRegistro, { day: "2-digit", month: "short", year: "numeric" })}</td>
 									<td className="border-b border-[#d8e6dd] px-3 py-3">
 										<div className="flex flex-wrap gap-2">
 											<button type="button" className="inline-flex h-[32px] w-[32px] items-center justify-center rounded-sm  bg-[var(--primary)] text-white transition-colors hover:bg-[var(--primary-strong)]" onClick={() => openEditModal(user)} aria-label="Editar usuario">

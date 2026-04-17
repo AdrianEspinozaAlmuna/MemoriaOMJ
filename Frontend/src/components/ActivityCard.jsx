@@ -2,14 +2,10 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { CalendarDays, Clock3, MapPin, UserRound, Users } from "lucide-react";
 import { ArrowRight } from "lucide-react";
+import { formatDateForChile, parseDateForChile } from "../utils/chileDate";
 
 function formatDate(dateValue) {
-  if (!dateValue) return "Fecha por confirmar";
-
-  const parsed = new Date(dateValue);
-  if (Number.isNaN(parsed.getTime())) return "Fecha por confirmar";
-
-  return new Date(dateValue).toLocaleDateString("es-CL", {
+  return formatDateForChile(dateValue, {
     day: "2-digit",
     month: "short",
     year: "numeric"
@@ -20,8 +16,8 @@ function formatTime(activity) {
   if (activity.time) return activity.time;
   if (!activity.date) return "Hora por confirmar";
 
-  const parsedDate = new Date(activity.date);
-  if (Number.isNaN(parsedDate.getTime())) return "Hora por confirmar";
+  const parsedDate = parseDateForChile(activity.date);
+  if (!parsedDate) return "Hora por confirmar";
 
   const hasExplicitTime = parsedDate.getHours() !== 0 || parsedDate.getMinutes() !== 0;
   if (!hasExplicitTime) return "Hora por confirmar";
@@ -73,6 +69,36 @@ function getStatus(activity) {
   return "Activo";
 }
 
+function getStatusClasses(activity) {
+  const status = String(activity.state || activity.status || "").toLowerCase();
+
+  if (status === "pendiente") {
+    return "bg-[#fff4de] text-[#a86612]";
+  }
+
+  if (status === "programada") {
+    return "bg-[#e7f5ec] text-[#177945]";
+  }
+
+  if (status === "en_curso") {
+    return "bg-[#e9f3ff] text-[#1d4f91]";
+  }
+
+  if (status === "finalizada") {
+    return "bg-[#f1f3f5] text-[#475467]";
+  }
+
+  if (status === "cancelada") {
+    return "bg-[#fff1ed] text-[#8a3b2a]";
+  }
+
+  if (status === "inscrito") {
+    return "bg-[#e8f5ff] text-[#1f5f8b]";
+  }
+
+  return "bg-[var(--primary)]/10 text-[var(--primary-strong)]";
+}
+
 function getTopLabel(activity) {
   if (activity.category) return activity.category;
   if (activity.type) return activity.type;
@@ -109,7 +135,7 @@ function CardBody({ activity, actionLabel }) {
               </p>
             </div>
 
-            <span className="inline-flex shrink-0 items-center rounded-md bg-[var(--primary)]/10 px-3 py-1 text-[0.72rem] font-semibold text-[var(--primary-strong)]">
+            <span className={`inline-flex shrink-0 items-center rounded-md px-3 py-1 text-[0.72rem] font-semibold ${getStatusClasses(activity)}`}>
               {getStatus(activity)}
             </span>
           </div>

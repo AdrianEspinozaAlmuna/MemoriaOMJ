@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 const userRoutes = require("./routes/userRoutes");
+const activityRoutes = require("./routes/activityRoutes");
 const { prisma } = require("./prisma/client");
 
 const app = express();
@@ -9,6 +10,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/api/users", userRoutes);
+app.use("/api/activities", activityRoutes);
 
 app.get("/api/health", async (req, res) => {
   // prueba simple de conexión a la BD

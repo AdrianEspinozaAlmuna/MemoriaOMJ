@@ -139,18 +139,22 @@ export default function UserCalendar() {
 
         {loading ? (
           <div className="grid min-h-[220px] place-items-center rounded-lg border border-[#d8e6dd] bg-white font-medium text-[var(--text-muted)]">Cargando calendario...</div>
-        ) : filteredActivities.length === 0 ? (
-          <div className="grid min-h-[220px] place-items-center rounded-lg border border-dashed border-[#d8e6dd] bg-[#f9fbfa] px-5 text-center font-medium text-[var(--text-muted)]">
-            No hay actividades con los filtros seleccionados. Prueba con otra categoria o estado.
-          </div>
         ) : (
-          <Calendar
-            activities={filteredActivities}
-            viewMode={viewMode}
-            monthDate={monthDate}
-            onActivityClick={activity => navigate(`/user/actividad/${activity.id}`)}
-            createActivityPath="/user/crear-actividad"
-          />
+          <>
+            {filteredActivities.length === 0 && (
+              <div className="rounded-lg border border-dashed border-[#d8e6dd] bg-[#f9fbfa] px-5 py-3 text-center text-[0.88rem] font-medium text-[var(--text-muted)]">
+                No hay actividades con los filtros seleccionados. Puedes cambiar filtros o crear una nueva actividad.
+              </div>
+            )}
+
+            <Calendar
+              activities={filteredActivities}
+              viewMode={viewMode}
+              monthDate={monthDate}
+              onActivityClick={activity => navigate(`/user/actividad/${activity.id}`)}
+              createActivityPath="/user/crear-actividad"
+            />
+          </>
         )}
       </section>
     </section>

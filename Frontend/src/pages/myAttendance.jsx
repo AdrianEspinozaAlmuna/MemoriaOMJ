@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { CalendarDays, CheckCircle2, Filter, Search, Star, TrendingUp, UserRound, XCircle } from "lucide-react";
 import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, PieChart, Pie, Cell } from "recharts";
 import { getAttendanceData } from "../services/userViewsService";
+import { formatDateForChile } from "../utils/chileDate";
 
 function parseMonthlyData(data = "") {
   const match = String(data).match(/(\d+)\/(\d+)\s*\((\d+)%\)/);
@@ -561,7 +562,7 @@ export default function MyAttendance() {
                     </div>
                   </td>
                   
-                  <td className="border-b border-[#d8e6dd] px-3 py-3 text-[var(--text)]">{new Date(row.date).toLocaleDateString("es-CL")}</td>
+                  <td className="border-b border-[#d8e6dd] px-3 py-3 text-[var(--text)]">{formatDateForChile(row.date, { day: "2-digit", month: "2-digit", year: "numeric" })}</td>
                   <td className="border-b border-[#d8e6dd] px-3 py-3 text-[var(--text)]">{row.time || "-"}</td>
                   <td className="border-b border-[#d8e6dd] px-3 py-3 text-[var(--text)]">{row.place || "-"}</td>
                   <td className="border-b border-[#d8e6dd] px-3 py-3">
