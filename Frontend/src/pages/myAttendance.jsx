@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { CalendarDays, CheckCircle2, Filter, Search, Star, TrendingUp, UserRound, XCircle } from "lucide-react";
 import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, PieChart, Pie, Cell } from "recharts";
 import { getAttendanceData } from "../services/userViewsService";
+import LoadingState from "../components/LoadingState";
 import { formatDateForChile } from "../utils/chileDate";
 
 function parseMonthlyData(data = "") {
@@ -290,11 +291,11 @@ export default function MyAttendance() {
       <section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-bg)] p-5 shadow-sm">
         <h2 className="mb-4 mt-0 text-[1.08rem] font-semibold text-[var(--text)]">Indicadores principales</h2>
         {loading ? (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <article key={`stats-skeleton-${index}`} className="min-h-[100px] rounded-xl border border-[var(--panel-border)] bg-[var(--gray-soft)]" />
-            ))}
-          </div>
+          <LoadingState
+            title="Cargando indicadores"
+            description="Estamos calculando tus métricas de asistencia."
+            minHeightClass="min-h-[180px]"
+          />
         ) : (
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
             {attendanceStatCards.map(item => (
@@ -426,11 +427,11 @@ export default function MyAttendance() {
         </div>
 
         {loading ? (
-          <div className="space-y-3">
-            {Array.from({ length: 3 }).map((_, index) => (
-              <article key={`monthly-skeleton-${index}`} className="min-h-[64px] rounded-md border border-[#d8e6dd] bg-[#f3f4f6]" />
-            ))}
-          </div>
+          <LoadingState
+            title="Cargando asistencia mensual"
+            description="Estamos trayendo tu desglose mensual de asistencia."
+            minHeightClass="min-h-[170px]"
+          />
         ) : filteredMonthlyRows.length === 0 ? (
           <div className="grid min-h-[150px] place-items-center rounded-md border border-dashed border-[#d8e6dd] bg-[var(--gray-soft)] px-5 text-center">
             <p className="m-0 max-w-[48ch] text-[0.92rem] text-[var(--text-muted)]">Aún no hay datos mensuales de asistencia para mostrar.</p>
@@ -512,11 +513,11 @@ export default function MyAttendance() {
         </div>
 
         {loading ? (
-          <div className="space-y-2">
-            {Array.from({ length: 5 }).map((_, index) => (
-              <div key={`history-skeleton-${index}`} className="min-h-[44px] rounded-md border border-[#d8e6dd] bg-[#f3f4f6]" />
-            ))}
-          </div>
+          <LoadingState
+            title="Cargando historial"
+            description="Estamos cargando el detalle de tus asistencias registradas."
+            minHeightClass="min-h-[170px]"
+          />
         ) : filteredHistory.length === 0 ? (
           <div className="grid min-h-[150px] place-items-center rounded-md border border-dashed border-[#d8e6dd] bg-[var(--gray-soft)] px-5 text-center">
             <p className="m-0 max-w-[50ch] text-[0.92rem] text-[var(--text-muted)]">Todavía no hay asistencias registradas en tu historial.</p>

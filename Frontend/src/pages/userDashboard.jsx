@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { CalendarDays, ListChecks   , ClipboardCheck , Plus } from "lucide-react";
 import ActivityCard from "../components/ActivityCard";
+import LoadingState from "../components/LoadingState";
 import { getDashboardData } from "../services/userViewsService";
 import { parseDateForChile } from "../utils/chileDate";
 
@@ -142,7 +143,13 @@ export default function UserDashboard() {
         {/* Próximas Actividades */}
         <article className="rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-6 shadow-sm">
           <h2 className="m-0 mb-4 text-[1rem] font-semibold text-[var(--text)]">Próximas actividades</h2>
-          {nextFiveUpcoming.length === 0 && !loading ? (
+          {loading ? (
+            <LoadingState
+              title="Cargando actividades"
+              description="Estamos buscando tus próximas actividades."
+              minHeightClass="min-h-[180px]"
+            />
+          ) : nextFiveUpcoming.length === 0 ? (
             <div className="grid min-h-[140px] place-items-center rounded-lg border border-dashed border-[#e0e9e2] bg-[#f9fcfa] text-center">
               <p className="max-w-[44ch] px-4 text-[0.9rem] text-[var(--text-muted)]">Aún no tienes actividades próximas. Explora el calendario para inscribirte en nuevos talleres.</p>
             </div>

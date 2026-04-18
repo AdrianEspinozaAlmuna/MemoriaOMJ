@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { CalendarDays, Clock3, ListChecks, MapPin, UserRound } from "lucide-react";
 import Modal from "../components/Modal";
 import ActivityCard from "../components/ActivityCard";
+import LoadingState from "../components/LoadingState";
 import { getAdminActivities, reviewActivity } from "../services/userViewsService";
 import { formatDateForChile } from "../utils/chileDate";
 
@@ -167,9 +168,11 @@ export default function AdminApprovals() {
 
 			<section className="grid w-full gap-3.5" aria-live="polite">
 				{loading && (
-					<article className="rounded-xl border border-[#d8e6dd] bg-white p-5 shadow-sm">
-						<p className="text-[0.92rem] text-[var(--text-muted)]">Cargando aprobaciones pendientes...</p>
-					</article>
+					<LoadingState
+						title="Cargando aprobaciones"
+						description="Estamos consultando propuestas pendientes de revisión."
+						minHeightClass="min-h-[180px]"
+					/>
 				)}
 
 				{!loading && filteredItems.length === 0 && (

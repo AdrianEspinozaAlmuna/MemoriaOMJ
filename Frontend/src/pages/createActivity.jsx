@@ -22,10 +22,16 @@ const initialForm = {
   chat_bidireccional: true
 };
 
+function formatConflictRange(conflict) {
+  const start = conflict?.hora_inicio || "--:--";
+  const end = conflict?.hora_termino || "--:--";
+  return `${start} - ${end}`;
+}
+
 export default function CreateActivity() {
   const [form, setForm] = useState(initialForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [feedback, setFeedback] = useState({ type: "", message: "" });
+  const [feedback, setFeedback] = useState({ type: "", title: "", message: "", hint: "" });
 
   function handleChange(event) {
     const { name, value, type, checked } = event.target;
@@ -34,21 +40,36 @@ export default function CreateActivity() {
 
   async function handleSubmit(event) {
     event.preventDefault();
-    setFeedback({ type: "", message: "" });
+    setFeedback({ type: "", title: "", message: "", hint: "" });
 
     if (!form.title.trim() || !form.description.trim() || !form.date || !form.hora_inicio || !form.hora_termino) {
-      setFeedback({ type: "error", message: "Completa todos los campos requeridos." });
+      setFeedback({
+        type: "error",
+        title: "Faltan datos requeridos",
+        message: "Completa todos los campos obligatorios para continuar.",
+        hint: "Revisa titulo, descripcion, fecha y bloque horario."
+      });
       return;
     }
 
     if (form.hora_termino <= form.hora_inicio) {
-      setFeedback({ type: "error", message: "La hora de termino debe ser mayor a la hora de inicio." });
+      setFeedback({
+        type: "error",
+        title: "Rango horario invalido",
+        message: "La hora de termino debe ser mayor a la hora de inicio.",
+        hint: "Ajusta el rango para evitar solapamientos de tiempo."
+      });
       return;
     }
 
     const maxParticipants = Number(form.max_participantes);
     if (!Number.isFinite(maxParticipants) || maxParticipants < 1) {
-      setFeedback({ type: "error", message: "Ingresa un maximo de participantes valido." });
+      setFeedback({
+        type: "error",
+        title: "Capacidad invalida",
+        message: "Ingresa un maximo de participantes valido.",
+        hint: "Debe ser un numero mayor a 0."
+      });
       return;
     }
 
@@ -69,13 +90,37 @@ export default function CreateActivity() {
       });
 
       if (response?.ok) {
-        setFeedback({ type: "success", message: "Tu propuesta fue enviada. El equipo OMJ la revisara pronto." });
+        setFeedback({
+          type: "success",
+          title: "Propuesta enviada",
+          message: "Tu actividad fue registrada correctamente y quedo en revision.",
+          hint: "El equipo OMJ te notificara cuando cambie su estado."
+        });
         setForm(initialForm);
+      } else if (response?.status === 409 || response?.conflict) {
+        const conflictName = response?.conflict?.titulo || "otra actividad";
+        const conflictRange = formatConflictRange(response?.conflict);
+        setFeedback({
+          type: "conflict",
+          title: "Tope de horario detectado",
+          message: `La sala seleccionada ya esta ocupada en ese horario (${conflictRange}) por ${conflictName}.`,
+          hint: "Prueba con otra sala o ajusta el tramo horario."
+        });
       } else {
-        setFeedback({ type: "error", message: "No se pudo enviar la propuesta. Intenta nuevamente." });
+        setFeedback({
+          type: "error",
+          title: "No se pudo enviar la propuesta",
+          message: response?.message || "No se pudo enviar la propuesta. Intenta nuevamente.",
+          hint: "Si el problema persiste, intenta nuevamente en unos minutos."
+        });
       }
     } catch (_) {
-      setFeedback({ type: "error", message: "Ocurrio un error inesperado. Intenta nuevamente." });
+      setFeedback({
+        type: "error",
+        title: "Error inesperado",
+        message: "Ocurrio un error inesperado. Intenta nuevamente.",
+        hint: "Verifica tu conexion y vuelve a intentar."
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -101,7 +146,7 @@ export default function CreateActivity() {
               type="text"
               maxLength={90}
               placeholder="Ej: Taller de fotografia urbana"
-              className="rounded-lg border border-[#d8e6dd] bg-[var(--panel-bg)] px-3.5 py-2.5 text-[0.92rem] text-[var(--text)] outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[#05a63d]/20 hover:cursor-pointer"
+              className="rounded-sm border border-[#d8e6dd] bg-[var(--panel-bg)] px-3.5 py-2.5 text-[0.92rem] text-[var(--text)] outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[#05a63d]/20"
               value={form.title}
               onChange={handleChange}
               required
@@ -118,7 +163,7 @@ export default function CreateActivity() {
               rows={5}
               maxLength={500}
               placeholder="Describe objetivo, publico y dinamica de la actividad."
-              className="resize-y rounded-lg border border-[#d8e6dd] bg-[var(--panel-bg)] px-3.5 py-2.5 text-[0.92rem] text-[var(--text)] outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[#05a63d]/20 hover:cursor-pointer"
+              className="resize-y rounded-sm border border-[#d8e6dd] bg-[var(--panel-bg)] px-3.5 py-2.5 text-[0.92rem] text-[var(--text)] outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[#05a63d]/20"
               value={form.description}
               onChange={handleChange}
               required
@@ -230,14 +275,36 @@ export default function CreateActivity() {
 
           {feedback.message && (
             <div
-              className={`rounded-lg border px-3.5 py-2.5 text-[0.86rem] font-medium ${
+              className={`rounded-xl border px-4 py-3 shadow-sm ${
                 feedback.type === "success"
-                  ? "border-[#badcc9] bg-[#ebf7f0] text-[#1f6a42]"
-                  : "border-[#f0c9c2] bg-[#fff1ef] text-[#8b2f22]"
+                  ? "border-[#b8dfc7] bg-[linear-gradient(180deg,#f3fbf6,#e9f6ef)] text-[#1f6a42]"
+                  : feedback.type === "conflict"
+                    ? "border-[#f0d9b8] bg-[linear-gradient(180deg,#fff9ef,#fff4df)] text-[#8a5817]"
+                    : "border-[#efcdc7] bg-[linear-gradient(180deg,#fff6f4,#fff0ed)] text-[#8b2f22]"
               }`}
               role="status"
             >
-              {feedback.message}
+              <div className="grid gap-2">
+                <div className="flex items-start gap-3">
+                  <span
+                    className={`mt-[2px] inline-flex h-5 w-5 flex-shrink-0 rounded-full ${
+                      feedback.type === "success"
+                        ? "bg-[#2ca664]"
+                        : feedback.type === "conflict"
+                          ? "bg-[#d2902a]"
+                          : "bg-[#c94a3a]"
+                    }`}
+                    aria-hidden="true"
+                  />
+                  <div className="grid gap-0.5">
+                    <p className="m-0 text-[0.88rem] font-semibold tracking-[0.01em]">{feedback.title}</p>
+                    <p className="m-0 text-[0.85rem] font-medium leading-relaxed">{feedback.message}</p>
+                  </div>
+                </div>
+                {feedback.hint && (
+                  <p className="m-0 border-t border-current/15 pt-2 text-[0.78rem] font-medium opacity-85">{feedback.hint}</p>
+                )}
+              </div>
             </div>
           )}
 

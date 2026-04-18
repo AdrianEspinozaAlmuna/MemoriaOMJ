@@ -29,6 +29,21 @@ function toTimeLabel(timeValue) {
   return `${hh}:${mm}`;
 }
 
+function hasTimeOverlap({ newStart, newEnd, existingStart, existingEnd }) {
+  const safeNewEnd = newEnd || newStart;
+  const safeExistingEnd = existingEnd || existingStart;
+
+  if (!newStart || !safeNewEnd || !existingStart || !safeExistingEnd) {
+    return false;
+  }
+
+  if (newStart.getTime() === existingStart.getTime()) {
+    return true;
+  }
+
+  return existingStart < safeNewEnd && safeExistingEnd > newStart;
+}
+
 function mapEstadoToUi(estado, membershipRole) {
   if (membershipRole === "participante") return "inscrito";
   if (estado === "pendiente") return "pendiente";
@@ -258,7 +273,51 @@ async function createActivity(req, res) {
     return res.status(400).json({ message: "max_participantes invalido" });
   }
 
+  if (!activityPlace) {
+    return res.status(400).json({ message: "lugar es requerido" });
+  }
+
   try {
+    const sameRoomActivities = await prisma.actividad.findMany({
+      where: {
+        fecha: activityDate,
+        lugar: {
+          equals: activityPlace,
+          mode: "insensitive"
+        },
+        estado: {
+          in: ["pendiente", "programada", "en_curso"]
+        }
+      },
+      select: {
+        id_actividad: true,
+        titulo: true,
+        hora_inicio: true,
+        hora_termino: true
+      }
+    });
+
+    const conflictingActivity = sameRoomActivities.find(existing =>
+      hasTimeOverlap({
+        newStart: startTime,
+        newEnd: endTime,
+        existingStart: existing.hora_inicio,
+        existingEnd: existing.hora_termino
+      })
+    );
+
+    if (conflictingActivity) {
+      return res.status(409).json({
+        message: "Ya existe una actividad en la misma sala y horario.",
+        conflict: {
+          id_actividad: conflictingActivity.id_actividad,
+          titulo: conflictingActivity.titulo,
+          hora_inicio: toTimeLabel(conflictingActivity.hora_inicio),
+          hora_termino: toTimeLabel(conflictingActivity.hora_termino)
+        }
+      });
+    }
+
     const created = await prisma.$transaction(async tx => {
       const newActivity = await tx.actividad.create({
         data: {

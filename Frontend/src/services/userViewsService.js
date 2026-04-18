@@ -438,13 +438,17 @@ export async function submitActivityProposal(payload) {
     const { data } = await api.post("/activities", payload);
     return {
       ok: true,
+      status: 201,
       message: data?.message || "Propuesta enviada correctamente.",
       proposal: data?.activity || data
     };
   } catch (error) {
+    const responseData = error?.response?.data || {};
     return {
       ok: false,
-      message: error?.response?.data?.message || "No se pudo enviar la propuesta."
+      status: error?.response?.status || null,
+      message: responseData?.message || "No se pudo enviar la propuesta.",
+      conflict: responseData?.conflict || null
     };
   }
 }

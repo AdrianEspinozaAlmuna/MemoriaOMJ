@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import ActivityCard from "../components/ActivityCard";
+import LoadingState from "../components/LoadingState";
 import { getAdminActivities } from "../services/userViewsService";
 
 const ITEMS_PER_PAGE = 15;
@@ -75,9 +76,12 @@ export default function AdminActivities() {
 				)}
 
 				{loading && (
-					<article className="mb-4 rounded-xl border border-[#d8e6dd] bg-white p-5 shadow-sm">
-						<p className="text-[0.92rem] text-[var(--text-muted)]">Cargando actividades disponibles...</p>
-					</article>
+					<LoadingState
+						title="Cargando actividades"
+						description="Estamos consultando el catálogo de actividades disponibles."
+						minHeightClass="min-h-[180px]"
+						className="mb-4"
+					/>
 				)}
 
 				{!loading && pageItems.length === 0 && (

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { BarChart3, CalendarDays, MapPin, Percent, Plus, Star, TrendingUp, Users, UsersRound } from "lucide-react";
 import { getMyActivitiesData } from "../services/userViewsService";
 import ActivityCard from "../components/ActivityCard";
+import LoadingState from "../components/LoadingState";
 import { formatDateForChile, parseDateForChile } from "../utils/chileDate";
 
 function formatDate(dateValue) {
@@ -316,11 +317,11 @@ export default function MyActivities() {
           })}
         </div>
         {loading ? (
-          <div className="space-y-3">
-            {Array.from({ length: 3 }).map((_, index) => (
-              <article key={`created-skeleton-${index}`} className="min-h-[88px] rounded-md border border-[var(--panel-border)] bg-[var(--gray-soft)]" />
-            ))}
-          </div>
+          <LoadingState
+            title="Cargando actividades activas"
+            description="Estamos preparando las actividades que tienes en curso."
+            minHeightClass="min-h-[190px]"
+          />
         ) : (
           <div className="rounded-md p-2.5">
             <div className="space-y-3.5">
@@ -368,11 +369,11 @@ export default function MyActivities() {
           </select>
         </div>
         {loading ? (
-          <div className="space-y-3">
-            {Array.from({ length: 3 }).map((_, index) => (
-              <article key={`completed-skeleton-${index}`} className="min-h-[88px] rounded-md border border-[var(--panel-border)] bg-[var(--gray-soft)]" />
-            ))}
-          </div>
+          <LoadingState
+            title="Cargando actividades finalizadas"
+            description="Estamos consultando tu historial de actividades cerradas."
+            minHeightClass="min-h-[190px]"
+          />
         ) : (
           <div className="rounded-md p-2.5">
             <div className="space-y-3.5">

@@ -122,12 +122,12 @@ export default function ActivityDetail() {
 	const currentName = String(user?.nombre || user?.name || "Tu").toLowerCase();
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState("");
-	const [activity, setActivity] = useState(() => normalizeActivity());
+	const [activity, setActivity] = useState(null);
 	const [isEnrolled, setIsEnrolled] = useState(false);
-	const [enrolledCount, setEnrolledCount] = useState(() => normalizeActivity().enrolled);
+	const [enrolledCount, setEnrolledCount] = useState(0);
 	const [activeParticipantMenu, setActiveParticipantMenu] = useState(null);
-	const [participants, setParticipants] = useState(() => normalizeActivity().participants);
-	const [chatMessages, setChatMessages] = useState(() => normalizeActivity().messages);
+	const [participants, setParticipants] = useState([]);
+	const [chatMessages, setChatMessages] = useState([]);
 	const [enrollmentBusy, setEnrollmentBusy] = useState(false);
 	const [enrollmentMessage, setEnrollmentMessage] = useState("");
 	const [enrollmentError, setEnrollmentError] = useState("");
@@ -151,11 +151,10 @@ export default function ActivityDetail() {
 
 			if (!response.ok) {
 				setError(response.message || "No se pudo cargar el detalle de la actividad.");
-				const fallback = normalizeActivity();
-				setActivity(fallback);
-				setParticipants(fallback.participants);
-				setChatMessages(fallback.messages);
-				setEnrolledCount(fallback.enrolled);
+				setActivity(null);
+				setParticipants([]);
+				setChatMessages([]);
+				setEnrolledCount(0);
 				setIsEnrolled(false);
 				setLoading(false);
 				return;
@@ -197,12 +196,12 @@ export default function ActivityDetail() {
 		return true;
 	}
 
-	const statusBadge = useMemo(() => getStatusBadge(activity.status), [activity.status]);
-	const isFinished = activity.status === "finalizada";
-	const isActivityManager = currentUserId !== null && Number(activity.id_encargado) === currentUserId;
+	const statusBadge = useMemo(() => getStatusBadge(activity?.status), [activity?.status]);
+	const isFinished = activity?.status === "finalizada";
+	const isActivityManager = currentUserId !== null && Number(activity?.id_encargado) === currentUserId;
 	const canManageActivity = role === "admin" || isActivityManager;
-	const canSendChat = canManageActivity || activity.chat_bidireccional;
-	const freeSpots = useMemo(() => Math.max(activity.capacity - enrolledCount, 0), [enrolledCount, activity.capacity]);
+	const canSendChat = canManageActivity || Boolean(activity?.chat_bidireccional);
+	const freeSpots = useMemo(() => Math.max((activity?.capacity ?? 0) - enrolledCount, 0), [enrolledCount, activity?.capacity]);
 	const ratingsTotal = ratingsData.distribution.reduce((acc, item) => acc + item.count, 0);
 	const backTo = location.pathname.startsWith("/admin") ? "/admin/actividades" : "/user/mis-actividades";
 
@@ -256,16 +255,54 @@ export default function ActivityDetail() {
 		setEnrollmentMessage(isEnrolled ? "Inscripción cancelada correctamente." : "Inscrito correctamente en la actividad.");
 	}
 
+	if (loading) {
+		return (
+			<section className="relative animate-[revealUp_0.7s_ease_both]">
+				<div className="max-w-7xl mx-auto px-4 py-6">
+					<article className="rounded-2xl border border-[#d8e6dd] bg-[linear-gradient(180deg,#ffffff,#f7fcf9)] p-7 shadow-sm">
+						<div className="flex flex-col items-center justify-center gap-4 py-4 text-center">
+							<div className="relative inline-flex h-16 w-16 items-center justify-center" aria-hidden="true">
+								<span className="absolute h-16 w-16 rounded-full border-4 border-[#d7e9df]" />
+								<span className="absolute h-16 w-16 animate-spin rounded-full border-4 border-transparent border-t-[var(--primary)] border-r-[var(--primary)]" />
+								<span className="h-6 w-6 rounded-full bg-[var(--primary)]/15" />
+							</div>
+
+							<div className="space-y-1">
+								<p className="m-0 text-[1rem] font-semibold text-[var(--text)]">Cargando actividad</p>
+								<p className="m-0 text-[0.9rem] text-[var(--text-muted)]">Estamos preparando todos los datos del detalle.</p>
+							</div>
+
+							<div className="w-full max-w-[340px] overflow-hidden rounded-full bg-[#e8f1eb]">
+								<div className="h-1.5 w-1/2 animate-pulse rounded-full bg-[var(--primary)]" />
+							</div>
+						</div>
+					</article>
+				</div>
+			</section>
+		);
+	}
+
+	if (!activity) {
+		return (
+			<section className="relative animate-[revealUp_0.7s_ease_both]">
+				<div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+					<article className="rounded-xl border border-[#f0d5cf] bg-[#fff4f2] p-4 shadow-sm">
+						<p className="m-0 text-[0.92rem] font-medium text-[#9f3b2d]">{error || "No se encontró la actividad solicitada."}</p>
+					</article>
+					<div className="pt-2">
+						<Link to={backTo} className="inline-flex items-center gap-2 text-[0.9rem] font-semibold text-[var(--primary)] hover:underline">
+							← Volver
+						</Link>
+					</div>
+				</div>
+			</section>
+		);
+	}
+
 	return (
 		<section className="relative animate-[revealUp_0.7s_ease_both]">
 			<div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
-				{loading && (
-					<article className="rounded-xl border border-[#d8e6dd] bg-white p-5 shadow-sm">
-						<p className="m-0 text-[0.92rem] text-[var(--text-muted)]">Cargando detalle de la actividad...</p>
-					</article>
-				)}
-
-				{error && !loading && (
+				{error && (
 					<article className="rounded-xl border border-[#f0d5cf] bg-[#fff4f2] p-4 shadow-sm">
 						<p className="m-0 text-[0.92rem] font-medium text-[#9f3b2d]">{error}</p>
 					</article>
@@ -460,7 +497,7 @@ export default function ActivityDetail() {
 												<p className="m-0 mt-0.5 text-[0.78rem] text-[var(--text-muted)]">Tu cupo quedó reservado y podrás registrar asistencia al finalizar.</p>
 											</div>
 										)}
-										{isEnrolled && <button type="button" className="w-full rounded-sm border-2 border-[var(--primary-soft)] bg-[white] px-4 py-2.5 text-[0.88rem] font-semibold text-[var(--primary)] transition-all hover:bg-[#ecf7f0]">Marcar asistencia</button>}
+										{isEnrolled && <button type="button" className="w-full rounded-sm border-2 border-[var(--primary)] bg-[var(--primary)] px-4 py-2.5 text-[0.88rem] font-semibold text-[white] transition-all hover:bg-[var(--primary-strong)] hover:border-[var(--primary-strong)]">Marcar asistencia</button>}
 									</>
 								)}
 								</div>

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { CalendarDays, ChevronLeft, ChevronRight, Layers3, ListFilter, Tags } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Calendar from "../components/Calendar";
+import LoadingState from "../components/LoadingState";
 import { getCalendarData } from "../services/userViewsService";
 
 function getMonthLabel(date) {
@@ -138,7 +139,11 @@ export default function UserCalendar() {
         </div>
 
         {loading ? (
-          <div className="grid min-h-[220px] place-items-center rounded-lg border border-[#d8e6dd] bg-white font-medium text-[var(--text-muted)]">Cargando calendario...</div>
+          <LoadingState
+            title="Cargando calendario"
+            description="Estamos trayendo actividades y filtros disponibles."
+            minHeightClass="min-h-[220px]"
+          />
         ) : (
           <>
             {filteredActivities.length === 0 && (
