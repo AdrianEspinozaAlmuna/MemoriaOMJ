@@ -6,6 +6,41 @@ function parseActivityId(value) {
   return Number.isInteger(parsed) ? parsed : null;
 }
 
+function parseUserId(value) {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) ? parsed : null;
+}
+
+async function syncActivityStatuses(db = prisma) {
+  // Usa hora de Chile para asegurar transiciones coherentes con la operación local.
+  await db.$executeRaw`
+    UPDATE actividad
+    SET estado = 'finalizada'::estado_actividad
+    WHERE aprobado = true
+      AND estado IN ('pendiente'::estado_actividad, 'programada'::estado_actividad, 'en_curso'::estado_actividad)
+      AND (fecha + COALESCE(hora_termino, hora_inicio)) <= (CURRENT_TIMESTAMP AT TIME ZONE 'America/Santiago')::timestamp
+  `;
+
+  await db.$executeRaw`
+    UPDATE actividad
+    SET estado = 'en_curso'::estado_actividad
+    WHERE aprobado = true
+      AND estado IN ('pendiente'::estado_actividad, 'programada'::estado_actividad)
+      AND (fecha + hora_inicio) <= (CURRENT_TIMESTAMP AT TIME ZONE 'America/Santiago')::timestamp
+      AND (fecha + COALESCE(hora_termino, hora_inicio)) > (CURRENT_TIMESTAMP AT TIME ZONE 'America/Santiago')::timestamp
+  `;
+
+  await db.$executeRaw`
+    UPDATE actividad
+    SET estado = 'programada'::estado_actividad
+    WHERE aprobado = true
+      AND estado = 'pendiente'::estado_actividad
+      AND (fecha + hora_inicio) > (CURRENT_TIMESTAMP AT TIME ZONE 'America/Santiago')::timestamp
+  `;
+
+  return true;
+}
+
 function timeStringToDate(time) {
   if (!time || typeof time !== "string") return null;
   const normalized = /^\d{2}:\d{2}$/.test(time) ? `${time}:00` : time;
@@ -108,6 +143,8 @@ async function listActivities(req, res) {
   };
 
   try {
+    await syncActivityStatuses();
+
     const items = await prisma.actividad.findMany({
       where,
       orderBy: [{ fecha: "asc" }, { hora_inicio: "asc" }],
@@ -146,6 +183,8 @@ async function listAdminActivities(req, res) {
   };
 
   try {
+    await syncActivityStatuses();
+
     const items = await prisma.actividad.findMany({
       where,
       orderBy: [{ fecha: "asc" }, { hora_inicio: "asc" }],
@@ -176,6 +215,8 @@ async function getActivityById(req, res) {
   }
 
   try {
+    await syncActivityStatuses();
+
     const activity = await prisma.actividad.findUnique({
       where: { id_actividad: idActividad },
       include: {
@@ -214,8 +255,24 @@ async function getActivityById(req, res) {
         id: item.usuario.id_usuario,
         name: `${item.usuario.nombre} ${item.usuario.apellido || ""}`.trim(),
         status: item.asistio ? "Asistencia registrada" : "Confirmado",
-        asistio: item.asistio
+        asistio: item.asistio,
+        valoracion: item.valoracion
       }));
+
+    const ratingValues = participants
+      .map(item => Number(item.valoracion))
+      .filter(value => Number.isInteger(value) && value >= 1 && value <= 5);
+
+    const ratingsDistribution = [5, 4, 3, 2, 1].map(stars => ({
+      stars,
+      count: ratingValues.filter(value => value === stars).length
+    }));
+
+    const ratingsTotal = ratingValues.length;
+    const ratingsAverage =
+      ratingsTotal > 0
+        ? Number((ratingValues.reduce((sum, value) => sum + value, 0) / ratingsTotal).toFixed(1))
+        : 0;
 
     const messages = activity.actividad_mensaje.map(item => ({
       id: item.id_mensaje,
@@ -225,7 +282,16 @@ async function getActivityById(req, res) {
       date: item.fecha
     }));
 
-    return res.json({ ...base, participants, messages });
+    return res.json({
+      ...base,
+      participants,
+      messages,
+      ratings: {
+        average: ratingsAverage,
+        total: ratingsTotal,
+        distribution: ratingsDistribution
+      }
+    });
   } catch (error) {
     return res.status(500).json({ message: "Error obteniendo actividad", detail: error.message });
   }
@@ -375,6 +441,8 @@ async function enrollInActivity(req, res) {
   }
 
   try {
+    await syncActivityStatuses();
+
     const activity = await prisma.actividad.findUnique({
       where: { id_actividad: idActividad },
       select: {
@@ -445,6 +513,21 @@ async function cancelEnrollment(req, res) {
   }
 
   try {
+    await syncActivityStatuses();
+
+    const activity = await prisma.actividad.findUnique({
+      where: { id_actividad: idActividad },
+      select: { id_actividad: true, estado: true }
+    });
+
+    if (!activity) {
+      return res.status(404).json({ message: "Actividad no encontrada" });
+    }
+
+    if (activity.estado === "en_curso") {
+      return res.status(400).json({ message: "No puedes cancelar la inscripción cuando la actividad está en curso" });
+    }
+
     const existing = await prisma.actividad_participantes.findUnique({
       where: {
         id_actividad_id_usuario: {
@@ -470,6 +553,268 @@ async function cancelEnrollment(req, res) {
     return res.json({ ok: true, enrolled: false });
   } catch (error) {
     return res.status(500).json({ message: "Error cancelando inscripcion", detail: error.message });
+  }
+}
+
+async function markMyAttendance(req, res) {
+  const idActividad = parseActivityId(req.params.id_actividad);
+  const idUsuario = getUserIdFromToken(req.user);
+
+  if (!idActividad) {
+    return res.status(400).json({ message: "id_actividad invalido" });
+  }
+
+  if (!idUsuario) {
+    return res.status(403).json({ message: "No se pudo identificar el usuario autenticado" });
+  }
+
+  try {
+    await syncActivityStatuses();
+
+    const activity = await prisma.actividad.findUnique({
+      where: { id_actividad: idActividad },
+      select: { id_actividad: true, estado: true }
+    });
+
+    if (!activity) {
+      return res.status(404).json({ message: "Actividad no encontrada" });
+    }
+
+    if (activity.estado !== "en_curso") {
+      return res.status(400).json({ message: "Solo puedes marcar asistencia cuando la actividad está en curso" });
+    }
+
+    const membership = await prisma.actividad_participantes.findUnique({
+      where: {
+        id_actividad_id_usuario: {
+          id_actividad: idActividad,
+          id_usuario: idUsuario
+        }
+      },
+      select: { rol: true, asistio: true }
+    });
+
+    if (!membership || membership.rol !== "participante") {
+      return res.status(403).json({ message: "Solo participantes inscritos pueden marcar asistencia" });
+    }
+
+    if (membership.asistio) {
+      return res.json({ ok: true, message: "Asistencia ya registrada" });
+    }
+
+    await prisma.actividad_participantes.update({
+      where: {
+        id_actividad_id_usuario: {
+          id_actividad: idActividad,
+          id_usuario: idUsuario
+        }
+      },
+      data: {
+        asistio: true
+      }
+    });
+
+    return res.json({ ok: true, message: "Asistencia registrada correctamente" });
+  } catch (error) {
+    return res.status(500).json({ message: "Error registrando asistencia", detail: error.message });
+  }
+}
+
+async function markParticipantAttendance(req, res) {
+  const idActividad = parseActivityId(req.params.id_actividad);
+  const idUsuarioObjetivo = parseUserId(req.params.id_usuario);
+  const idUsuario = getUserIdFromToken(req.user);
+
+  if (!idActividad || !idUsuarioObjetivo) {
+    return res.status(400).json({ message: "Parametros invalidos" });
+  }
+
+  if (!idUsuario) {
+    return res.status(403).json({ message: "No se pudo identificar el usuario autenticado" });
+  }
+
+  try {
+    await syncActivityStatuses();
+
+    const activity = await prisma.actividad.findUnique({
+      where: { id_actividad: idActividad },
+      select: { id_actividad: true, estado: true, id_encargado: true }
+    });
+
+    if (!activity) {
+      return res.status(404).json({ message: "Actividad no encontrada" });
+    }
+
+    if (activity.estado !== "en_curso") {
+      return res.status(400).json({ message: "Solo puedes marcar asistencia cuando la actividad está en curso" });
+    }
+
+    const isAdmin = req.user?.rol === "admin";
+    const isOwner = Number(activity.id_encargado) === idUsuario;
+    if (!isAdmin && !isOwner) {
+      return res.status(403).json({ message: "No tienes permisos para marcar asistencia en esta actividad" });
+    }
+
+    const membership = await prisma.actividad_participantes.findUnique({
+      where: {
+        id_actividad_id_usuario: {
+          id_actividad: idActividad,
+          id_usuario: idUsuarioObjetivo
+        }
+      },
+      select: { rol: true, asistio: true }
+    });
+
+    if (!membership || membership.rol !== "participante") {
+      return res.status(404).json({ message: "Participante no encontrado en esta actividad" });
+    }
+
+    if (membership.asistio) {
+      return res.json({ ok: true, message: "Asistencia ya registrada" });
+    }
+
+    await prisma.actividad_participantes.update({
+      where: {
+        id_actividad_id_usuario: {
+          id_actividad: idActividad,
+          id_usuario: idUsuarioObjetivo
+        }
+      },
+      data: {
+        asistio: true
+      }
+    });
+
+    return res.json({ ok: true, message: "Asistencia registrada correctamente" });
+  } catch (error) {
+    return res.status(500).json({ message: "Error registrando asistencia de participante", detail: error.message });
+  }
+}
+
+async function removeParticipant(req, res) {
+  const idActividad = parseActivityId(req.params.id_actividad);
+  const idUsuarioObjetivo = parseUserId(req.params.id_usuario);
+  const idUsuario = getUserIdFromToken(req.user);
+
+  if (!idActividad || !idUsuarioObjetivo) {
+    return res.status(400).json({ message: "Parametros invalidos" });
+  }
+
+  if (!idUsuario) {
+    return res.status(403).json({ message: "No se pudo identificar el usuario autenticado" });
+  }
+
+  try {
+    await syncActivityStatuses();
+
+    const activity = await prisma.actividad.findUnique({
+      where: { id_actividad: idActividad },
+      select: { id_actividad: true, estado: true, id_encargado: true }
+    });
+
+    if (!activity) {
+      return res.status(404).json({ message: "Actividad no encontrada" });
+    }
+
+    if (["finalizada", "cancelada"].includes(activity.estado)) {
+      return res.status(400).json({ message: "No puedes expulsar participantes en una actividad finalizada o cancelada" });
+    }
+
+    const isAdmin = req.user?.rol === "admin";
+    const isOwner = Number(activity.id_encargado) === idUsuario;
+    if (!isAdmin && !isOwner) {
+      return res.status(403).json({ message: "No tienes permisos para expulsar participantes en esta actividad" });
+    }
+
+    const membership = await prisma.actividad_participantes.findUnique({
+      where: {
+        id_actividad_id_usuario: {
+          id_actividad: idActividad,
+          id_usuario: idUsuarioObjetivo
+        }
+      },
+      select: { rol: true }
+    });
+
+    if (!membership || membership.rol !== "participante") {
+      return res.status(404).json({ message: "Participante no encontrado en esta actividad" });
+    }
+
+    await prisma.actividad_participantes.delete({
+      where: {
+        id_actividad_id_usuario: {
+          id_actividad: idActividad,
+          id_usuario: idUsuarioObjetivo
+        }
+      }
+    });
+
+    return res.json({ ok: true, message: "Participante expulsado correctamente" });
+  } catch (error) {
+    return res.status(500).json({ message: "Error expulsando participante", detail: error.message });
+  }
+}
+
+async function rateActivity(req, res) {
+  const idActividad = parseActivityId(req.params.id_actividad);
+  const idUsuario = getUserIdFromToken(req.user);
+  const ratingValue = Number(req.body?.valoracion ?? req.body?.rating);
+
+  if (!idActividad) {
+    return res.status(400).json({ message: "id_actividad invalido" });
+  }
+
+  if (!idUsuario) {
+    return res.status(403).json({ message: "No se pudo identificar el usuario autenticado" });
+  }
+
+  if (!Number.isInteger(ratingValue) || ratingValue < 1 || ratingValue > 5) {
+    return res.status(400).json({ message: "La valoracion debe estar entre 1 y 5" });
+  }
+
+  try {
+    await syncActivityStatuses();
+
+    const activity = await prisma.actividad.findUnique({
+      where: { id_actividad: idActividad },
+      select: { id_actividad: true, estado: true }
+    });
+
+    if (!activity) {
+      return res.status(404).json({ message: "Actividad no encontrada" });
+    }
+
+    if (activity.estado !== "finalizada") {
+      return res.status(400).json({ message: "Solo puedes valorar una actividad finalizada" });
+    }
+
+    const membership = await prisma.actividad_participantes.findUnique({
+      where: {
+        id_actividad_id_usuario: {
+          id_actividad: idActividad,
+          id_usuario: idUsuario
+        }
+      },
+      select: { rol: true }
+    });
+
+    if (!membership || membership.rol !== "participante") {
+      return res.status(403).json({ message: "Solo los participantes inscritos pueden valorar" });
+    }
+
+    await prisma.actividad_participantes.update({
+      where: {
+        id_actividad_id_usuario: {
+          id_actividad: idActividad,
+          id_usuario: idUsuario
+        }
+      },
+      data: { valoracion: ratingValue }
+    });
+
+    return res.json({ ok: true, message: "Valoracion registrada correctamente", valoracion: ratingValue });
+  } catch (error) {
+    return res.status(500).json({ message: "Error registrando valoracion", detail: error.message });
   }
 }
 
@@ -528,6 +873,10 @@ async function reviewActivity(req, res) {
       }
     });
 
+    if (action === "approve") {
+      await syncActivityStatuses();
+    }
+
     return res.json({
       ok: true,
       message: action === "approve" ? "Actividad aprobada correctamente" : "Actividad rechazada correctamente",
@@ -538,6 +887,81 @@ async function reviewActivity(req, res) {
   }
 }
 
+async function cancelActivity(req, res) {
+  const idActividad = parseActivityId(req.params.id_actividad);
+  const idUsuario = getUserIdFromToken(req.user);
+
+  if (!idActividad) {
+    return res.status(400).json({ message: "id_actividad invalido" });
+  }
+
+  if (!idUsuario) {
+    return res.status(403).json({ message: "No se pudo identificar el usuario autenticado" });
+  }
+
+  try {
+    await syncActivityStatuses();
+
+    const existing = await prisma.actividad.findUnique({
+      where: { id_actividad: idActividad },
+      include: {
+        usuario: { select: { id_usuario: true, nombre: true, apellido: true } },
+        _count: {
+          select: {
+            actividad_participantes: {
+              where: { rol: "participante" }
+            }
+          }
+        }
+      }
+    });
+
+    if (!existing) {
+      return res.status(404).json({ message: "Actividad no encontrada" });
+    }
+
+    const isAdmin = req.user?.rol === "admin";
+    const isOwner = Number(existing.id_encargado) === idUsuario;
+
+    if (!isAdmin && !isOwner) {
+      return res.status(403).json({ message: "No tienes permisos para cancelar esta actividad" });
+    }
+
+    if (existing.estado === "cancelada") {
+      return res.status(400).json({ message: "La actividad ya se encuentra cancelada" });
+    }
+
+    if (existing.estado === "finalizada") {
+      return res.status(400).json({ message: "No puedes cancelar una actividad finalizada" });
+    }
+
+    const updated = await prisma.actividad.update({
+      where: { id_actividad: idActividad },
+      data: {
+        estado: "cancelada"
+      },
+      include: {
+        usuario: { select: { id_usuario: true, nombre: true, apellido: true } },
+        _count: {
+          select: {
+            actividad_participantes: {
+              where: { rol: "participante" }
+            }
+          }
+        }
+      }
+    });
+
+    return res.json({
+      ok: true,
+      message: "Actividad cancelada correctamente",
+      activity: serializeActivity(updated, idUsuario)
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Error cancelando actividad", detail: error.message });
+  }
+}
+
 module.exports = {
   listActivities,
   listAdminActivities,
@@ -545,5 +969,10 @@ module.exports = {
   createActivity,
   enrollInActivity,
   cancelEnrollment,
-  reviewActivity
+  markMyAttendance,
+  markParticipantAttendance,
+  removeParticipant,
+  rateActivity,
+  reviewActivity,
+  cancelActivity
 };

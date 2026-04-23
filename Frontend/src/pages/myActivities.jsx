@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { BarChart3, CalendarDays, MapPin, Percent, Plus, Star, TrendingUp, Users, UsersRound } from "lucide-react";
+import { BarChart3, CalendarDays, CheckCircle2, Clock3, MapPin, Percent, PlayCircle, Plus, Star, TrendingUp, Users, UsersRound, XCircle } from "lucide-react";
 import { getMyActivitiesData } from "../services/userViewsService";
 import ActivityCard from "../components/ActivityCard";
 import LoadingState from "../components/LoadingState";
@@ -84,13 +84,22 @@ function ActiveActivityRow({ activity, mode = "created" }) {
 }
 
 const STATUS_FILTERS = [
-  { value: "all", label: "Todas", className: "border-[#d8e6dd] bg-white text-[#496053]" },
-  { value: "pendiente", label: "Pendiente", className: "border-[#f3d39a] bg-[#fff4de] text-[#a86612]" },
-  { value: "programada", label: "Programada", className: "border-[#bfe4cd] bg-[#e7f5ec] text-[#177945]" },
-  { value: "en_curso", label: "En curso", className: "border-[#bfd9f5] bg-[#e9f3ff] text-[#1d4f91]" },
-  { value: "finalizada", label: "Finalizada", className: "border-[#d5dae1] bg-[#f1f3f5] text-[#475467]" },
-  { value: "cancelada", label: "Cancelada", className: "border-[#f1c8be] bg-[#fff1ed] text-[#8a3b2a]" }
+  { value: "all", label: "Todas", icon: CalendarDays, className: "border-[#d8e6dd] bg-white text-[#496053]" },
+  { value: "pendiente", label: "Pendiente", icon: Clock3, className: "border-[#f3d39a] bg-[#fff4de] text-[#a86612]" },
+  { value: "programada", label: "Programada", icon: CheckCircle2, className: "border-[#bfe4cd] bg-[#e7f5ec] text-[#177945]" },
+  { value: "en_curso", label: "En curso", icon: PlayCircle, className: "border-[#bfd9f5] bg-[#e9f3ff] text-[#1d4f91]" },
+  { value: "finalizada", label: "Finalizada", icon: CheckCircle2, className: "border-[#d5dae1] bg-[#f1f3f5] text-[#475467]" },
+  { value: "cancelada", label: "Cancelada", icon: XCircle, className: "border-[#f1c8be] bg-[#fff1ed] text-[#8a3b2a]" }
 ];
+
+function getStateIcon(state) {
+  if (state === "pendiente") return Clock3;
+  if (state === "programada") return CheckCircle2;
+  if (state === "en_curso") return PlayCircle;
+  if (state === "finalizada") return CheckCircle2;
+  if (state === "cancelada") return XCircle;
+  return CalendarDays;
+}
 
 function getActivityState(activity) {
   const value = activity?.state || activity?.status || "";
@@ -173,6 +182,7 @@ export default function MyActivities() {
   const [createdFilter, setCreatedFilter] = useState("all");
   const [completedFilter, setCompletedFilter] = useState("todas");
   const ITEMS_PER_PAGE = 5;
+  const COMPLETED_ITEMS_PER_PAGE = 10;
 
   useEffect(() => {
     let mounted = true;
@@ -253,17 +263,17 @@ export default function MyActivities() {
   const paginatedCreated = filteredCreated.slice(createdStart, createdStart + ITEMS_PER_PAGE);
 
   // Paginación completadas
-  const completedTotalPages = Math.ceil(sortedCompleted.length / ITEMS_PER_PAGE);
-  const completedStart = (completedPage - 1) * ITEMS_PER_PAGE;
-  const paginatedCompleted = sortedCompleted.slice(completedStart, completedStart + ITEMS_PER_PAGE);
+  const completedTotalPages = Math.ceil(sortedCompleted.length / COMPLETED_ITEMS_PER_PAGE);
+  const completedStart = (completedPage - 1) * COMPLETED_ITEMS_PER_PAGE;
+  const paginatedCompleted = sortedCompleted.slice(completedStart, completedStart + COMPLETED_ITEMS_PER_PAGE);
 
   return (
     <section className="max-w-7xl mx-auto px-4 py-6 space-y-7">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Panel de usuario</p>
-          <h1 className="mt-2 mb-0 text-[clamp(1.8rem,2.5vw,2.3rem)] font-bold text-[var(--text)]">Mis actividades</h1>
-          <p className="mt-2 text-[1rem] text-[var(--text-muted)]">Gestiona tus actividades activas y revisa el historial finalizado.</p>
+          <h1 className="mt-2 mb-0 text-[clamp(1.8rem,2.5vw,2.3rem)] font-bold text-[var(--text)]">Mis actividades creadas</h1>
+          <p className="mt-2 text-[1rem] text-[var(--text-muted)]">Gestiona tus solicitudes de actividades, las creadas y las finalizadas.</p>
         </div>
       </header>
 
@@ -295,11 +305,12 @@ export default function MyActivities() {
 
       <section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-bg)] p-5 shadow-sm">
         <div className="mb-4 flex items-center justify-between border-b border-[var(--panel-border)] pb-3 ">
-          <h2 className="m-0 text-[1.08rem] font-semibold text-[var(--text)]">Mis actividades activas</h2>
+          <h2 className="m-0 text-[1.08rem] font-semibold text-[var(--text)]">Mis actividades creadas</h2>
         </div>
         <div className="mb-4 flex flex-wrap gap-2">
           {STATUS_FILTERS.map(filter => {
             const isActive = createdFilter === filter.value;
+            const Icon = filter.icon;
 
             return (
               <button
@@ -309,8 +320,9 @@ export default function MyActivities() {
                   setCreatedFilter(filter.value);
                   setCreatedPage(1);
                 }}
-                className={`rounded-full border px-3 py-1.5 text-[0.8rem] font-semibold transition-colors ${filter.className} ${isActive ? "ring-2 ring-[var(--primary)]/35" : "hover:opacity-90"}`}
+                className={`inline-flex items-center gap-1.5 rounded-sm border px-3 py-1.5 text-[0.8rem] font-semibold transition-colors ${filter.className} ${isActive ? "ring-2 ring-[var(--primary)]/35" : "hover:opacity-90"}`}
               >
+                <Icon className="h-3.5 w-3.5" strokeWidth={2} />
                 {filter.label}
               </button>
             );
@@ -402,7 +414,11 @@ export default function MyActivities() {
                           </td>
                           <td className="border-b border-[#d8e6dd] px-3 py-3 text-[var(--text)]">{(activity.participants ?? activity.enrolled ?? 0)}/{activity.capacity ?? "-"}</td>
                           <td className="border-b border-[#d8e6dd] px-3 py-3 text-[var(--text)]">
-                            <span className={`inline-flex rounded-full border px-2.5 py-1 text-[0.75rem] font-semibold ${getStatePillClass(getActivityState(activity))}`}>
+                            <span className={`inline-flex items-center gap-1.5 rounded-sm border px-2.5 py-1 text-[0.75rem] font-semibold ${getStatePillClass(getActivityState(activity))}`}>
+                              {(() => {
+                                const StateIcon = getStateIcon(getActivityState(activity));
+                                return <StateIcon aria-hidden="true" className="h-3.5 w-3.5" strokeWidth={2} />;
+                              })()}
                               {getStateLabel(getActivityState(activity))}
                             </span>
                           </td>
@@ -432,7 +448,7 @@ export default function MyActivities() {
                 totalPages={completedTotalPages}
                 onPageChange={setCompletedPage}
                 start={completedStart + 1}
-                end={Math.min(completedStart + ITEMS_PER_PAGE, sortedCompleted.length)}
+                end={Math.min(completedStart + COMPLETED_ITEMS_PER_PAGE, sortedCompleted.length)}
                 total={sortedCompleted.length}
               />
             )}

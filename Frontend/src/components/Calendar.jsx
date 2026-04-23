@@ -98,22 +98,30 @@ function formatShortDate(date) {
 }
 
 function getActivityStatus(activity) {
-  if (activity.state) return activity.state;
+  const state = String(activity.state || "").toLowerCase();
+  if (state === "en_curso") return "En curso";
+  if (state === "programada") return "Programada";
+  if (state === "finalizada") return "Finalizada";
+  if (state === "pendiente") return "Pendiente";
+  if (state === "cancelada") return "Cancelada";
+  if (activity.state) return String(activity.state);
   if (activity.status === "inscrito") return "Inscrito";
   if (activity.status === "disponible") return "Disponible";
   return "Activo";
 }
 
 function getActivityStatusClass(activity) {
-  if (activity.status === "inscrito") {
-    return "bg-[#0f8f4e] text-white border border-[#0f8f4e]";
-  }
+  const status = String(activity.state || activity.status || "").toLowerCase();
 
-  if (activity.status === "disponible") {
-    return "bg-[#0b7f9f] text-white border border-[#0b7f9f]";
-  }
+  if (status === "pendiente") return "border-[#f3d39a] bg-[#fff4de] text-[#a86612]";
+  if (status === "programada") return "border-[#bfe4cd] bg-[#e7f5ec] text-[#177945]";
+  if (status === "en_curso") return "border-[#bfd9f5] bg-[#e9f3ff] text-[#1d4f91]";
+  if (status === "finalizada") return "border-[#d5dae1] bg-[#f1f3f5] text-[#475467]";
+  if (status === "cancelada") return "border-[#f1c8be] bg-[#fff1ed] text-[#8a3b2a]";
+  if (status === "inscrito") return "border-[#9ec9ea] bg-[#e8f5ff] text-[#1f5f8b]";
+  if (status === "disponible") return "border-[#bfe4cd] bg-[#e7f5ec] text-[#177945]";
 
-  return "bg-[#4d6a5d] text-white border border-[#4d6a5d]";
+  return "border-[#d8e6dd] bg-white text-[#496053]";
 }
 
 function getActivityCreator(activity) {
@@ -148,7 +156,7 @@ function CompactCalendarActivityCard({ activity, onClick, showPlace = true }) {
       className="group relative flex w-full items-stretch gap-4 rounded-[10px] border border-[#e8f0ea] bg-white p-3 text-left shadow-sm transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-[0.6px] hover:border-[var(--primary-soft)] hover:cursor-pointer hover:shadow-[0_12px_22px_-18px_rgba(8,38,22,0.32)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#05a63d]/20"
       onClick={() => onClick(activity)}
     >
-      <span className={`absolute right-3 top-3 rounded-[7px] px-2 py-0.5 text-[0.7rem] font-semibold ${getActivityStatusClass(activity)}`}>
+      <span className={`absolute right-3 top-3 rounded-sm border px-2 py-0.5 text-[0.7rem] font-semibold ${getActivityStatusClass(activity)}`}>
         {getActivityStatus(activity)}
       </span>
 

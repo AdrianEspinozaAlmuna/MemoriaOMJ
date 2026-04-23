@@ -178,6 +178,20 @@ button:disabled {
 	}
 }
 
+@keyframes loadingSlide {
+	0% {
+		transform: translateX(-130%);
+	}
+	100% {
+		transform: translateX(370%);
+	}
+}
+
+.loading-slide-bar {
+	animation: loadingSlide 1.2s ease-in-out infinite;
+	will-change: transform;
+}
+
 @media (max-width: 640px) {
 	.page-main {
 		padding-top: 5.8rem;

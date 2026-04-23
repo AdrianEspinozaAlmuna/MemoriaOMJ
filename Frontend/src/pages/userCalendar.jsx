@@ -69,6 +69,28 @@ export default function UserCalendar() {
       </header>
 
       <section className="rounded-sm border border-[#d8e6dd] bg-[var(--panel-bg)] p-6 shadow-sm space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#e0e9e2] pb-3">
+          <strong className="text-[1rem] font-bold capitalize text-[var(--text)]">{monthLabel}</strong>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className="hover:cursor-pointer inline-flex items-center gap-1.5 rounded-sm border border-[var(--primary)] bg-[var(--primary)] px-3.5 py-2 text-[0.84rem] font-semibold text-white transition-all hover:bg-[#0a7f3d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#05a63d]/30"
+              onClick={goToPreviousMonth}
+            >
+              <ChevronLeft className="h-4 w-4" strokeWidth={2} />
+              Mes anterior
+            </button>
+            <button
+              type="button"
+              className="hover:cursor-pointer inline-flex items-center gap-1.5 rounded-sm border border-[var(--primary)] bg-[var(--primary)] px-3.5 py-2 text-[0.84rem] font-semibold text-white transition-all hover:bg-[#0a7f3d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#05a63d]/30"
+              onClick={goToNextMonth}
+            >
+              Mes siguiente
+              <ChevronRight className="h-4 w-4" strokeWidth={2} />
+            </button>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <label className="grid gap-2 text-[0.82rem] font-semibold text-[var(--text)]">
             <span className="inline-flex items-center gap-1.5">
@@ -114,28 +136,6 @@ export default function UserCalendar() {
               <option value="semanal">semanal</option>
             </select>
           </label>
-        </div>
-
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <strong className="text-[0.95rem] font-semibold capitalize text-[var(--text)]">{monthLabel}</strong>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              className="hover:cursor-pointer inline-flex items-center gap-1.5 rounded-sm border border-[var(--primary)] bg-[var(--primary)] px-3.5 py-2 text-[0.84rem] font-semibold text-white transition-all hover:bg-[#0a7f3d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#05a63d]/30"
-              onClick={goToPreviousMonth}
-            >
-              <ChevronLeft className="h-4 w-4" strokeWidth={2} />
-              Mes anterior
-            </button>
-            <button
-              type="button"
-              className="hover:cursor-pointer inline-flex items-center gap-1.5 rounded-sm border border-[var(--primary)] bg-[var(--primary)] px-3.5 py-2 text-[0.84rem] font-semibold text-white transition-all hover:bg-[#0a7f3d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#05a63d]/30"
-              onClick={goToNextMonth}
-            >
-              Mes siguiente
-              <ChevronRight className="h-4 w-4" strokeWidth={2} />
-            </button>
-          </div>
         </div>
 
         {loading ? (

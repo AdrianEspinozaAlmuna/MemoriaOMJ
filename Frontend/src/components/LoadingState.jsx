@@ -21,8 +21,8 @@ export default function LoadingState({
             <p className="m-0 text-[0.88rem] text-[var(--text-muted)]">{description}</p>
           </div>
 
-          <div className="w-full overflow-hidden rounded-full bg-[#e8f1eb]">
-            <div className="h-1.5 w-1/2 animate-pulse rounded-full bg-[var(--primary)]" />
+          <div className="relative w-full overflow-hidden rounded-full bg-[#e8f1eb]">
+            <div className="loading-slide-bar h-1.5 w-[38%] rounded-full bg-[var(--primary)]" />
           </div>
         </div>
       </div>

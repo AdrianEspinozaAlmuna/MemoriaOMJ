@@ -358,7 +358,7 @@ export async function getDashboardData() {
     const { data } = await api.get("/activities");
     const activities = Array.isArray(data) ? data.map(toUiActivity) : [];
     const upcomingActivities = activities
-      .filter(item => item.status === "inscrito" || item.status === "disponible")
+      .filter(item => ["programada", "en_curso"].includes(item.state))
       .slice(0, 6);
 
     const enrolledCount = activities.filter(item => item.status === "inscrito").length;
@@ -415,7 +415,7 @@ export async function getMyActivitiesData() {
     const created = Array.isArray(createdActivities) ? createdActivities.map(toUiActivity) : [];
 
     const participating = all.filter(item => item.status === "inscrito");
-    const completed = participating.filter(item => item.state === "finalizada");
+    const completed = created.filter(item => item.state === "finalizada");
     const upcoming = participating.filter(item => item.state !== "finalizada");
 
     return {
@@ -543,6 +543,82 @@ export async function cancelActivityEnrollment(activityId) {
     return {
       ok: false,
       message: error?.response?.data?.message || "No se pudo cancelar la inscripción."
+    };
+  }
+}
+
+export async function markMyAttendance(activityId) {
+  try {
+    const { data } = await api.patch(`/activities/${activityId}/attendance`);
+    return {
+      ok: true,
+      message: data?.message || "Asistencia registrada correctamente."
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      message: error?.response?.data?.message || "No se pudo registrar la asistencia."
+    };
+  }
+}
+
+export async function markParticipantAttendance(activityId, participantId) {
+  try {
+    const { data } = await api.patch(`/activities/${activityId}/participants/${participantId}/attendance`);
+    return {
+      ok: true,
+      message: data?.message || "Asistencia registrada correctamente."
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      message: error?.response?.data?.message || "No se pudo registrar la asistencia manual."
+    };
+  }
+}
+
+export async function removeParticipantFromActivity(activityId, participantId) {
+  try {
+    const { data } = await api.delete(`/activities/${activityId}/participants/${participantId}`);
+    return {
+      ok: true,
+      message: data?.message || "Participante expulsado correctamente."
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      message: error?.response?.data?.message || "No se pudo expulsar al participante."
+    };
+  }
+}
+
+export async function rateActivity(activityId, rating) {
+  try {
+    const { data } = await api.patch(`/activities/${activityId}/rating`, { valoracion: rating });
+    return {
+      ok: true,
+      message: data?.message || "Valoracion registrada correctamente."
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      message: error?.response?.data?.message || "No se pudo registrar la valoracion."
+    };
+  }
+}
+
+export async function cancelManagedActivity(activityId) {
+  try {
+    const { data } = await api.patch(`/activities/${activityId}/cancel`);
+    return {
+      ok: true,
+      message: data?.message || "Actividad cancelada correctamente.",
+      activity: data?.activity || null
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      message: error?.response?.data?.message || "No se pudo cancelar la actividad."
     };
   }
 }

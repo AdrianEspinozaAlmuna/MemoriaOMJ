@@ -1,8 +1,9 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { BadgeCheck, CalendarDays, Clock3, Lock, MapPin, MessageCircle, MoreHorizontal, Send, User, Star } from "lucide-react";
 import { Link, useLocation, useParams } from "react-router-dom";
+import Modal from "../components/Modal";
 import { formatDateForChile } from "../utils/chileDate";
-import { cancelActivityEnrollment, enrollInActivity, getActivityDetail } from "../services/userViewsService";
+import { cancelActivityEnrollment, cancelManagedActivity, enrollInActivity, getActivityDetail, markMyAttendance, markParticipantAttendance, rateActivity, removeParticipantFromActivity } from "../services/userViewsService";
 
 function decodeToken(token) {
 	if (!token) return null;
@@ -87,6 +88,7 @@ function formatDate(value) {
 function normalizeActivity(rawActivity = {}) {
 	const hasParticipants = Object.prototype.hasOwnProperty.call(rawActivity, "participants");
 	const hasMessages = Object.prototype.hasOwnProperty.call(rawActivity, "messages");
+	const hasRatings = Object.prototype.hasOwnProperty.call(rawActivity, "ratings");
 
 	return {
 		id: rawActivity.id ?? rawActivity.id_actividad ?? null,
@@ -103,7 +105,8 @@ function normalizeActivity(rawActivity = {}) {
 		requirements: Array.isArray(rawActivity.requirements) ? rawActivity.requirements : fallbackActivity.requirements,
 		chat_bidireccional: rawActivity.chat_bidireccional ?? fallbackActivity.chat_bidireccional,
 		aprobado: rawActivity.aprobado ?? rawActivity.approved ?? fallbackActivity.aprobado,
-		status: rawActivity.status || rawActivity.estado || fallbackActivity.status,
+		status: rawActivity.estado || rawActivity.status || fallbackActivity.status,
+		ratings: hasRatings ? rawActivity.ratings : ratingsData,
 		participants: hasParticipants && Array.isArray(rawActivity.participants)
 			? rawActivity.participants
 			: fallbackActivity.participants,
@@ -131,6 +134,16 @@ export default function ActivityDetail() {
 	const [enrollmentBusy, setEnrollmentBusy] = useState(false);
 	const [enrollmentMessage, setEnrollmentMessage] = useState("");
 	const [enrollmentError, setEnrollmentError] = useState("");
+	const [activityActionMessage, setActivityActionMessage] = useState("");
+	const [activityActionError, setActivityActionError] = useState("");
+	const [cancelModalOpen, setCancelModalOpen] = useState(false);
+	const [cancelBusy, setCancelBusy] = useState(false);
+	const [attendanceBusy, setAttendanceBusy] = useState(false);
+	const [manualAttendanceBusyByUser, setManualAttendanceBusyByUser] = useState({});
+	const [ratingValue, setRatingValue] = useState(5);
+	const [ratingBusy, setRatingBusy] = useState(false);
+	const [ratingMessage, setRatingMessage] = useState("");
+	const [ratingError, setRatingError] = useState("");
 
 	useEffect(() => {
 		if (typeof window !== "undefined") {
@@ -145,6 +158,7 @@ export default function ActivityDetail() {
 			setLoading(true);
 			setError("");
 			setEnrollmentError("");
+			setActivityActionError("");
 
 			const response = await getActivityDetail(activityId);
 			if (!mounted) return;
@@ -197,12 +211,22 @@ export default function ActivityDetail() {
 	}
 
 	const statusBadge = useMemo(() => getStatusBadge(activity?.status), [activity?.status]);
+	const ratings = activity?.ratings || ratingsData;
+	const ratingsTotal = Array.isArray(ratings.distribution)
+		? ratings.distribution.reduce((acc, item) => acc + Number(item.count || 0), 0)
+		: 0;
 	const isFinished = activity?.status === "finalizada";
+	const isInProgress = activity?.status === "en_curso";
+	const isCanceled = activity?.status === "cancelada";
 	const isActivityManager = currentUserId !== null && Number(activity?.id_encargado) === currentUserId;
 	const canManageActivity = role === "admin" || isActivityManager;
-	const canSendChat = canManageActivity || Boolean(activity?.chat_bidireccional);
+	const currentParticipant = useMemo(() => participants.find(item => Number(item.id) === Number(currentUserId)) || null, [participants, currentUserId]);
+	const canCancelActivity = canManageActivity && !isFinished && !isCanceled;
+	const canSendChat = Boolean(activity?.chat_bidireccional);
+	const canRateActivity = isFinished && role === "participante" && !currentParticipant?.valoracion;
 	const freeSpots = useMemo(() => Math.max((activity?.capacity ?? 0) - enrolledCount, 0), [enrolledCount, activity?.capacity]);
-	const ratingsTotal = ratingsData.distribution.reduce((acc, item) => acc + item.count, 0);
+	const canCancelEnrollment = isEnrolled && !isInProgress;
+	const hasAttendanceRegistered = Boolean(currentParticipant?.asistio);
 	const backTo = location.pathname.startsWith("/admin") ? "/admin/actividades" : "/user/mis-actividades";
 
 	function isOwnMessage(message) {
@@ -222,6 +246,7 @@ export default function ActivityDetail() {
 
 	async function handleEnrollmentToggle() {
 		if (loading || enrollmentBusy) return;
+		if (isEnrolled && !canCancelEnrollment) return;
 		setEnrollmentMessage("");
 		setEnrollmentError("");
 
@@ -255,6 +280,116 @@ export default function ActivityDetail() {
 		setEnrollmentMessage(isEnrolled ? "Inscripción cancelada correctamente." : "Inscrito correctamente en la actividad.");
 	}
 
+	async function handleMarkAttendance() {
+		if (!isEnrolled || !isInProgress || hasAttendanceRegistered || attendanceBusy) return;
+
+		setAttendanceBusy(true);
+		setEnrollmentError("");
+		setEnrollmentMessage("");
+
+		const response = await markMyAttendance(activityId);
+		setAttendanceBusy(false);
+
+		if (!response.ok) {
+			setEnrollmentError(response.message || "No se pudo registrar la asistencia.");
+			return;
+		}
+
+		await refreshActivityDetail({ silentError: true });
+		setEnrollmentMessage(response.message || "Asistencia registrada correctamente.");
+	}
+
+	async function handleManualAttendance(participantId) {
+		if (!isInProgress || !participantId) return;
+
+		setManualAttendanceBusyByUser(previous => ({ ...previous, [participantId]: true }));
+		setActivityActionError("");
+		setActivityActionMessage("");
+
+		const response = await markParticipantAttendance(activityId, participantId);
+		setManualAttendanceBusyByUser(previous => ({ ...previous, [participantId]: false }));
+
+		if (!response.ok) {
+			setActivityActionError(response.message || "No se pudo marcar asistencia manual.");
+			return;
+		}
+
+		setActiveParticipantMenu(null);
+		await refreshActivityDetail({ silentError: true });
+		setActivityActionMessage(response.message || "Asistencia registrada correctamente.");
+	}
+
+	async function handleRemoveParticipant(participantId) {
+		if (!participantId) return;
+
+		const confirmed = window.confirm("¿Expulsar a este participante de la actividad?");
+		if (!confirmed) return;
+
+		setActivityActionError("");
+		setActivityActionMessage("");
+
+		const response = await removeParticipantFromActivity(activityId, participantId);
+		if (!response.ok) {
+			setActivityActionError(response.message || "No se pudo expulsar al participante.");
+			return;
+		}
+
+		setActiveParticipantMenu(null);
+		await refreshActivityDetail({ silentError: true });
+		setActivityActionMessage(response.message || "Participante expulsado correctamente.");
+	}
+
+	async function handleSubmitRating() {
+		if (!canRateActivity || ratingBusy) return;
+
+		setRatingBusy(true);
+		setRatingError("");
+		setRatingMessage("");
+
+		const response = await rateActivity(activityId, ratingValue);
+		setRatingBusy(false);
+
+		if (!response.ok) {
+			setRatingError(response.message || "No se pudo registrar la valoración.");
+			return;
+		}
+
+		setRatingMessage(response.message || "Valoración registrada correctamente.");
+		await refreshActivityDetail({ silentError: true });
+	}
+
+	function openCancelModal() {
+		setActivityActionError("");
+		setActivityActionMessage("");
+		setActiveParticipantMenu(null);
+		setCancelModalOpen(true);
+	}
+
+	function closeCancelModal() {
+		if (cancelBusy) return;
+		setCancelModalOpen(false);
+	}
+
+	async function handleConfirmCancelActivity() {
+		if (!activity?.id || cancelBusy) return;
+
+		setCancelBusy(true);
+		setActivityActionError("");
+		setActivityActionMessage("");
+
+		const response = await cancelManagedActivity(activity.id);
+		if (!response.ok) {
+			setCancelBusy(false);
+			setActivityActionError(response.message || "No se pudo cancelar la actividad.");
+			return;
+		}
+
+		await refreshActivityDetail({ silentError: true });
+		setCancelBusy(false);
+		setCancelModalOpen(false);
+		setActivityActionMessage("Actividad cancelada correctamente.");
+	}
+
 	if (loading) {
 		return (
 			<section className="relative animate-[revealUp_0.7s_ease_both]">
@@ -272,8 +407,8 @@ export default function ActivityDetail() {
 								<p className="m-0 text-[0.9rem] text-[var(--text-muted)]">Estamos preparando todos los datos del detalle.</p>
 							</div>
 
-							<div className="w-full max-w-[340px] overflow-hidden rounded-full bg-[#e8f1eb]">
-								<div className="h-1.5 w-1/2 animate-pulse rounded-full bg-[var(--primary)]" />
+							<div className="relative w-full max-w-[340px] overflow-hidden rounded-full bg-[#e8f1eb]">
+								<div className="loading-slide-bar h-1.5 w-[38%] rounded-full bg-[var(--primary)]" />
 							</div>
 						</div>
 					</article>
@@ -302,6 +437,18 @@ export default function ActivityDetail() {
 	return (
 		<section className="relative animate-[revealUp_0.7s_ease_both]">
 			<div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+				{activityActionMessage && (
+					<article className="rounded-xl border border-[#d2e9da] bg-[#f2fbf5] p-4 shadow-sm">
+						<p className="m-0 text-[0.92rem] font-medium text-[#1d6a41]">{activityActionMessage}</p>
+					</article>
+				)}
+
+				{activityActionError && (
+					<article className="rounded-xl border border-[#f0d5cf] bg-[#fff4f2] p-4 shadow-sm">
+						<p className="m-0 text-[0.92rem] font-medium text-[#9f3b2d]">{activityActionError}</p>
+					</article>
+				)}
+
 				{error && (
 					<article className="rounded-xl border border-[#f0d5cf] bg-[#fff4f2] p-4 shadow-sm">
 						<p className="m-0 text-[0.92rem] font-medium text-[#9f3b2d]">{error}</p>
@@ -377,7 +524,7 @@ export default function ActivityDetail() {
 								<span className="rounded-full bg-[#ebf6ef] px-3 py-1 text-[0.75rem] font-semibold text-[#266346]">{participants.length}</span>
 							</div>
 
-							<div className="overflow-hidden rounded-lg border border-[#e0e9e2] bg-white">
+							<div className="overflow-visible rounded-lg border border-[#e0e9e2] bg-white">
 								<div className="divide-y divide-[#e5ede8]">
 									{participants.map(person => (
 										<div key={person.id} className="relative grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3 px-3.5 py-3 sm:grid-cols-[auto_1fr_auto_auto] sm:items-center">
@@ -400,7 +547,7 @@ export default function ActivityDetail() {
 											<span className={`hidden flex-shrink-0 rounded-full px-2.5 py-1 text-[0.72rem] font-semibold whitespace-nowrap sm:inline-flex ${person.status === "Confirmado" ? "bg-[#e7f5ec] text-[#177945]" : "bg-[#fff3de] text-[#b87015]"}`}>
 												{person.status}
 											</span>
-											{canManageActivity && (
+											{canManageActivity && !isFinished && (
 												<>
 													<button
 														type="button"
@@ -412,9 +559,18 @@ export default function ActivityDetail() {
 													</button>
 
 													{activeParticipantMenu === person.id && (
-														<div className="absolute right-3 top-[calc(100%_-_8px)] z-20 w-[190px] rounded-md border border-[#dce7e0] bg-white p-1.5 shadow-[0_14px_24px_-20px_rgba(10,43,26,0.55)]">
-															<button type="button" className="w-full rounded-md px-2.5 py-2 text-left text-[0.82rem] font-medium text-[#274634] hover:bg-[#f4faf7]">Marcar asistencia manual</button>
-															<button type="button" className="w-full rounded-md px-2.5 py-2 text-left text-[0.82rem] font-medium text-[#8a3b2a] hover:bg-[#fff4ef]">Expulsar de la actividad</button>
+														<div className="absolute right-3 top-[calc(100%_-_8px)] z-40 w-[190px] rounded-md border border-[#dce7e0] bg-white p-1.5 shadow-[0_14px_24px_-20px_rgba(10,43,26,0.55)]">
+															{isInProgress && (
+																<button
+																	type="button"
+																	onClick={() => handleManualAttendance(person.id)}
+																	disabled={Boolean(manualAttendanceBusyByUser[person.id]) || Boolean(person.asistio)}
+																	className="w-full rounded-md px-2.5 py-2 text-left text-[0.82rem] font-medium text-[#274634] hover:bg-[#f4faf7] disabled:cursor-not-allowed disabled:opacity-70"
+																>
+																	{person.asistio ? "Asistencia registrada" : manualAttendanceBusyByUser[person.id] ? "Registrando..." : "Marcar asistencia manual"}
+																</button>
+															)}
+															<button type="button" onClick={() => handleRemoveParticipant(person.id)} className="w-full rounded-md px-2.5 py-2 text-left text-[0.82rem] font-medium text-[#8a3b2a] hover:bg-[#fff4ef]">Expulsar de la actividad</button>
 														</div>
 													)}
 												</>
@@ -431,23 +587,11 @@ export default function ActivityDetail() {
 							<article className="order-2 rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-6 shadow-sm lg:order-none">
 								<div className="mb-4 flex items-center justify-between gap-3">
 									<h2 className="m-0 text-[1rem] font-semibold text-[var(--text)]">Valoraciones</h2>
-									<span className="rounded-md bg-[#eef8f2] px-2.5 py-1 text-[0.74rem] font-semibold text-[#1f6e45]">{ratingsData.total} reseñas</span>
-								</div>
-
-								<div className="rounded-lg border border-[#d8e6dd] bg-[#f8fcfa] px-4 py-3.5">
-									<div className="flex items-end justify-between gap-3">
-										<p className="m-0 text-[2rem] font-bold leading-none text-[var(--text)]">{ratingsData.average.toFixed(1)}</p>
-										<div className="inline-flex items-center gap-0.5" aria-label={`Promedio ${ratingsData.average} de 5`}>
-											{Array.from({ length: 5 }).map((_, index) => (
-												<Star key={`star-summary-${index}`} className={`h-3.5 w-3.5 ${index < Math.round(ratingsData.average) ? "fill-[#f59e0b] text-[#f59e0b]" : "text-[#cbd5e1]"}`} />
-											))}
-										</div>
-									</div>
-									<p className="mt-1 mb-0 text-[0.78rem] text-[var(--text-muted)]">Promedio histórico de participantes.</p>
+									<span className="rounded-sm bg-[#eef8f2] px-2.5 py-1 text-[0.74rem] font-semibold text-[#1f6e45]">{ratings.total} reseñas</span>
 								</div>
 
 								<div className="mt-4 space-y-2">
-									{ratingsData.distribution.map(item => {
+									{(Array.isArray(ratings.distribution) ? ratings.distribution : []).map(item => {
 										const percentage = ratingsTotal === 0 ? 0 : Math.round((item.count / ratingsTotal) * 100);
 
 										return (
@@ -462,16 +606,68 @@ export default function ActivityDetail() {
 									})}
 								</div>
 
-								<button type="button" className="mt-4 w-full rounded-lg border border-[var(--primary)] bg-[var(--primary)] px-4 py-2.5 text-[0.88rem] font-semibold text-white transition-all hover:bg-[var(--primary-strong)]">
-									Valorar actividad
-								</button>
+								{canRateActivity && (
+									<div className="mt-4 space-y-4 rounded-xl border border-[#d8e6dd] bg-[linear-gradient(180deg,#ffffff,#f8fcfa)] px-4 py-4 shadow-[0_10px_24px_-22px_rgba(9,41,26,0.45)]">
+										<div className="flex items-start justify-between gap-3">
+											<div>
+												<p className="m-0 text-[0.84rem] font-semibold uppercase tracking-[0.05em] text-[var(--text-muted)]">Tu valoración</p>
+												<p className="m-0 mt-1 text-[0.93rem] font-semibold text-[var(--text)]">Selecciona cuántas estrellas quieres dar</p>
+											</div>
+											<span className="inline-flex shrink-0 rounded-full bg-[#eef8f2] px-3 py-1 text-[0.78rem] font-semibold text-[#1f6e45]">
+												{ratingValue} estrella{ratingValue === 1 ? "" : "s"}
+											</span>
+										</div>
+
+										<div className="inline-flex items-center gap-1 rounded-sm border border-[#d8e6dd] bg-white p-1 shadow-sm">
+											{[1, 2, 3, 4, 5].map(value => {
+												const active = value <= ratingValue;
+
+												return (
+													<button
+														key={`rate-star-${value}`}
+														type="button"
+														onClick={() => setRatingValue(value)}
+														aria-label={`${value} estrella${value === 1 ? "" : "s"}`}
+														aria-pressed={ratingValue === value}
+														className={`inline-flex h-11 w-11 items-center justify-center rounded-sm transition-all ${active ? "bg-[#eef8f2] text-[#f59e0b] shadow-[0_8px_18px_-16px_rgba(245,158,11,0.9)]" : "text-[#c6d3cc] hover:bg-[#f4f8f6] hover:text-[#f0b429]"}`}
+													>
+														<Star className={`h-5 w-5 ${active ? "fill-[#f59e0b]" : ""}`} strokeWidth={1.8} />
+													</button>
+												);
+											})}
+										</div>
+
+										<div className="flex items-center gap-2">
+											<p className="m-0 text-[0.8rem] font-semibold text-[var(--text-muted)]">Seleccionadas:</p>
+											<div className="inline-flex items-center gap-0.5 rounded-sm border border-[#d8e6dd] bg-[#f8fcfa] px-2.5 py-1" aria-label={`Valoración ${ratingValue} de 5`}>
+												{[1, 2, 3, 4, 5].map(value => (
+													<Star
+														key={`selected-star-${value}`}
+														className={`h-4 w-4 ${value <= ratingValue ? "fill-[#f59e0b] text-[#f59e0b]" : "text-[#d4ddd7]"}`}
+														strokeWidth={1.8}
+													/>
+												))}
+											</div>
+											<span className="text-[0.8rem] font-semibold text-[#1f6e45]">{ratingValue} estrella{ratingValue === 1 ? "" : "s"}</span>
+										</div>
+
+										<div className="flex flex-wrap items-center gap-3">
+											<button type="button" onClick={handleSubmitRating} disabled={ratingBusy} className="rounded-sm border border-[var(--primary)] bg-[var(--primary)] px-4 py-2.5 text-[0.88rem] font-semibold text-white transition-all hover:bg-[var(--primary-strong)] disabled:cursor-not-allowed disabled:opacity-70">
+												{ratingBusy ? "Guardando..." : "Guardar valoración"}
+											</button>
+											<p className="m-0 text-[0.8rem] text-[var(--text-muted)]">Pulsa una estrella para elegir la nota exacta.</p>
+										</div>
+										{ratingMessage && <p className="m-0 text-[0.82rem] font-medium text-[#1d6a41]">{ratingMessage}</p>}
+										{ratingError && <p className="m-0 text-[0.82rem] font-medium text-[#9f3b2d]">{ratingError}</p>}
+									</div>
+								)}
 							</article>
 						) : (
 							<article className="order-2 rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-6 shadow-sm lg:order-none">
 								<p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.05em] text-[var(--text-muted)]">Acciones</p>
 
 								<div className="mt-4 rounded-lg border border-[#d6e5dc] bg-[#f5fbf8] p-4">
-									<p className="text-[0.85rem] text-[var(--text-muted)] m-0">Cupos disponibles</p>
+									<p className="text-[0.85rem] text-[var(--text-muted)] m-0">Cupos inscritos</p>
 									<p className="text-[2.2rem] font-bold text-[var(--primary)] m-0 mt-2">{enrolledCount}/{activity.capacity}</p>
 									<p className="text-[0.8rem] text-[var(--text-muted)] m-0 mt-2">{freeSpots === 0 ? "Sin cupos disponibles" : `${freeSpots} cupos libres`}</p>
 								</div>
@@ -481,12 +677,21 @@ export default function ActivityDetail() {
 										<>
 											<button type="button" className="w-full rounded-sm border border-[var(--primary)] bg-[var(--primary)] px-4 py-2.5 text-[0.88rem] font-semibold text-white transition-all hover:bg-[var(--primary-strong)]">Editar actividad</button>
 											<button type="button" className="w-full rounded-sm border border-[var(--primary-soft)] bg-[white] px-4 py-2.5 text-[0.88rem] font-semibold text-[var(--primary)] transition-all hover:bg-[#ecf7f0]">Gestionar inscritos</button>
-											<button type="button" className="w-full rounded-sm border border-[#f2d3cc] bg-[#fff3ef] px-4 py-2.5 text-[0.88rem] font-semibold text-[#8a3b2a] transition-all hover:bg-[#ffe9e2]">Enviar notificación</button>
+											<button type="button" className="w-full rounded-sm border border-[var(--reject)] bg-[#fff3ef] px-4 py-2.5 text-[0.88rem] font-semibold text-[var(--reject)] transition-all hover:bg-[#ffe9e2]">Enviar notificación</button>
+											{canCancelActivity && (
+												<button
+													type="button"
+													onClick={openCancelModal}
+													className="w-full rounded-sm border border-[var(--reject)] bg-[var(--reject)] px-4 py-2.5 text-[0.88rem] font-semibold text-[white] transition-all hover:bg-[#ffe4dc]"
+												>
+													Cancelar actividad
+												</button>
+											)}
 										</>
 									) : (
 										<>
-											<button type="button" onClick={handleEnrollmentToggle} disabled={enrollmentBusy || (!isEnrolled && freeSpots === 0)} className={`w-full rounded-sm border px-4 py-2.5 text-[0.88rem] font-semibold transition-all ${isEnrolled ? "border-[var(--reject)] bg-[var(--reject)] text-white hover:bg-[var(--reject-hover)]" : "border-[var(--primary)] bg-[var(--primary)] text-white hover:bg-[var(--primary-strong)] disabled:border-[#dce6df] disabled:bg-[#f4f8f6] disabled:text-[#7d9084]"}`}>
-											{isEnrolled ? "Cancelar inscripción" : freeSpots === 0 ? "Sin cupos" : "Inscribirme"}
+											<button type="button" onClick={handleEnrollmentToggle} disabled={enrollmentBusy || (!isEnrolled && freeSpots === 0) || (isEnrolled && !canCancelEnrollment)} className={`w-full rounded-sm border px-4 py-2.5 text-[0.88rem] font-semibold transition-all ${isEnrolled ? "border-[var(--reject)] bg-[var(--reject)] text-white hover:bg-[var(--reject-hover)] disabled:border-[#dce6df] disabled:bg-[#f4f8f6] disabled:text-[#7d9084]" : "border-[var(--primary)] bg-[var(--primary)] text-white hover:bg-[var(--primary-strong)] disabled:border-[#dce6df] disabled:bg-[#f4f8f6] disabled:text-[#7d9084]"}`}>
+											{isEnrolled ? (isInProgress ? "Inscripción bloqueada en curso" : "Cancelar inscripción") : freeSpots === 0 ? "Sin cupos" : "Inscribirme"}
 										</button>
 										{enrollmentError && (
 											<p className="m-0 text-[0.82rem] font-semibold text-[#9f3b2d]">{enrollmentError}</p>
@@ -494,10 +699,19 @@ export default function ActivityDetail() {
 										{isEnrolled && (
 											<div className="px-1">
 												<p className="m-0 text-[0.84rem] font-semibold text-[var(--primary)]">{enrollmentMessage || "Inscrito correctamente en la actividad."}</p>
-												<p className="m-0 mt-0.5 text-[0.78rem] text-[var(--text-muted)]">Tu cupo quedó reservado y podrás registrar asistencia al finalizar.</p>
+												<p className="m-0 mt-0.5 text-[0.78rem] text-[var(--text-muted)]">Tu cupo quedó reservado y podrás registrar asistencia cuando la actividad esté en curso.</p>
 											</div>
 										)}
-										{isEnrolled && <button type="button" className="w-full rounded-sm border-2 border-[var(--primary)] bg-[var(--primary)] px-4 py-2.5 text-[0.88rem] font-semibold text-[white] transition-all hover:bg-[var(--primary-strong)] hover:border-[var(--primary-strong)]">Marcar asistencia</button>}
+										{isEnrolled && isInProgress && (
+											<button
+												type="button"
+												onClick={handleMarkAttendance}
+												disabled={attendanceBusy || hasAttendanceRegistered}
+												className="w-full rounded-sm border-2 border-[var(--primary)] bg-[var(--primary)] px-4 py-2.5 text-[0.88rem] font-semibold text-[white] transition-all hover:bg-[var(--primary-strong)] hover:border-[var(--primary-strong)] disabled:cursor-not-allowed disabled:border-[#dce6df] disabled:bg-[#f4f8f6] disabled:text-[#7d9084]"
+											>
+												{hasAttendanceRegistered ? "Asistencia ya registrada" : attendanceBusy ? "Registrando asistencia..." : "Marcar asistencia"}
+											</button>
+										)}
 									</>
 								)}
 								</div>
@@ -539,24 +753,55 @@ export default function ActivityDetail() {
 									})}
 								</div>
 
-								<div className="border-t border-[#e2ebe4] px-3 py-3">
-									<div className="grid grid-cols-[1fr_auto] items-center gap-2">
-										<input type="text" className="w-full rounded-md border border-[#d8e6dd] bg-white px-3 py-2 text-[0.84rem] text-[var(--text)] outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[#05a63d]/20" placeholder={canSendChat ? "Escribe un mensaje..." : "Solo encargado/admin puede enviar mensajes"} disabled={!canSendChat} />
-										<button type="button" disabled={!canSendChat} className={`inline-flex h-10 w-10 items-center justify-center rounded-md border transition-colors ${canSendChat ? "border-[var(--primary)] bg-[var(--primary)] text-white hover:bg-[var(--primary-strong)]" : "border-[#dce6df] bg-[#f4f8f6] text-[#7d9084]"}`}>
-											<Send className="h-4 w-4" strokeWidth={2} />
-										</button>
+								{canSendChat && (
+									<div className="border-t border-[#e2ebe4] px-3 py-3">
+										<div className="grid grid-cols-[1fr_auto] items-center gap-2">
+											<input type="text" className="w-full rounded-md border border-[#d8e6dd] bg-white px-3 py-2 text-[0.84rem] text-[var(--text)] outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[#05a63d]/20" placeholder="Escribe un mensaje..." />
+											<button type="button" className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-[var(--primary)] bg-[var(--primary)] text-white transition-colors hover:bg-[var(--primary-strong)]">
+												<Send className="h-4 w-4" strokeWidth={2} />
+											</button>
+										</div>
 									</div>
-								</div>
+								)}
 							</div>
 						</article>
 					</aside>
 				</section>
-				<div className="pt-2">
-					<Link to={backTo} className="inline-flex items-center gap-2 text-[0.9rem] font-semibold text-[var(--primary)] hover:underline">
-						← Volver
-					</Link>
-				</div>
 			</div>
+
+			<Modal
+				isOpen={cancelModalOpen}
+				title="Cancelar actividad"
+				onClose={closeCancelModal}
+				panelClassName="sm:max-w-[480px]"
+				footer={(
+					<>
+						<button
+							type="button"
+							onClick={closeCancelModal}
+							disabled={cancelBusy}
+							className="rounded-sm border border-[#d8e6dd] bg-white px-3.5 py-2 text-[0.84rem] font-semibold text-[#486154] transition-colors hover:bg-[#f5faf7] disabled:cursor-not-allowed disabled:opacity-70"
+						>
+							Volver
+						</button>
+						<button
+							type="button"
+							onClick={handleConfirmCancelActivity}
+							disabled={cancelBusy}
+							className="rounded-sm border border-[#f1c8be] bg-[#8a3b2a] px-3.5 py-2 text-[0.84rem] font-semibold text-white transition-colors hover:bg-[#743021] disabled:cursor-not-allowed disabled:opacity-70"
+						>
+							{cancelBusy ? "Cancelando..." : "Confirmar cancelación"}
+						</button>
+					</>
+				)}
+			>
+				<div className="space-y-2">
+					<p className="m-0 text-[0.9rem] leading-relaxed text-[var(--text-muted)]">
+						Esta acción cambiará el estado de la actividad a <strong>Cancelada</strong> y dejará de estar disponible para inscripción.
+					</p>
+					<p className="m-0 text-[0.84rem] text-[#8a3b2a]">Puedes realizar esta acción porque eres admin o encargado de la actividad.</p>
+				</div>
+			</Modal>
 		</section>
 	);
 }

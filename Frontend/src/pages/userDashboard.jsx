@@ -79,6 +79,11 @@ export default function UserDashboard() {
   const nextFiveUpcoming = useMemo(() => {
     return [...(upcomingActivities || [])]
       .sort((a, b) => {
+        const enrolledA = String(a?.status || "").toLowerCase() === "inscrito" ? 0 : 1;
+        const enrolledB = String(b?.status || "").toLowerCase() === "inscrito" ? 0 : 1;
+        return enrolledA - enrolledB;
+      })
+      .sort((a, b) => {
         const dateA = parseDateForChile(a.date);
         const dateB = parseDateForChile(b.date);
         return (dateA?.getTime() || 0) - (dateB?.getTime() || 0);
@@ -143,6 +148,9 @@ export default function UserDashboard() {
         {/* Próximas Actividades */}
         <article className="rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-6 shadow-sm">
           <h2 className="m-0 mb-4 text-[1rem] font-semibold text-[var(--text)]">Próximas actividades</h2>
+          {!loading && nextFiveUpcoming.length > 0 && (
+            <p className="mb-4 mt-[-0.35rem] text-[0.82rem] font-semibold text-[#177945]">Las tarjetas marcadas como "Ya inscrito" corresponden a tus inscripciones activas.</p>
+          )}
           {loading ? (
             <LoadingState
               title="Cargando actividades"
@@ -151,12 +159,12 @@ export default function UserDashboard() {
             />
           ) : nextFiveUpcoming.length === 0 ? (
             <div className="grid min-h-[140px] place-items-center rounded-lg border border-dashed border-[#e0e9e2] bg-[#f9fcfa] text-center">
-              <p className="max-w-[44ch] px-4 text-[0.9rem] text-[var(--text-muted)]">Aún no tienes actividades próximas. Explora el calendario para inscribirte en nuevos talleres.</p>
+              <p className="max-w-[44ch] px-4 text-[0.9rem] text-[var(--text-muted)]">No hay actividades programadas. Explora el calendario para crear nuevos eventos.</p>
             </div>
           ) : (
             <div className="space-y-3.5">
               {nextFiveUpcoming.map(activity => (
-                <ActivityCard key={activity.id} activity={activity} actionLabel="Ver más" />
+                <ActivityCard key={activity.id} activity={activity} actionLabel="Ver más" emphasizeEnrollment />
               ))}
             </div>
           )}

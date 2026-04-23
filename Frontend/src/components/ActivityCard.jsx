@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { CalendarDays, Clock3, MapPin, UserRound, Users } from "lucide-react";
+import { CalendarDays, CheckCircle2, CircleDot, Clock3, PlayCircle, MapPin, UserRound, Users, XCircle } from "lucide-react";
 import { ArrowRight } from "lucide-react";
 import { formatDateForChile, parseDateForChile } from "../utils/chileDate";
 
@@ -63,10 +63,28 @@ function getDescription(activity) {
 }
 
 function getStatus(activity) {
-  if (activity.state) return activity.state;
+  if (activity.state === "en_curso") return "En curso";
+  if (activity.state === "programada") return "Programada";
+  if (activity.state === "finalizada") return "Finalizada";
+  if (activity.state === "pendiente") return "Pendiente";
+  if (activity.state === "cancelada") return "Cancelada";
+  if (activity.state) return String(activity.state);
   if (activity.status === "inscrito") return "Inscrito";
   if (activity.status === "disponible") return "Disponible";
   return "Activo";
+}
+
+function getStatusIcon(activity) {
+  const status = String(activity.state || activity.status || "").toLowerCase();
+
+  if (status === "programada") return CheckCircle2;
+  if (status === "en_curso") return PlayCircle;
+  if (status === "finalizada") return CheckCircle2;
+  if (status === "cancelada") return XCircle;
+  if (status === "pendiente") return Clock3;
+  if (status === "inscrito") return CheckCircle2;
+
+  return Clock3;
 }
 
 function getStatusClasses(activity) {
@@ -105,13 +123,15 @@ function getTopLabel(activity) {
   return "Actividad";
 }
 
-function CardBody({ activity, actionLabel }) {
+function CardBody({ activity, actionLabel, emphasizeEnrollment = false }) {
   const creator = getCreator(activity);
   const description = getDescription(activity);
   const placeLabel = activity.place || "Lugar por confirmar";
   const enrolled = activity.enrolled ?? activity.participants ?? activity.inscritos ?? null;
   const capacity = activity.capacity ?? activity.max_participantes ?? activity.capacidad ?? null;
   const imageSrc = activity.image || activity.imageUrl || activity.img || null;
+  const StatusIcon = getStatusIcon(activity);
+  const isEnrolled = String(activity?.status || "").toLowerCase() === "inscrito";
 
   return (
     <>
@@ -128,14 +148,23 @@ function CardBody({ activity, actionLabel }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 space-y-1">
-              <h3 className="m-0 text-[1.06rem] font-semibold leading-tight text-[var(--text)] max-[760px]:text-[1rem]">{activity.title}</h3>
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="m-0 text-[1.06rem] font-semibold leading-tight text-[var(--text)] max-[760px]:text-[1rem]">{activity.title}</h3>
+                {emphasizeEnrollment && isEnrolled && (
+                  <span className="inline-flex items-center gap-1 rounded-sm border border-[#b9dfc8] bg-[#edf9f1] px-2 py-0.5 text-[0.69rem] font-semibold text-[#177945]">
+                    <CircleDot className="h-3.5 w-3.5" strokeWidth={2} />
+                    Ya inscrito
+                  </span>
+                )}
+              </div>
               <p className="m-0 inline-flex items-center gap-2 text-[0.85rem] text-[var(--text-muted)]">
                 <UserRound className="h-3 w-3 text-[var(--primary)]" strokeWidth={1.9} />
                 {creator}
               </p>
             </div>
 
-            <span className={`inline-flex shrink-0 items-center rounded-md px-3 py-1 text-[0.72rem] font-semibold ${getStatusClasses(activity)}`}>
+            <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-sm px-3 py-1 text-[0.72rem] font-semibold ${getStatusClasses(activity)}`}>
+              <StatusIcon className="h-3.5 w-3.5" strokeWidth={2} />
               {getStatus(activity)}
             </span>
           </div>
@@ -177,7 +206,7 @@ function CardBody({ activity, actionLabel }) {
   );
 }
 
-export default function ActivityCard({ activity, actionLabel = "Ver más", onActionClick, to }) {
+export default function ActivityCard({ activity, actionLabel = "Ver más", onActionClick, to, emphasizeEnrollment = false }) {
   const resolvedTo = onActionClick ? null : (to || (activity?.id ? `/user/actividad/${activity.id}` : null));
   const baseClassName =
     "group block relative w-full rounded-sm border border-[#d8e3de] bg-white px-4 py-3 text-left shadow-sm transition-all duration-200 hover:-translate-y-[2px] hover:border-[var(--primary-soft)] hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]/30";
@@ -185,7 +214,7 @@ export default function ActivityCard({ activity, actionLabel = "Ver más", onAct
   if (resolvedTo) {
     return (
       <Link to={resolvedTo} className={baseClassName}>
-        <CardBody activity={activity} actionLabel={actionLabel} />
+        <CardBody activity={activity} actionLabel={actionLabel} emphasizeEnrollment={emphasizeEnrollment} />
       </Link>
     );
   }
@@ -193,14 +222,14 @@ export default function ActivityCard({ activity, actionLabel = "Ver más", onAct
   if (onActionClick) {
     return (
       <button type="button" className={baseClassName} onClick={() => onActionClick(activity)}>
-        <CardBody activity={activity} actionLabel={actionLabel} />
+        <CardBody activity={activity} actionLabel={actionLabel} emphasizeEnrollment={emphasizeEnrollment} />
       </button>
     );
   }
 
   return (
     <article className={baseClassName}>
-      <CardBody activity={activity} actionLabel={actionLabel} />
+      <CardBody activity={activity} actionLabel={actionLabel} emphasizeEnrollment={emphasizeEnrollment} />
     </article>
   );
 }
