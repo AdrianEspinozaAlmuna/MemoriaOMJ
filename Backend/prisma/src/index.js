@@ -1,9 +1,11 @@
 const express = require("express");
 const cors = require("cors");
+const http = require("http");
 require("dotenv").config();
 const userRoutes = require("./routes/userRoutes");
 const activityRoutes = require("./routes/activityRoutes");
 const { prisma } = require("./prisma/client");
+const { initRealtimeServer } = require("./realtime");
 
 const app = express();
 app.use(cors());
@@ -25,7 +27,9 @@ app.get("/api/health", async (req, res) => {
 const PORT = process.env.PORT || 4000;
 
 if (require.main === module && process.env.VERCEL !== "1") {
-  app.listen(PORT, "localhost", () => console.log(`Backend iniciado en http://localhost:${PORT}`));
+  const server = http.createServer(app);
+  initRealtimeServer(server);
+  server.listen(PORT, "localhost", () => console.log(`Backend iniciado en http://localhost:${PORT}`));
 }
 
 module.exports = app;

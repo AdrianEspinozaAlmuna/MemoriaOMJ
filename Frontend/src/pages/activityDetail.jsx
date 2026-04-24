@@ -1,9 +1,13 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
+import { io } from "socket.io-client";
 import { BadgeCheck, CalendarDays, Clock3, Lock, MapPin, MessageCircle, MoreHorizontal, Send, User, Star } from "lucide-react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import Modal from "../components/Modal";
 import { formatDateForChile } from "../utils/chileDate";
-import { cancelActivityEnrollment, cancelManagedActivity, enrollInActivity, getActivityDetail, markMyAttendance, markParticipantAttendance, rateActivity, removeParticipantFromActivity } from "../services/userViewsService";
+import { cancelActivityEnrollment, cancelManagedActivity, enrollInActivity, getActivityDetail, markMyAttendance, markParticipantAttendance, rateActivity, removeParticipantFromActivity, sendActivityMessage } from "../services/userViewsService";
+import { API_BASE_URL } from "../services/api";
+
+const SOCKET_BASE_URL = (import.meta.env.VITE_SOCKET_URL || API_BASE_URL).replace(/\/api\/?$/, "");
 
 function decodeToken(token) {
 	if (!token) return null;
@@ -122,7 +126,6 @@ export default function ActivityDetail() {
 	const user = decodeToken(localStorage.getItem("token"));
 	const role = user?.rol || "participante";
 	const currentUserId = getTokenUserId(user);
-	const currentName = String(user?.nombre || user?.name || "Tu").toLowerCase();
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState("");
 	const [activity, setActivity] = useState(null);
@@ -144,11 +147,48 @@ export default function ActivityDetail() {
 	const [ratingBusy, setRatingBusy] = useState(false);
 	const [ratingMessage, setRatingMessage] = useState("");
 	const [ratingError, setRatingError] = useState("");
+	const [showRatingEditor, setShowRatingEditor] = useState(false);
+	const [chatInput, setChatInput] = useState("");
+	const [chatBusy, setChatBusy] = useState(false);
+	const [chatError, setChatError] = useState("");
+	const socketRef = useRef(null);
 
 	useEffect(() => {
 		if (typeof window !== "undefined") {
 			window.scrollTo({ top: 0, left: 0, behavior: "auto" });
 		}
+	}, [activityId]);
+
+	useEffect(() => {
+		const token = localStorage.getItem("token");
+		if (!token || !activityId) return;
+
+		const socket = io(SOCKET_BASE_URL, {
+			transports: ["websocket", "polling"],
+			auth: { token }
+		});
+
+		socketRef.current = socket;
+
+		socket.on("connect", () => {
+			socket.emit("activity:join", { activityId: Number(activityId) });
+		});
+
+		socket.on("activity:message:new", incomingMessage => {
+			setChatMessages(previous => {
+				const exists = previous.some(item => Number(item.id) === Number(incomingMessage?.id));
+				if (exists) return previous;
+
+				const next = [...previous, incomingMessage];
+				next.sort((a, b) => Number(a.id) - Number(b.id));
+				return next;
+			});
+		});
+
+		return () => {
+			socket.disconnect();
+			socketRef.current = null;
+		};
 	}, [activityId]);
 
 	useEffect(() => {
@@ -221,17 +261,39 @@ export default function ActivityDetail() {
 	const isActivityManager = currentUserId !== null && Number(activity?.id_encargado) === currentUserId;
 	const canManageActivity = role === "admin" || isActivityManager;
 	const currentParticipant = useMemo(() => participants.find(item => Number(item.id) === Number(currentUserId)) || null, [participants, currentUserId]);
+	const currentUserRating = Number(currentParticipant?.valoracion);
+	const hasExistingRating = Number.isInteger(currentUserRating) && currentUserRating >= 1 && currentUserRating <= 5;
 	const canCancelActivity = canManageActivity && !isFinished && !isCanceled;
-	const canSendChat = Boolean(activity?.chat_bidireccional);
-	const canRateActivity = isFinished && role === "participante" && !currentParticipant?.valoracion;
+	const canSendChat = Boolean(activity?.chat_bidireccional) || canManageActivity;
+	const isChatReadOnlyForUser = !canSendChat;
+	const canRateInActivity = isFinished && role === "participante" && !canManageActivity;
 	const freeSpots = useMemo(() => Math.max((activity?.capacity ?? 0) - enrolledCount, 0), [enrolledCount, activity?.capacity]);
 	const canCancelEnrollment = isEnrolled && !isInProgress;
 	const hasAttendanceRegistered = Boolean(currentParticipant?.asistio);
 	const backTo = location.pathname.startsWith("/admin") ? "/admin/actividades" : "/user/mis-actividades";
 
+	useEffect(() => {
+		if (!canRateInActivity) {
+			setShowRatingEditor(false);
+			return;
+		}
+
+		if (hasExistingRating) {
+			setRatingValue(currentUserRating);
+			setShowRatingEditor(false);
+			return;
+		}
+
+		setShowRatingEditor(true);
+	}, [canRateInActivity, hasExistingRating, currentUserRating]);
+
 	function isOwnMessage(message) {
-		if (canManageActivity && message.role === "encargado") return true;
-		return String(message.author || "").toLowerCase() === currentName;
+		const messageUserId = Number(message?.userId);
+		if (Number.isInteger(messageUserId) && Number.isInteger(currentUserId)) {
+			return messageUserId === currentUserId;
+		}
+
+		return false;
 	}
 
 	function getSenderLabel(message) {
@@ -242,6 +304,16 @@ export default function ActivityDetail() {
 
 	function isManagerMessage(message) {
 		return message.role === "admin" || message.role === "encargado";
+	}
+
+	function getMessageMomentLabel(message) {
+		if (message.time) return message.time;
+		if (!message.date) return "";
+		return formatDateForChile(message.date, {
+			day: "2-digit",
+			month: "2-digit",
+			year: "numeric"
+		});
 	}
 
 	async function handleEnrollmentToggle() {
@@ -340,7 +412,7 @@ export default function ActivityDetail() {
 	}
 
 	async function handleSubmitRating() {
-		if (!canRateActivity || ratingBusy) return;
+		if (!canRateInActivity || ratingBusy) return;
 
 		setRatingBusy(true);
 		setRatingError("");
@@ -356,6 +428,22 @@ export default function ActivityDetail() {
 
 		setRatingMessage(response.message || "Valoración registrada correctamente.");
 		await refreshActivityDetail({ silentError: true });
+	}
+
+	function openRatingEditor() {
+		if (!canRateInActivity) return;
+		setRatingError("");
+		setRatingMessage("");
+		if (hasExistingRating) {
+			setRatingValue(currentUserRating);
+		}
+		setShowRatingEditor(true);
+	}
+
+	function closeRatingEditor() {
+		if (ratingBusy) return;
+		setShowRatingEditor(false);
+		setRatingError("");
 	}
 
 	function openCancelModal() {
@@ -388,6 +476,33 @@ export default function ActivityDetail() {
 		setCancelBusy(false);
 		setCancelModalOpen(false);
 		setActivityActionMessage("Actividad cancelada correctamente.");
+	}
+
+	async function handleSendChatMessage() {
+		if (!canSendChat || chatBusy) return;
+
+		const messageText = chatInput.trim();
+		if (!messageText) return;
+
+		setChatBusy(true);
+		setChatError("");
+
+		const response = await sendActivityMessage(activityId, messageText);
+		setChatBusy(false);
+
+		if (!response.ok) {
+			setChatError(response.message || "No se pudo enviar el mensaje.");
+			return;
+		}
+
+		setChatInput("");
+		await refreshActivityDetail({ silentError: true });
+	}
+
+	function handleChatKeyDown(event) {
+		if (event.key !== "Enter" || event.shiftKey) return;
+		event.preventDefault();
+		handleSendChatMessage();
 	}
 
 	if (loading) {
@@ -596,7 +711,7 @@ export default function ActivityDetail() {
 
 										return (
 											<div key={`rating-${item.stars}`} className="grid grid-cols-[40px_1fr_34px] items-center gap-2 text-[0.78rem]">
-												<span className="font-semibold text-[var(--text)]">{item.stars}★</span>
+												<span className="font-semibold text-[var(--accent-strong)]">{item.stars}★</span>
 												<div className="h-2 rounded-full bg-[#e7efea]">
 													<div className="h-2 rounded-full bg-[#f59e0b]" style={{ width: `${percentage}%` }} />
 												</div>
@@ -606,12 +721,25 @@ export default function ActivityDetail() {
 									})}
 								</div>
 
-								{canRateActivity && (
-									<div className="mt-4 space-y-4 rounded-xl border border-[#d8e6dd] bg-[linear-gradient(180deg,#ffffff,#f8fcfa)] px-4 py-4 shadow-[0_10px_24px_-22px_rgba(9,41,26,0.45)]">
+								{canRateInActivity && hasExistingRating && !showRatingEditor && (
+									<div className="mt-4 space-y-3 rounded-sm border border-[#d8e6dd] bg-[var(--gray-soft)] px-4 py-4">
+										<p className="m-0 text-[0.88rem] text-[var(--text-muted)]">Ya registraste tu valoración: <strong>{currentUserRating}</strong> estrella{currentUserRating === 1 ? "" : "s"}.</p>
+										<button
+											type="button"
+											onClick={openRatingEditor}
+											className="rounded-sm border border-[var(--primary)] bg-[var(--primary)] px-4 py-2.5 text-[0.88rem] font-semibold text-white transition-all hover:bg-[var(--primary-strong)]"
+										>
+											Cambiar valoración
+										</button>
+									</div>
+								)}
+
+								{canRateInActivity && (!hasExistingRating || showRatingEditor) && (
+									<div className="mt-4 space-y-4 rounded-sm border border-[#d8e6dd] bg-[var(--gray-soft)] px-4 py-4">
 										<div className="flex items-start justify-between gap-3">
 											<div>
 												<p className="m-0 text-[0.84rem] font-semibold uppercase tracking-[0.05em] text-[var(--text-muted)]">Tu valoración</p>
-												<p className="m-0 mt-1 text-[0.93rem] font-semibold text-[var(--text)]">Selecciona cuántas estrellas quieres dar</p>
+												<p className="m-0 mt-1 text-[0.93rem] font-semibold text-[var(--text)]">{hasExistingRating ? "Actualiza tu valoración" : "Selecciona cuántas estrellas quieres dar"}</p>
 											</div>
 											<span className="inline-flex shrink-0 rounded-full bg-[#eef8f2] px-3 py-1 text-[0.78rem] font-semibold text-[#1f6e45]">
 												{ratingValue} estrella{ratingValue === 1 ? "" : "s"}
@@ -653,8 +781,13 @@ export default function ActivityDetail() {
 
 										<div className="flex flex-wrap items-center gap-3">
 											<button type="button" onClick={handleSubmitRating} disabled={ratingBusy} className="rounded-sm border border-[var(--primary)] bg-[var(--primary)] px-4 py-2.5 text-[0.88rem] font-semibold text-white transition-all hover:bg-[var(--primary-strong)] disabled:cursor-not-allowed disabled:opacity-70">
-												{ratingBusy ? "Guardando..." : "Guardar valoración"}
+												{ratingBusy ? "Guardando..." : hasExistingRating ? "Actualizar valoración" : "Guardar valoración"}
 											</button>
+											{hasExistingRating && (
+												<button type="button" onClick={closeRatingEditor} disabled={ratingBusy} className="rounded-sm border border-[#d8e6dd] bg-white px-4 py-2.5 text-[0.88rem] font-semibold text-[#486154] transition-all hover:bg-[#f5faf7] disabled:cursor-not-allowed disabled:opacity-70">
+													Cancelar
+												</button>
+											)}
 											<p className="m-0 text-[0.8rem] text-[var(--text-muted)]">Pulsa una estrella para elegir la nota exacta.</p>
 										</div>
 										{ratingMessage && <p className="m-0 text-[0.82rem] font-medium text-[#1d6a41]">{ratingMessage}</p>}
@@ -682,7 +815,7 @@ export default function ActivityDetail() {
 												<button
 													type="button"
 													onClick={openCancelModal}
-													className="w-full rounded-sm border border-[var(--reject)] bg-[var(--reject)] px-4 py-2.5 text-[0.88rem] font-semibold text-[white] transition-all hover:bg-[#ffe4dc]"
+													className="w-full rounded-sm border border-[var(--reject)] bg-[var(--reject)] px-4 py-2.5 text-[0.88rem] font-semibold text-[white] transition-all hover:bg-[var(--reject-hover)] disabled:border-[#dce6df] disabled:bg-[#f4f8f6] disabled:text-[#7d9084]"
 												>
 													Cancelar actividad
 												</button>
@@ -727,24 +860,36 @@ export default function ActivityDetail() {
 								<span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-[var(--primary)] shadow-sm"><MessageCircle className="h-4 w-4" strokeWidth={1.9} /></span>
 							</div>
 
-							<div className="mb-3 h-1 w-full rounded-full bg-[linear-gradient(90deg,var(--primary),var(--primary-soft))]" />
+							<div className="mb-3 h-1 w-full rounded-full bg-[var(--primary)]" />
 
-							<div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#cfe5d8] bg-white px-3 py-1 text-[0.73rem] font-semibold text-[#35604b]">
+							<div className="mb-3 inline-flex items-center gap-2 rounded-sm border border-[#cfe5d8] bg-white px-3 py-1 text-[0.73rem] font-semibold text-[#35604b]">
 								{activity.chat_bidireccional ? "Chat bidireccional habilitado" : "Solo encargado/admin puede enviar"}
 								{!activity.chat_bidireccional && <Lock className="h-3.5 w-3.5" />}
 							</div>
+							{isChatReadOnlyForUser && (
+								<p className="m-0 mb-3 rounded-md border border-[#f0d9b9] bg-[#fff8ef] px-3 py-2 text-[0.78rem] font-medium text-[#8a5a18]">
+									Este chat es de solo lectura para ti: solo encargados y admin pueden enviar mensajes.
+								</p>
+							)}
 
-							<div className="rounded-lg border border-[#d4e6db] bg-white">
+							<div className="rounded-lg border border-[#d4e6db] bg-[var(--gray-soft)]">
 								<div className="max-h-[260px] space-y-2 overflow-y-auto px-3 py-3">
+									{chatMessages.length === 0 && (
+										<p className="m-0 px-3 py-2 text-[0.82rem] text-[var(--text-muted)] text-center">
+											Aún no hay mensajes en esta actividad
+										</p>
+									)}
 									{chatMessages.map(message => {
 										const own = isOwnMessage(message);
 										const managerMessage = isManagerMessage(message);
+										const messageMoment = getMessageMomentLabel(message);
+										const senderLabel = own ? message.author : getSenderLabel(message);
 										return (
 											<div key={message.id} className={`flex ${own ? "justify-end" : "justify-start"}`}>
-												<div className={`max-w-[88%] rounded-2xl px-3 py-2.5 text-[0.82rem] ${own ? "border border-[#138645] bg-[linear-gradient(180deg,#18a24f,#0f8d43)] text-white shadow-[0_8px_16px_-12px_rgba(6,94,41,0.7)]" : managerMessage ? "border border-[var(--primary)] bg-[linear-gradient(180deg,#f4fbf6,#edf8f1)] text-[#173629] shadow-[0_10px_22px_-18px_rgba(8,40,25,0.34)] ring-1 ring-[rgba(5,166,61,0.08)]" : "border border-[#e2ebe6] bg-[#f9fbfa] text-[#2f4d3f]"}`}>
+												<div className={`max-w-[88%] rounded-2xl px-3 py-2.5 text-[0.82rem] ${own ? "bg-[var(--primary)] text-white" : managerMessage ? "border border-[var(--primary)] bg-[#f4fbf6] text-[] ring-1 ring-[rgba(5,166,61,0.08)]" : "border border-[var(--gray-strong)] bg-white text-[#2f4d3f]"}`}>
 													<div className="mb-1 flex items-center justify-between gap-2">
-														<p className={`m-0 text-[0.72rem] font-semibold ${own ? "text-[#daf8e6]" : "text-[#537564]"}`}>{getSenderLabel(message)}</p>
-														<span className={`text-[0.69rem] ${own ? "text-[#c5f1d7]" : "text-[#7b9286]"}`}>{message.time}</span>
+														<p className={`m-0 text-[0.72rem] font-semibold ${own ? "text-[#daf8e6]" : "text-[#537564]"}`}>{senderLabel}</p>
+														<span className={`text-[0.69rem] ${own ? "text-[#c5f1d7]" : "text-[#7b9286]"}`}>{messageMoment}</span>
 													</div>
 													<p className="m-0 leading-relaxed">{message.text}</p>
 												</div>
@@ -756,11 +901,20 @@ export default function ActivityDetail() {
 								{canSendChat && (
 									<div className="border-t border-[#e2ebe4] px-3 py-3">
 										<div className="grid grid-cols-[1fr_auto] items-center gap-2">
-											<input type="text" className="w-full rounded-md border border-[#d8e6dd] bg-white px-3 py-2 text-[0.84rem] text-[var(--text)] outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[#05a63d]/20" placeholder="Escribe un mensaje..." />
-											<button type="button" className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-[var(--primary)] bg-[var(--primary)] text-white transition-colors hover:bg-[var(--primary-strong)]">
+											<input
+												type="text"
+												value={chatInput}
+												onChange={event => setChatInput(event.target.value)}
+												onKeyDown={handleChatKeyDown}
+												disabled={chatBusy}
+												className="w-full rounded-md border border-[#d8e6dd] bg-white px-3 py-2 text-[0.84rem] text-[var(--text)] outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[#05a63d]/20 disabled:cursor-not-allowed disabled:bg-[#f4f8f6]"
+												placeholder="Escribe un mensaje..."
+											/>
+											<button type="button" onClick={handleSendChatMessage} disabled={chatBusy || !chatInput.trim()} className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-[var(--primary)] bg-[var(--primary)] text-white transition-colors hover:bg-[var(--primary-strong)] disabled:cursor-not-allowed disabled:border-[#cfdcd5] disabled:bg-[#dde9e2]">
 												<Send className="h-4 w-4" strokeWidth={2} />
 											</button>
 										</div>
+										{chatError && <p className="m-0 mt-2 text-[0.8rem] font-medium text-[#9f3b2d]">{chatError}</p>}
 									</div>
 								)}
 							</div>

@@ -622,3 +622,19 @@ export async function cancelManagedActivity(activityId) {
     };
   }
 }
+
+export async function sendActivityMessage(activityId, mensaje) {
+  try {
+    const { data } = await api.post(`/activities/${activityId}/messages`, { mensaje });
+    return {
+      ok: true,
+      message: data?.message || "Mensaje enviado correctamente.",
+      chatMessage: data?.chatMessage || null
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      message: error?.response?.data?.message || "No se pudo enviar el mensaje."
+    };
+  }
+}

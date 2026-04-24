@@ -12,7 +12,8 @@ const {
   removeParticipant,
   rateActivity,
   reviewActivity,
-  cancelActivity
+  cancelActivity,
+  createActivityMessage
 } = require("../controllers/activityController");
 const { requireAuth, requireRole } = require("../middleware/auth");
 
@@ -29,5 +30,6 @@ router.delete("/:id_actividad/participants/:id_usuario", requireAuth, requireRol
 router.patch("/:id_actividad/rating", requireAuth, requireRole("participante", "admin", "encargado"), rateActivity);
 router.post("/:id_actividad/enroll", requireAuth, requireRole("participante", "admin", "encargado"), enrollInActivity);
 router.delete("/:id_actividad/enroll", requireAuth, requireRole("participante", "admin", "encargado"), cancelEnrollment);
+router.post("/:id_actividad/messages", requireAuth, requireRole("participante", "admin"), createActivityMessage);
 
 module.exports = router;

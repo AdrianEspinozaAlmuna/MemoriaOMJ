@@ -1,5 +1,6 @@
 const { prisma } = require("../prisma/client");
 const { getUserIdFromToken } = require("../middleware/auth");
+const { emitActivityMessage } = require("../realtime");
 
 function parseActivityId(value) {
   const parsed = Number(value);
@@ -276,6 +277,7 @@ async function getActivityById(req, res) {
 
     const messages = activity.actividad_mensaje.map(item => ({
       id: item.id_mensaje,
+      userId: item.id_usuario,
       author: `${item.usuario.nombre} ${item.usuario.apellido || ""}`.trim(),
       role: item.usuario.rol === "admin" ? "admin" : item.id_usuario === activity.id_encargado ? "encargado" : "participante",
       text: item.mensaje,
@@ -517,7 +519,7 @@ async function cancelEnrollment(req, res) {
 
     const activity = await prisma.actividad.findUnique({
       where: { id_actividad: idActividad },
-      select: { id_actividad: true, estado: true }
+      select: { id_actividad: true, estado: true, id_encargado: true }
     });
 
     if (!activity) {
@@ -788,6 +790,14 @@ async function rateActivity(req, res) {
       return res.status(400).json({ message: "Solo puedes valorar una actividad finalizada" });
     }
 
+    if (req.user?.rol === "admin") {
+      return res.status(403).json({ message: "El admin no puede valorar actividades" });
+    }
+
+    if (Number(activity.id_encargado) === idUsuario) {
+      return res.status(403).json({ message: "El encargado de la actividad no puede valorarla" });
+    }
+
     const membership = await prisma.actividad_participantes.findUnique({
       where: {
         id_actividad_id_usuario: {
@@ -962,6 +972,107 @@ async function cancelActivity(req, res) {
   }
 }
 
+async function createActivityMessage(req, res) {
+  const idActividad = parseActivityId(req.params.id_actividad);
+  const idUsuario = getUserIdFromToken(req.user);
+  const text = String(req.body?.mensaje ?? req.body?.message ?? "").trim();
+
+  if (!idActividad) {
+    return res.status(400).json({ message: "id_actividad invalido" });
+  }
+
+  if (!idUsuario) {
+    return res.status(403).json({ message: "No se pudo identificar el usuario autenticado" });
+  }
+
+  if (!text) {
+    return res.status(400).json({ message: "El mensaje no puede estar vacío" });
+  }
+
+  if (text.length > 2000) {
+    return res.status(400).json({ message: "El mensaje supera el largo máximo permitido (2000 caracteres)" });
+  }
+
+  try {
+    const activity = await prisma.actividad.findUnique({
+      where: { id_actividad: idActividad },
+      select: {
+        id_actividad: true,
+        id_encargado: true,
+        chat_bidireccional: true,
+        estado: true
+      }
+    });
+
+    if (!activity) {
+      return res.status(404).json({ message: "Actividad no encontrada" });
+    }
+
+    if (activity.estado === "cancelada") {
+      return res.status(400).json({ message: "No se pueden enviar mensajes en una actividad cancelada" });
+    }
+
+    const isAdmin = req.user?.rol === "admin";
+
+    const membership = await prisma.actividad_participantes.findUnique({
+      where: {
+        id_actividad_id_usuario: {
+          id_actividad: idActividad,
+          id_usuario: idUsuario
+        }
+      },
+      select: { rol: true }
+    });
+
+    if (!isAdmin && !membership) {
+      return res.status(403).json({ message: "No participas en esta actividad" });
+    }
+
+    const isOwner = Number(activity.id_encargado) === idUsuario;
+    const isManager = isAdmin || isOwner || membership?.rol === "encargado";
+
+    if (!activity.chat_bidireccional && !isManager) {
+      return res.status(403).json({ message: "Este chat permite mensajes solo de encargados y admin" });
+    }
+
+    const createdMessage = await prisma.actividad_mensaje.create({
+      data: {
+        id_actividad: idActividad,
+        id_usuario: idUsuario,
+        mensaje: text,
+        fecha: new Date()
+      },
+      include: {
+        usuario: { select: { id_usuario: true, nombre: true, apellido: true, rol: true } }
+      }
+    });
+
+    const serializedMessage = {
+      id: createdMessage.id_mensaje,
+      userId: createdMessage.id_usuario,
+      author: `${createdMessage.usuario.nombre} ${createdMessage.usuario.apellido || ""}`.trim(),
+      role:
+        createdMessage.usuario.rol === "admin"
+          ? "admin"
+          : createdMessage.id_usuario === activity.id_encargado
+          ? "encargado"
+          : "participante",
+      text: createdMessage.mensaje,
+      date: createdMessage.fecha
+    };
+
+    emitActivityMessage(idActividad, serializedMessage);
+
+    return res.status(201).json({
+      ok: true,
+      message: "Mensaje enviado correctamente",
+      chatMessage: serializedMessage
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Error enviando mensaje", detail: error.message });
+  }
+}
+
 module.exports = {
   listActivities,
   listAdminActivities,
@@ -974,5 +1085,6 @@ module.exports = {
   removeParticipant,
   rateActivity,
   reviewActivity,
-  cancelActivity
+  cancelActivity,
+  createActivityMessage
 };
