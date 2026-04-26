@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Activity, BarChart3, Bell, CalendarDays, CheckCircle2, Circle, Cog, LayoutDashboard, Users } from "lucide-react";
+import React from "react";
+import { Activity, BarChart3, Bell, CalendarDays, CheckCircle2, Circle, DoorOpen, LayoutDashboard, LogOut, Menu, UserRound, Users, X } from "lucide-react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 function decodeToken(token) {
@@ -14,16 +14,6 @@ function decodeToken(token) {
 	}
 }
 
-function getInitials(name = "") {
-	const clean = name.trim();
-	if (!clean) return "AU";
-	return clean
-		.split(" ")
-		.slice(0, 2)
-		.map(part => part[0]?.toUpperCase() || "")
-		.join("");
-}
-
 const mainLinks = [
 	{ to: "/admin/dashboard", label: "Dashboard", icon: "dashboard" },
 	{ to: "/admin/usuarios", label: "Usuarios", icon: "users" },
@@ -31,15 +21,8 @@ const mainLinks = [
 	{ to: "/admin/calendario", label: "Calendario", icon: "calendar" },
 	{ to: "/admin/actividades", label: "Actividades", icon: "activity" },
 	{ to: "/admin/reportes", label: "Reportes", icon: "report" },
-	{ to: "/admin/notificaciones", label: "Notificaciones", icon: "bell" }
-];
-
-const systemLinks = [{ to: "/admin/configuracion", label: "Configuracion", icon: "settings" }];
-
-const notifications = [
-	{ id: "adm-notif-1", title: "Nueva actividad pendiente", detail: "Workshop de Emprendimiento requiere revision", time: "Hace 10 min" },
-	{ id: "adm-notif-2", title: "Registro nuevo", detail: "Camila Torres se registro en la plataforma", time: "Hace 1 hora" },
-	{ id: "adm-notif-3", title: "Alerta de asistencia", detail: "Dos actividades tienen baja asistencia", time: "Hoy" }
+	{ to: "/admin/notificaciones", label: "Notificaciones", icon: "bell" },
+	{ to: "/admin/configuracion", label: "Salas", icon: "rooms" }
 ];
 
 function SidebarIcon({ name, className = "h-4 w-4" }) {
@@ -64,8 +47,8 @@ function SidebarIcon({ name, className = "h-4 w-4" }) {
 	if (name === "bell") {
 		return <Bell aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
 	}
-	if (name === "settings") {
-		return <Cog aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
+	if (name === "rooms") {
+		return <DoorOpen aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
 	}
 	return <Circle aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
 }
@@ -75,45 +58,16 @@ export default function AdminLayout() {
 	const user = decodeToken(token);
 	const location = useLocation();
 	const navigate = useNavigate();
-	const menuRef = useRef(null);
-	const [menuOpen, setMenuOpen] = useState(false);
-	const [notificationsOpen, setNotificationsOpen] = useState(false);
-	const [mobileNavOpen, setMobileNavOpen] = useState(false);
+	const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
 
 	const displayName = user?.nombre ? `${user.nombre} ${user.apellido || ""}`.trim() : "Admin Usuario";
-	const initials = useMemo(() => getInitials(displayName), [displayName]);
+	const displayEmail = user?.mail || user?.email || "";
 
-	useEffect(() => {
-		function handleDocumentClick(event) {
-			if (menuRef.current && !menuRef.current.contains(event.target)) {
-				setMenuOpen(false);
-				setNotificationsOpen(false);
-			}
-		}
-
-		function handleEscape(event) {
-			if (event.key === "Escape") {
-				setMenuOpen(false);
-				setNotificationsOpen(false);
-			}
-		}
-
-		document.addEventListener("mousedown", handleDocumentClick);
-		document.addEventListener("keydown", handleEscape);
-
-		return () => {
-			document.removeEventListener("mousedown", handleDocumentClick);
-			document.removeEventListener("keydown", handleEscape);
-		};
-	}, []);
-
-	useEffect(() => {
+	React.useEffect(() => {
 		setMobileNavOpen(false);
-		setMenuOpen(false);
-		setNotificationsOpen(false);
 	}, [location.pathname]);
 
-	useEffect(() => {
+	React.useEffect(() => {
 		function handleResize() {
 			if (window.innerWidth > 980) {
 				setMobileNavOpen(false);
@@ -126,8 +80,6 @@ export default function AdminLayout() {
 
 	function handleLogout() {
 		localStorage.removeItem("token");
-		setMenuOpen(false);
-		setNotificationsOpen(false);
 		setMobileNavOpen(false);
 		navigate("/login");
 	}
@@ -138,14 +90,32 @@ export default function AdminLayout() {
 
 	const navLinkClass = ({ isActive }) =>
 		[
-			"flex items-center gap-2 rounded-xl px-3.5 py-2 text-[0.92rem] font-semibold text-[#355447] [transition:background-color_150ms_ease,color_120ms_ease] hover:bg-[#def3e7] hover:text-[var(--primary-strong)] active:bg-[var(--primary-active)] focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(5,166,61,0.15)]",
+			"flex items-center gap-2 rounded-sm px-3 py-2 text-[0.92rem] font-semibold text-[#355447] [transition:background-color_150ms_ease,color_120ms_ease] hover:bg-[#edf2ef] hover:text-[#162a1e] focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(5,166,61,0.15)]",
 			isActive ? "bg-[var(--primary-active)] !text-[var(--primary-strong)]" : ""
 		].join(" ");
 
 	return (
-		<div className="grid min-h-screen grid-cols-[220px_minmax(0,1fr)] bg-[var(--bg-neutral)] animate-[revealUp_0.7s_ease_both] max-[980px]:grid-cols-1 max-[980px]:relative">
-			<aside className={`${mobileNavOpen ? "block" : "hidden min-[981px]:block"} border-r border-[#d7e4dc] bg-white px-3 pb-4 pt-3 min-[981px]:sticky min-[981px]:top-0 min-[981px]:h-screen min-[981px]:overflow-y-auto max-[980px]:fixed max-[980px]:left-3 max-[980px]:right-3 max-[980px]:top-[4.55rem] max-[980px]:z-[35] max-[980px]:max-h-[calc(100vh-5.4rem)] max-[980px]:overflow-y-auto max-[980px]:rounded-xl max-[980px]:border max-[980px]:border-[#d7e4dc] max-[980px]:shadow-[0_18px_35px_-22px_rgba(11,38,24,0.45)] max-[640px]:left-2 max-[640px]:right-2 max-[640px]:top-[4.1rem]`}>
-				<p className="mb-2 text-[0.82rem] font-semibold text-[#6f8278]">Administracion</p>
+		<div className="grid min-h-screen grid-cols-[232px_minmax(0,1fr)] bg-[var(--bg-neutral)] animate-[revealUp_0.7s_ease_both] max-[980px]:grid-cols-1 max-[980px]:relative">
+			<button
+				type="button"
+				className="fixed left-3 top-3 z-40 hidden h-9 w-9 items-center justify-center rounded-sm border border-[#d8e6dd] bg-white text-[#2f463a] shadow-[0_8px_20px_-16px_rgba(10,27,16,0.45)] max-[980px]:inline-flex"
+				onClick={() => setMobileNavOpen(previous => !previous)}
+				aria-expanded={mobileNavOpen}
+				aria-label={mobileNavOpen ? "Cerrar menu de administracion" : "Abrir menu de administracion"}
+			>
+				{mobileNavOpen ? <X className="h-4 w-4" strokeWidth={2} /> : <Menu className="h-4 w-4" strokeWidth={2} />}
+			</button>
+
+			{mobileNavOpen && <button type="button" className="fixed inset-0 z-30 hidden bg-[#10261a]/20 max-[980px]:block" onClick={closeMobileNav} aria-label="Cerrar menu" />}
+
+			<aside className={`${mobileNavOpen ? "max-[980px]:translate-x-0" : "max-[980px]:-translate-x-[110%]"} border-r border-[#e0e5e2] bg-[#f7f8f7] px-3 pb-4 pt-3 min-[981px]:sticky min-[981px]:top-0 min-[981px]:h-screen min-[981px]:overflow-y-auto min-[981px]:flex min-[981px]:flex-col max-[980px]:fixed max-[980px]:left-0 max-[980px]:top-0 max-[980px]:z-[35] max-[980px]:h-screen max-[980px]:w-[236px] max-[980px]:overflow-y-auto max-[980px]:shadow-[0_16px_28px_-18px_rgba(10,27,16,0.5)] max-[980px]:transition-transform max-[980px]:duration-200`}>
+				<div className="mb-3 flex items-center gap-2 px-2">
+					<img src="/iconOMJ.jpg" alt="OMJ" className="h-7 w-7 rounded-md border border-[#d8dfda]" />
+					<div className="min-w-0">
+						<p className="m-0 truncate text-[0.84rem] font-semibold text-[#455b50]">Administracion OMJ</p>
+						<p className="m-0 text-[0.75rem] text-[#7a8881]">Gestion interna</p>
+					</div>
+				</div>
 
 				<nav className="grid gap-1" aria-label="Menu de administracion">
 					{mainLinks.map(link => (
@@ -162,106 +132,34 @@ export default function AdminLayout() {
 					))}
 				</nav>
 
-				<div className="mt-4 grid gap-1">
-					<p className="mb-1 text-[0.78rem] font-semibold text-[#6f8278]">Sistema</p>
-					{systemLinks.map(link => (
-						<NavLink
-							key={link.to}
-							to={link.to}
-							onClick={closeMobileNav}
-							className={navLinkClass}
+				<div className="mt-5 border-t border-[#e2e6e3] pt-3 min-[981px]:mt-auto">
+					<p className="mb-2 px-2 text-[0.74rem] font-semibold uppercase tracking-[0.08em] text-[#829087]">Cuenta</p>
+
+					<div className="grid gap-2">
+						<div className="inline-flex items-center gap-2 rounded-lg px-3 py-2.5 text-left text-[0.9rem] font-semibold text-[#2f463a]">
+							<span className="grid h-8 w-8 place-items-center text-[var(--primary-strong)]">
+								<UserRound aria-hidden="true" focusable="false" className="h-4 w-4" strokeWidth={2} />
+							</span>
+							<span className="grid min-w-0">
+								<span className="truncate">{displayName}</span>
+								{displayEmail && <span className="truncate text-[0.74rem] font-normal text-[#7a8881]">{displayEmail}</span>}
+							</span>
+						</div>
+
+						<button
+							type="button"
+							onClick={handleLogout}
+							className="inline-flex w-full items-center gap-2 rounded-sm border border-[var(--reject-hover)] bg-white px-2.5 py-2 text-left text-[0.84rem] font-semibold text-[var(--reject-hover)] hover:bg-[#ffefed]"
 						>
-							<SidebarIcon name={link.icon} className="h-4 w-4" />
-							<span>{link.label}</span>
-						</NavLink>
-					))}
+							<LogOut aria-hidden="true" focusable="false" className="h-4 w-4" strokeWidth={2} />
+							Cerrar sesion
+						</button>
+					</div>
 				</div>
 			</aside>
 
-			<section className="grid min-w-0 grid-rows-[auto_minmax(0,1fr)]">
-				<header className="flex h-[3.85rem] items-center justify-between border-b border-[#d7e4dc] bg-white px-4 max-[980px]:sticky max-[980px]:top-0 max-[980px]:z-40 max-[980px]:px-3">
-					<div className="flex items-center gap-2.5">
-						<button
-							type="button"
-							className="hidden h-[2.15rem] w-[2.15rem] flex-col items-center justify-center gap-[0.22rem] rounded-lg bg-[#eef7f1] p-0 transition-colors duration-200 hover:bg-[#e2f4e9] focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(5,166,61,0.15)] max-[980px]:inline-flex"
-							onClick={() => setMobileNavOpen(previous => !previous)}
-							aria-expanded={mobileNavOpen}
-							aria-label="Abrir menu de administracion"
-						>
-							<span className="block h-[2px] w-4 rounded-full bg-[#325444]" />
-							<span className="block h-[2px] w-4 rounded-full bg-[#325444]" />
-							<span className="block h-[2px] w-4 rounded-full bg-[#325444]" />
-						</button>
-
-						<div className="inline-flex items-center gap-2 text-[1.02rem] text-[#1f3a2c]">
-							<img src="/iconOMJ.jpg" alt="OMJ" className="h-8 w-8 rounded-lg border border-[#cde2d4]" />
-							<strong className="max-[640px]:hidden">OMJ Curico</strong>
-						</div>
-					</div>
-
-					<div className="relative flex items-center gap-2" ref={menuRef}>
-						<button
-							type="button"
-							className="relative inline-flex h-[2.15rem] w-[2.15rem] items-center justify-center cursor-pointer rounded-lg border border-[#d8e6dd] bg-[#f7fbf8] transition-colors duration-200 hover:bg-[#ecf6ef] focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(5,166,61,0.15)]"
-							aria-label="Notificaciones"
-							onClick={() => {
-								setNotificationsOpen(previous => !previous);
-								setMenuOpen(false);
-							}}
-							aria-expanded={notificationsOpen}
-						>
-							<Bell aria-hidden="true" focusable="false" className="h-4 w-4 text-[#3e5b4c]" strokeWidth={1.8} />
-							<span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-[var(--primary)] px-1 text-[0.7rem] font-bold text-white">3</span>
-						</button>
-
-						{notificationsOpen && (
-							<div className="absolute right-[3.25rem] top-[calc(100%+0.4rem)] z-[21] w-[min(380px,82vw)] overflow-hidden rounded-[14px] border border-[#d7e4dc] bg-white shadow-[0_18px_32px_-24px_rgba(11,38,24,0.38)] max-[640px]:right-0 max-[640px]:w-[min(320px,calc(100vw-1.2rem))]" role="dialog" aria-label="Notificaciones">
-								<div className="border-b border-[#e1ebe4] bg-[linear-gradient(180deg,#f8fbf9,rgba(248,251,249,0.9))] px-4 py-3">
-									<p className="m-0 text-[0.78rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Centro de alertas</p>
-									<p className="mt-1 m-0 text-[0.92rem] font-semibold text-[#244235]">Notificaciones recientes</p>
-								</div>
-								<div className="grid gap-0 bg-white">
-									{notifications.map(item => (
-										<article key={item.id} className="grid grid-cols-[auto_1fr_auto] items-start gap-3 border-b border-[#e7eee9] px-4 py-3 last:border-b-0">
-											<span className="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#eef7f1] text-[var(--primary)]">
-												<Bell aria-hidden="true" focusable="false" className="h-4 w-4" strokeWidth={1.9} />
-											</span>
-											<div className="min-w-0">
-												<strong className="block text-[0.9rem] leading-tight text-[#214234]">{item.title}</strong>
-												<small className="mt-1 block text-[0.8rem] leading-relaxed text-[#60716a]">{item.detail}</small>
-											</div>
-											<span className="inline-flex shrink-0 rounded-md bg-[#eef8f1] px-2 py-1 text-[0.72rem] font-semibold text-[#5f7a6a]">{item.time}</span>
-										</article>
-									))}
-								</div>
-							</div>
-						)}
-
-						<button
-							type="button"
-							className="inline-flex hover:cursor-pointer items-center gap-2 rounded-xl bg-[var(--gray-soft)] px-2 py-1.5 text-[0.89rem] font-semibold leading-none text-[#2e4c3d] transition-colors duration-200 hover:bg-[var(--gray)] focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(5,166,61,0.15)]"
-							onClick={() => {
-								setMenuOpen(previous => !previous);
-								setNotificationsOpen(false);
-							}}
-							aria-expanded={menuOpen}
-							aria-haspopup="menu"
-						>
-							<span className="grid h-7 w-7 place-items-center rounded-full bg-[linear-gradient(180deg,#138b47,#0f7f40)] text-[0.73rem] font-bold text-[#f8fafc]">{initials}</span>
-							<span className="max-[640px]:hidden">{displayName}</span>
-						</button>
-
-						{menuOpen && (
-							<div className="absolute right-0 top-[calc(100%+0.4rem)] z-20 min-w-44 rounded-[10px] border border-[#d7e4dc] bg-white p-2 shadow-[0_14px_26px_-20px_rgba(11,38,24,0.35)]" role="menu">
-								<button type="button" role="menuitem" onClick={handleLogout} className="hover:cursor-pointer w-full rounded-lg bg-[#eff8f2] px-2.5 py-2 text-left text-[0.85rem] font-semibold text-[#214234]">
-									Cerrar sesion
-								</button>
-							</div>
-						)}
-					</div>
-				</header>
-
-				<div className="px-4 py-5 max-[640px]:px-3.5 max-[640px]:py-4">
+			<section className="min-w-0">
+				<div className="px-4 py-5 max-[980px]:pt-14 max-[640px]:px-3.5 max-[640px]:py-4 max-[640px]:pt-14">
 					<div className="mx-auto w-full max-w-7xl">
 						<Outlet />
 					</div>

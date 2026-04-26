@@ -271,38 +271,38 @@ export default function AdminUsers() {
 					<table className="min-w-[840px] w-full text-[0.89rem] max-[640px]:min-w-[780px]">
 						<thead>
 							<tr>
-								<th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3 py-2 text-left text-[0.73rem] font-semibold text-[var(--text-muted)]">Nombre</th>
-								<th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3 py-2 text-left text-[0.73rem] font-semibold text-[var(--text-muted)]">Rol</th>
-								<th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3 py-2 text-left text-[0.73rem] font-semibold text-[var(--text-muted)]">Estado</th>
-								<th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3 py-2 text-left text-[0.73rem] font-semibold text-[var(--text-muted)]">RUT</th>
-								<th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3 py-2 text-left text-[0.73rem] font-semibold text-[var(--text-muted)]">Email</th>
-								<th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3 py-2 text-left text-[0.73rem] font-semibold text-[var(--text-muted)]">Telefono</th>
-								<th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3 py-2 text-left text-[0.73rem] font-semibold text-[var(--text-muted)]">Registro</th>
-								<th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3 py-2 text-left text-[0.73rem] font-semibold text-[var(--text-muted)]">Acciones</th>
+								<th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3 py-2 text-center text-[0.73rem] font-semibold text-[var(--text-muted)]">Nombre</th>
+								<th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3 py-2 text-center text-[0.73rem] font-semibold text-[var(--text-muted)]">Rol</th>
+								<th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3 py-2 text-center text-[0.73rem] font-semibold text-[var(--text-muted)]">Estado</th>
+								<th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3 py-2 text-center text-[0.73rem] font-semibold text-[var(--text-muted)]">RUT</th>
+								<th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3 py-2 text-center text-[0.73rem] font-semibold text-[var(--text-muted)]">Email</th>
+								<th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3 py-2 text-center text-[0.73rem] font-semibold text-[var(--text-muted)]">Telefono</th>
+								<th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3 py-2 text-center text-[0.73rem] font-semibold text-[var(--text-muted)]">Registro</th>
+								<th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3 py-2 text-center text-[0.73rem] font-semibold text-[var(--text-muted)]">Acciones</th>
 							</tr>
 						</thead>
 						<tbody>
 							{paginatedUsers.map(user => (
 								<tr key={user.id}>
-									<td className="border-b border-[#d8e6dd] px-3 py-3">
+									<td className="border-b border-[#d8e6dd] px-3 py-3 text-center">
 										<span className="block text-[0.9rem] text-[var(--text)] font-semibold">{`${user.nombre} ${user.apellido}`}</span>
 									</td>
-									<td className="border-b border-[#d8e6dd] px-3 py-3 text-[var(--text)]">
+									<td className="border-b border-[#d8e6dd] px-3 py-3 text-center text-[var(--text)]">
 										<span className={`inline-flex rounded-md px-2 py-1 `}>
 											{formatRoleLabel(user.rol)}
 										</span>
 									</td>
-									<td className="border-b border-[#d8e6dd] px-3 py-3">
+									<td className="border-b border-[#d8e6dd] px-3 py-3 text-center">
 										<span className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[0.82rem] font-semibold ${user.estado ? " text-[var(--primary-strong)]" : " text-[#ad4334]"}`}>
 											{user.estado ? "Habilitado" : "Deshabilitado"}
 										</span>
 									</td>
-									<td className="border-b border-[#d8e6dd] px-3 py-3 text-[var(--text)]">{user.rut}</td>
-									<td className="border-b border-[#d8e6dd] px-3 py-3 text-[var(--text)]">{user.mail}</td>
-									<td className="border-b border-[#d8e6dd] px-3 py-3 text-[var(--text)]">{user.telefono || "-"}</td>
-									<td className="border-b border-[#d8e6dd] px-3 py-3 text-[var(--text)]">{formatDateForChile(user.fechaRegistro, { day: "2-digit", month: "short", year: "numeric" })}</td>
-									<td className="border-b border-[#d8e6dd] px-3 py-3">
-										<div className="flex flex-wrap gap-2">
+									<td className="border-b border-[#d8e6dd] px-3 py-3 text-center text-[var(--text)]">{user.rut}</td>
+									<td className="border-b border-[#d8e6dd] px-3 py-3 text-center text-[var(--text)]">{user.mail}</td>
+									<td className="border-b border-[#d8e6dd] px-3 py-3 text-center text-[var(--text)]">{user.telefono || "-"}</td>
+									<td className="border-b border-[#d8e6dd] px-3 py-3 text-center text-[var(--text)]">{formatDateForChile(user.fechaRegistro, { day: "2-digit", month: "short", year: "numeric" })}</td>
+									<td className="border-b border-[#d8e6dd] px-3 py-3 text-center">
+										<div className="flex flex-wrap justify-center gap-2">
 											<button type="button" className="inline-flex h-[32px] w-[32px] items-center justify-center rounded-sm  bg-[var(--primary)] text-white transition-colors hover:bg-[var(--primary-strong)]" onClick={() => openEditModal(user)} aria-label="Editar usuario">
 												<Pencil className="h-3.5 w-3.5" strokeWidth={2} />
 											</button>

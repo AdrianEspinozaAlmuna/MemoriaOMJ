@@ -254,33 +254,33 @@ export default function AdminReports() {
 					<table className="min-w-[1040px] w-full text-[0.89rem] max-[640px]:min-w-[980px]">
 						<thead>
 							<tr>
-								<th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3 py-2 text-left text-[0.73rem] font-semibold text-[var(--text-muted)]">Actividad</th>
-								<th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3 py-2 text-left text-[0.73rem] font-semibold text-[var(--text-muted)]">Categoria</th>
-								<th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3 py-2 text-left text-[0.73rem] font-semibold text-[var(--text-muted)]">Encargado</th>
-								<th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3 py-2 text-left text-[0.73rem] font-semibold text-[var(--text-muted)]">Sala</th>
-								<th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3 py-2 text-left text-[0.73rem] font-semibold text-[var(--text-muted)]">Fecha</th>
-								<th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3 py-2 text-left text-[0.73rem] font-semibold text-[var(--text-muted)]">Hora inicio-termino</th>
-								<th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3 py-2 text-left text-[0.73rem] font-semibold text-[var(--text-muted)]">Inscritos</th>
-								<th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3 py-2 text-left text-[0.73rem] font-semibold text-[var(--text-muted)]">Estado</th>
-								<th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3 py-2 text-left text-[0.73rem] font-semibold text-[var(--text-muted)]">Accion</th>
+								<th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3 py-2 text-center text-[0.73rem] font-semibold text-[var(--text-muted)]">Actividad</th>
+								<th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3 py-2 text-center text-[0.73rem] font-semibold text-[var(--text-muted)]">Categoria</th>
+								<th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3 py-2 text-center text-[0.73rem] font-semibold text-[var(--text-muted)]">Encargado</th>
+								<th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3 py-2 text-center text-[0.73rem] font-semibold text-[var(--text-muted)]">Sala</th>
+								<th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3 py-2 text-center text-[0.73rem] font-semibold text-[var(--text-muted)]">Fecha</th>
+								<th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3 py-2 text-center text-[0.73rem] font-semibold text-[var(--text-muted)]">Hora inicio-termino</th>
+								<th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3 py-2 text-center text-[0.73rem] font-semibold text-[var(--text-muted)]">Inscritos</th>
+								<th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3 py-2 text-center text-[0.73rem] font-semibold text-[var(--text-muted)]">Estado</th>
+								<th className="border-b border-[#d8e6dd] bg-[#f5faf7] px-3 py-2 text-center text-[0.73rem] font-semibold text-[var(--text-muted)]">Accion</th>
 							</tr>
 						</thead>
 						<tbody>
 							{reportRows.map(row => (
 								<tr key={row.id}>
-									<td className="border-b border-[#d8e6dd] px-3 py-3 font-semibold text-[var(--text)]">{row.title}</td>
-									<td className="border-b border-[#d8e6dd] px-3 py-3 text-[var(--text)]">{row.category}</td>
-									<td className="border-b border-[#d8e6dd] px-3 py-3 text-[var(--text)]">{row.manager}</td>
-									<td className="border-b border-[#d8e6dd] px-3 py-3 text-[var(--text)]">{row.room}</td>
-									<td className="border-b border-[#d8e6dd] px-3 py-3 text-[var(--text)]">{row.date}</td>
-									<td className="border-b border-[#d8e6dd] px-3 py-3 text-[var(--text)]">{row.startTime} - {row.endTime}</td>
-									<td className="border-b border-[#d8e6dd] px-3 py-3 text-[var(--text)]">{row.enrolled}/{row.capacity}</td>
-									<td className="border-b border-[#d8e6dd] px-3 py-3">
+									<td className="border-b border-[#d8e6dd] px-3 py-3 text-center font-semibold text-[var(--text)]">{row.title}</td>
+									<td className="border-b border-[#d8e6dd] px-3 py-3 text-center text-[var(--text)]">{row.category}</td>
+									<td className="border-b border-[#d8e6dd] px-3 py-3 text-center text-[var(--text)]">{row.manager}</td>
+									<td className="border-b border-[#d8e6dd] px-3 py-3 text-center text-[var(--text)]">{row.room}</td>
+									<td className="border-b border-[#d8e6dd] px-3 py-3 text-center text-[var(--text)]">{row.date}</td>
+									<td className="border-b border-[#d8e6dd] px-3 py-3 text-center text-[var(--text)]">{row.startTime} - {row.endTime}</td>
+									<td className="border-b border-[#d8e6dd] px-3 py-3 text-center text-[var(--text)]">{row.enrolled}/{row.capacity}</td>
+									<td className="border-b border-[#d8e6dd] px-3 py-3 text-center">
 										<span className="inline-flex rounded-md bg-[#eaf6ef] px-2 py-1 text-[0.8rem] font-semibold text-[#1a7d47]">
 											Finalizada
 										</span>
 									</td>
-									<td className="border-b border-[#d8e6dd] px-3 py-3">
+									<td className="border-b border-[#d8e6dd] px-3 py-3 text-center">
 										<button
 											type="button"
 											className="inline-flex rounded-sm border border-[var(--primary)] bg-[var(--primary)] px-3 py-1.5 text-[0.82rem] font-semibold text-white transition-colors hover:bg-[var(--primary-strong)]"

@@ -206,23 +206,23 @@ export default function AdminApprovals() {
 				title={activeItem ? activeItem.title : "Detalle de actividad"}
 				onClose={closeItemModal}
 				hideHeader
-				panelClassName="sm:max-w-[900px] sm:rounded-[18px] sm:border-[#d7e4dc] sm:shadow-[0_26px_52px_-32px_rgba(16,24,40,0.45)]"
+				panelClassName="sm:max-w-[920px] sm:rounded-[16px] sm:border-[#d7e4dc] sm:shadow-[0_22px_46px_-30px_rgba(16,24,40,0.42)]"
 				contentClassName="bg-white px-0 pb-0 pt-0"
-				footerClassName="border-t border-[#dce7df] bg-[#f8fbf9] px-6 py-4 sm:px-7"
+				footerClassName="border-t border-[#dce7df] bg-white px-6 py-4 sm:px-7"
 				footer={
 					<>
 						{!rejecting ? (
 							<>
 								<button
 									type="button"
-									className="inline-flex items-center justify-center rounded-[11px] bg-[var(--reject)] px-4 py-2.5 text-[0.92rem] font-semibold text-white hover:bg-[var(--reject-hover)]"
+									className="inline-flex items-center justify-center rounded-[10px] bg-[var(--reject)] px-4 py-2.5 text-[0.92rem] font-semibold text-white hover:bg-[var(--reject-hover)]"
 									onClick={beginReject}
 								>
 									Rechazar
 								</button>
 								<button
 									type="button"
-									className="inline-flex items-center justify-center rounded-[11px] border bg-[var(--primary)] px-4 py-2.5 text-[0.92rem] font-semibold text-white hover:bg-[var(--primary-strong)]"
+									className="inline-flex items-center justify-center rounded-[10px] border bg-[var(--primary)] px-4 py-2.5 text-[0.92rem] font-semibold text-white hover:bg-[var(--primary-strong)]"
 									onClick={handleApprove}
 								>
 									Aprobar
@@ -231,7 +231,7 @@ export default function AdminApprovals() {
 						) : (
 							<button
 								type="button"
-								className="inline-flex items-center justify-center rounded-[11px] border border-[#d16b5d] bg-[var(--reject)] hover:bg-[var(--reject-hover)] px-4 py-2.5 text-[0.92rem] font-semibold text-white transition-all duration-200"
+								className="inline-flex items-center justify-center rounded-[10px] border border-[#d16b5d] bg-[var(--reject)] hover:bg-[var(--reject-hover)] px-4 py-2.5 text-[0.92rem] font-semibold text-white transition-all duration-200"
 								onClick={confirmReject}
 							>
 								Guardar rechazo
@@ -242,19 +242,13 @@ export default function AdminApprovals() {
 			>
 				{activeItem && (
 					<>
-					<div className="border-b border-[#dce7df] bg-[linear-gradient(180deg,#f8fbf9,rgba(248,251,249,0.88))] px-6 py-5 sm:px-7">
+					<div className="border-b border-[#dce7df] bg-[#f4fbf6] px-6 py-5 sm:px-7">
 						<div className="flex items-start justify-between gap-4">
-							<div className="flex items-start gap-3">
-								<span className="grid h-11 w-11 place-items-center rounded-[12px] bg-[linear-gradient(180deg,var(--primary),var(--primary-strong))] text-white shadow-[0_10px_22px_-18px_rgba(5,166,61,0.55)]">
-									<ListChecks className="h-5 w-5" strokeWidth={1.9} />
-								</span>
-								<div>
-									<p className="m-0 text-[0.78rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Revisión de actividad</p>
-									<h3 className="mt-1 text-[1.15rem] font-semibold text-[var(--text)]">{activeItem.title}</h3>
-									<p className="mt-1 max-w-[58ch] text-[0.88rem] text-[var(--text-muted)]">Valida la propuesta antes de publicarla o registra un rechazo con motivo.</p>
-								</div>
+							<div>
+								<p className="m-0 text-[0.78rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Revision</p>
+								<p className="mt-1 max-w-[58ch] text-[0.88rem] text-[var(--text-muted)]">Valida la propuesta antes de publicarla o registra un rechazo con motivo.</p>
 							</div>
-							<button type="button" className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#d7e0d9] bg-white text-[#496053] transition-colors hover:bg-[#f4f7f5]" onClick={closeItemModal} aria-label="Cerrar modal">
+							<button type="button" className="inline-flex h-8 w-8 items-center justify-center rounded-sm border border-[#d7e0d9] bg-white text-[#496053] transition-colors hover:bg-[#f4f7f5]" onClick={closeItemModal} aria-label="Cerrar modal">
 								×
 							</button>
 						</div>
@@ -262,20 +256,20 @@ export default function AdminApprovals() {
 
 					<div className="grid gap-4 bg-white px-6 py-4 sm:px-7">
 						<div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
-							<div className="space-y-3 rounded-[12px] border border-[#dce7df] bg-[#fcfefd] p-4">
-								<div className="grid gap-1.5 sm:grid-cols-2">
-										<p className="m-0 text-[0.9rem] text-[var(--text-muted)]"><strong className="text-[var(--text)]">Propuesto por:</strong> {activeItem.manager || "Sin encargado"}</p>
-										<p className="m-0 text-[0.9rem] text-[var(--text-muted)]"><strong className="text-[var(--text)]">Tipo:</strong> {activeItem.category || "General"}</p>
-									<p className="m-0 text-[0.9rem] text-[var(--text-muted)]"><strong className="text-[var(--text)]">Lugar:</strong> {activeItem.place}</p>
+							<div className="space-y-3 rounded-[12px] border border-[#dce7df] bg-white p-4">
+								<div className="grid gap-3 sm:grid-cols-2">
+									<p className="m-0 text-[0.9rem] text-[var(--text-muted)]"><strong className="text-[var(--text)]">Titulo:</strong> {activeItem.title}</p>
+									<p className="m-0 text-[0.9rem] text-[var(--text-muted)]"><strong className="text-[var(--text)]">Descripcion:</strong> {activeItem.description || "Sin descripcion"}</p>
+									<p className="m-0 text-[0.9rem] text-[var(--text-muted)]"><strong className="text-[var(--text)]">Hora inicio:</strong> {activeItem.startTime || activeItem.time || "-"}</p>
+									<p className="m-0 text-[0.9rem] text-[var(--text-muted)]"><strong className="text-[var(--text)]">Hora termino:</strong> {activeItem.endTime || activeItem.time || "-"}</p>
+									<p className="m-0 text-[0.9rem] text-[var(--text-muted)]"><strong className="text-[var(--text)]">Sala:</strong> {activeItem.room || activeItem.place || "Sin sala"}</p>
 									<p className="m-0 text-[0.9rem] text-[var(--text-muted)]"><strong className="text-[var(--text)]">Fecha:</strong> {formatDateForChile(activeItem.date, { day: "2-digit", month: "long", year: "numeric" })}</p>
-									<p className="m-0 text-[0.9rem] text-[var(--text-muted)]"><strong className="text-[var(--text)]">Hora:</strong> {activeItem.time}</p>
+									<p className="m-0 text-[0.9rem] text-[var(--text-muted)]"><strong className="text-[var(--text)]">Propuesto por:</strong> {activeItem.manager || "Sin encargado"}</p>
 									<p className="m-0 text-[0.9rem] text-[var(--text-muted)]"><strong className="text-[var(--text)]">Cupos:</strong> {activeItem.enrolled}/{activeItem.capacity}</p>
 								</div>
-
-								<p className="m-0 text-[0.92rem] leading-relaxed text-[var(--text-muted)]">{activeItem.description}</p>
 							</div>
 
-							<div className="grid content-start gap-3 rounded-[12px] border border-[#dce7df] bg-[#f8fbf9] px-4 py-4">
+							<div className="grid content-start gap-3 rounded-[12px] border border-[#dce7df] bg-white px-4 py-4">
 								<p className="m-0 text-[0.78rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Estado actual</p>
 								<span className="inline-flex w-fit items-center rounded-md bg-[#fff3de] px-2.5 py-1 text-[0.82rem] font-semibold text-[#b87015]">
 									{getStatusLabel(activeItem)}
@@ -284,7 +278,7 @@ export default function AdminApprovals() {
 								<div className="grid gap-2 rounded-[12px] border border-[#dce7df] bg-white p-3">
 									<p className="m-0 text-[0.78rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Resumen</p>
 									<p className="m-0 text-[0.88rem] text-[var(--text-muted)]"><strong className="text-[var(--text)]">Aforo:</strong> {activeItem.enrolled}/{activeItem.capacity}</p>
-									<p className="m-0 text-[0.88rem] text-[var(--text-muted)]"><strong className="text-[var(--text)]">Duración:</strong> {activeItem.time}</p>
+									<p className="m-0 text-[0.88rem] text-[var(--text-muted)]"><strong className="text-[var(--text)]">Duración:</strong> {activeItem.time || `${activeItem.startTime || "-"} - ${activeItem.endTime || "-"}`}</p>
 								</div>
 							</div>
 						</div>
