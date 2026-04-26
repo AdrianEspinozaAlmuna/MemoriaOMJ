@@ -1,12 +1,25 @@
 const { prisma } = require("../prisma/client");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
 const { getUserIdFromToken } = require("../middleware/auth");
 require("dotenv").config();
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
+const PASSWORD_MIN_LENGTH = 10;
 
-// Nota: la BD actual no tiene columna de contraseña en `usuario`,
-// así que los endpoints de autenticación se dejan como stub para evitar fallos.
+function validateStrongPassword(password) {
+  if (!password) return "Debes enviar una contrasena.";
+  if (password.length < PASSWORD_MIN_LENGTH) return `La contrasena debe tener al menos ${PASSWORD_MIN_LENGTH} caracteres.`;
+  if (/\s/.test(password)) return "La contrasena no debe contener espacios.";
+  if (!/[A-ZÁÉÍÓÚÑ]/.test(password)) return "La contrasena debe incluir al menos una mayuscula.";
+  if (!/[a-záéíóúñ]/.test(password)) return "La contrasena debe incluir al menos una minuscula.";
+  if (!/\d/.test(password)) return "La contrasena debe incluir al menos un numero.";
+  if (!/[^\w\s]/.test(password)) return "La contrasena debe incluir al menos un simbolo.";
+
+  return "";
+}
+
+// La autenticación usa `password_hash` en `usuario` y bcrypt para comparar credenciales.
 
 async function getUsers(req, res) {
   try {
@@ -30,18 +43,24 @@ async function getUsers(req, res) {
 }
 
 async function createUser(req, res) {
-  const { rut, nombre, apellido, mail, telefono = null, rol = "participante" } = req.body;
+  const { rut, nombre, apellido, mail, telefono = null, rol = "participante", password } = req.body;
 
   const normalizedRole = rol === "admin" ? "admin" : "participante";
   const canAssignAdmin = req.user?.rol === "admin";
+  const passwordError = validateStrongPassword(password);
 
   if (normalizedRole === "admin" && !canAssignAdmin) {
     return res.status(403).json({ message: "Solo un admin puede crear otro admin" });
   }
 
+  if (passwordError) {
+    return res.status(400).json({ message: passwordError });
+  }
+
   try {
+    const passwordHash = await bcrypt.hash(password, 12);
     const user = await prisma.usuario.create({
-      data: { rut, nombre, apellido, mail, telefono, rol: normalizedRole }
+      data: { rut, nombre, apellido, mail, telefono, rol: normalizedRole, password_hash: passwordHash }
     });
     return res.status(201).json({
       id_usuario: user.id_usuario,
@@ -61,8 +80,13 @@ async function createUser(req, res) {
 
 async function loginUser(req, res) {
   const mail = req.body?.email || req.body?.mail;
+  const password = req.body?.password;
   if (!mail) {
     return res.status(400).json({ message: "Debes enviar email/mail" });
+  }
+
+  if (!password) {
+    return res.status(400).json({ message: "Debes enviar la contrasena" });
   }
 
   try {
@@ -75,11 +99,17 @@ async function loginUser(req, res) {
         apellido: true,
         mail: true,
         rol: true,
-        estado: true
+        estado: true,
+        password_hash: true
       }
     });
 
-    if (!user || !user.estado) {
+    if (!user || !user.estado || !user.password_hash) {
+      return res.status(401).json({ message: "Credenciales inválidas" });
+    }
+
+    const passwordMatches = await bcrypt.compare(password, user.password_hash);
+    if (!passwordMatches) {
       return res.status(401).json({ message: "Credenciales inválidas" });
     }
 

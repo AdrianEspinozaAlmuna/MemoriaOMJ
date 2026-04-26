@@ -21,7 +21,7 @@ export default function Login() {
 		}
 
 		if (!formValues.password) return "Ingresa tu contrasena.";
-		if (formValues.password.length < 8) return "La contrasena debe tener al menos 8 caracteres.";
+		if (formValues.password.length < 10) return "La contrasena debe tener al menos 10 caracteres.";
 
 		return "";
 	}
@@ -91,9 +91,9 @@ export default function Login() {
 						id="password"
 						name="password"
 						type="password"
-						placeholder="Ingresa tu contraseña"
+						placeholder="Ingresa tu contrasena"
 						required
-						minLength={8}
+						minLength={10}
 						value={formValues.password}
 						onChange={handleChange}
 						autoComplete="current-password"

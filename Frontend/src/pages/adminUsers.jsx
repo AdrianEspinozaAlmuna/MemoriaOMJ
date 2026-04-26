@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Pencil, ShieldCheck, UserCheck, UserPlus, UserRoundPlus, Users } from "lucide-react";
 import Modal from "../components/Modal";
 import { formatDateForChile } from "../utils/chileDate";
+import { getPasswordHelpText, validateStrongPassword } from "../utils/passwordRules";
 
 const initialUsers = [
 	{ id: 1, nombre: "Camila", apellido: "Torres", rut: "12345678-9", mail: "camila@email.cl", telefono: "987654321", estado: true, rol: "participante", fechaRegistro: "2025-04-10" },
@@ -137,7 +138,8 @@ export default function AdminUsers() {
 		if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formValues.email.trim())) return "El correo electronico no es valido.";
 		if (!/^\d{8,11}$/.test(formValues.phone.trim())) return "El telefono debe tener entre 8 y 11 digitos.";
 		if (requirePassword) {
-			if (formValues.password.length < 8) return "La contrasena debe tener al menos 8 caracteres.";
+			const passwordError = validateStrongPassword(formValues.password);
+			if (passwordError) return passwordError;
 			if (formValues.confirmPassword !== formValues.password) return "Las contrasenas no coinciden.";
 		}
 
@@ -345,19 +347,16 @@ export default function AdminUsers() {
 					</>
 				}
 			>
-				<div className="border-b border-[#dce7df] bg-[linear-gradient(180deg,#f8fbf9,rgba(248,251,249,0.88))] px-6 py-5 sm:px-7">
+				<div className="border-b border-[#dce7df] bg-[var(--bg)] px-6 py-5 sm:px-7">
 					<div className="flex items-start justify-between gap-4">
 						<div className="flex items-start gap-3">
-							<span className="grid h-11 w-11 place-items-center rounded-[12px] bg-[linear-gradient(180deg,var(--primary),var(--primary-strong))] text-white shadow-[0_10px_22px_-18px_rgba(5,166,61,0.55)]">
-								<UserPlus className="h-5 w-5" strokeWidth={1.9} />
-							</span>
 							<div>
 								<p className="m-0 text-[0.78rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Nuevo usuario</p>
 								<h3 className="mt-1 text-[1.15rem] font-semibold text-[var(--text)]">Crear cuenta con acceso de administrador</h3>
 								<p className="mt-1 max-w-[56ch] text-[0.88rem] text-[var(--text-muted)]">Completa los datos personales y la credencial inicial para dejar listo el acceso interno.</p>
 							</div>
 						</div>
-						<button type="button" className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#d7e0d9] bg-white text-[#496053] transition-colors hover:bg-[#f4f7f5]" onClick={closeModal} aria-label="Cerrar modal">
+						<button type="button" className="inline-flex h-8 w-8 items-center justify-center rounded-sm border border-[#d7e0d9] bg-white text-[#496053] transition-colors hover:bg-[#f4f7f5]" onClick={closeModal} aria-label="Cerrar modal">
 							×
 						</button>
 					</div>
@@ -390,11 +389,12 @@ export default function AdminUsers() {
 
 						<div className="grid gap-1.5">
 							<label className="text-[0.82rem] font-semibold text-[#2f4438]" htmlFor="admin-password">Contrasena</label>
-							<input id="admin-password" name="password" className="w-full rounded-[10px] border border-[#d4dae2] bg-[var(--surface)] px-3 py-2.5 text-[0.9rem] text-[var(--text)] outline-none transition-shadow duration-200 placeholder:text-[var(--text-muted)] focus:border-[var(--primary)] focus:bg-[#fbfefc] focus:shadow-[0_0_0_3px_rgba(5,166,61,0.11)]" type="password" placeholder="Minimo 8 caracteres" value={formValues.password} onChange={handleFieldChange} autoComplete="new-password" />
+							<input id="admin-password" name="password" className="w-full rounded-[10px] border border-[#d4dae2] bg-[var(--surface)] px-3 py-2.5 text-[0.9rem] text-[var(--text)] outline-none transition-shadow duration-200 placeholder:text-[var(--text-muted)] focus:border-[var(--primary)] focus:bg-[#fbfefc] focus:shadow-[0_0_0_3px_rgba(5,166,61,0.11)]" type="password" placeholder="Minimo 10 caracteres" value={formValues.password} onChange={handleFieldChange} autoComplete="new-password" minLength={10} />
+							<p className="m-0 text-[0.76rem] text-[var(--text-muted)]">{getPasswordHelpText()}</p>
 						</div>
 						<div className="grid gap-1.5">
 							<label className="text-[0.82rem] font-semibold text-[#2f4438]" htmlFor="admin-confirmPassword">Confirmar contrasena</label>
-							<input id="admin-confirmPassword" name="confirmPassword" className="w-full rounded-[10px] border border-[#d4dae2] bg-[var(--surface)] px-3 py-2.5 text-[0.9rem] text-[var(--text)] outline-none transition-shadow duration-200 placeholder:text-[var(--text-muted)] focus:border-[var(--primary)] focus:bg-[#fbfefc] focus:shadow-[0_0_0_3px_rgba(5,166,61,0.11)]" type="password" placeholder="Minimo 8 caracteres" value={formValues.confirmPassword} onChange={handleFieldChange} autoComplete="new-password" />
+							<input id="admin-confirmPassword" name="confirmPassword" className="w-full rounded-[10px] border border-[#d4dae2] bg-[var(--surface)] px-3 py-2.5 text-[0.9rem] text-[var(--text)] outline-none transition-shadow duration-200 placeholder:text-[var(--text-muted)] focus:border-[var(--primary)] focus:bg-[#fbfefc] focus:shadow-[0_0_0_3px_rgba(5,166,61,0.11)]" type="password" placeholder="Repite la contrasena" value={formValues.confirmPassword} onChange={handleFieldChange} autoComplete="new-password" minLength={10} />
 						</div>
 					</div>
 
@@ -422,7 +422,7 @@ export default function AdminUsers() {
 				hideHeader
 				panelClassName="sm:max-w-[760px] sm:rounded-[18px] sm:border-[#d7e4dc] sm:shadow-[0_26px_52px_-32px_rgba(16,24,40,0.45)]"
 				contentClassName="px-0 pb-0 pt-0"
-				footerClassName="border-t border-[#dce7df] bg-[#f8fbf9] px-6 py-4 sm:px-7"
+				footerClassName="border-t border-[#dce7df] bg-[var(--bg)] px-6 py-4 sm:px-7"
 				footer={
 					<>
 						<button type="button" className="btn btn-ghost btn-inline" onClick={closeEditModal}>

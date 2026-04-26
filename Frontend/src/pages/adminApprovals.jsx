@@ -242,7 +242,7 @@ export default function AdminApprovals() {
 			>
 				{activeItem && (
 					<>
-					<div className="border-b border-[#dce7df] bg-[#f4fbf6] px-6 py-5 sm:px-7">
+					<div className="border-b border-[#dce7df] bg-[var(--bg)] px-6 py-5 sm:px-7">
 						<div className="flex items-start justify-between gap-4">
 							<div>
 								<p className="m-0 text-[0.78rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Revision</p>
@@ -255,17 +255,43 @@ export default function AdminApprovals() {
 					</div>
 
 					<div className="grid gap-4 bg-white px-6 py-4 sm:px-7">
-						<div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
-							<div className="space-y-3 rounded-[12px] border border-[#dce7df] bg-white p-4">
+						<div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+							<div className="rounded-[12px] border border-[#dce7df] bg-white p-4">
 								<div className="grid gap-3 sm:grid-cols-2">
-									<p className="m-0 text-[0.9rem] text-[var(--text-muted)]"><strong className="text-[var(--text)]">Titulo:</strong> {activeItem.title}</p>
-									<p className="m-0 text-[0.9rem] text-[var(--text-muted)]"><strong className="text-[var(--text)]">Descripcion:</strong> {activeItem.description || "Sin descripcion"}</p>
-									<p className="m-0 text-[0.9rem] text-[var(--text-muted)]"><strong className="text-[var(--text)]">Hora inicio:</strong> {activeItem.startTime || activeItem.time || "-"}</p>
-									<p className="m-0 text-[0.9rem] text-[var(--text-muted)]"><strong className="text-[var(--text)]">Hora termino:</strong> {activeItem.endTime || activeItem.time || "-"}</p>
-									<p className="m-0 text-[0.9rem] text-[var(--text-muted)]"><strong className="text-[var(--text)]">Sala:</strong> {activeItem.room || activeItem.place || "Sin sala"}</p>
-									<p className="m-0 text-[0.9rem] text-[var(--text-muted)]"><strong className="text-[var(--text)]">Fecha:</strong> {formatDateForChile(activeItem.date, { day: "2-digit", month: "long", year: "numeric" })}</p>
-									<p className="m-0 text-[0.9rem] text-[var(--text-muted)]"><strong className="text-[var(--text)]">Propuesto por:</strong> {activeItem.manager || "Sin encargado"}</p>
-									<p className="m-0 text-[0.9rem] text-[var(--text-muted)]"><strong className="text-[var(--text)]">Cupos:</strong> {activeItem.enrolled}/{activeItem.capacity}</p>
+									<div className="grid gap-1.5 rounded-[10px] px-3 py-2.5 sm:col-span-2">
+										<p className="m-0 text-[0.74rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Titulo</p>
+										<p className="m-0 text-[0.96rem] font-semibold leading-6 break-words text-[var(--text)]">{activeItem.title}</p>
+									</div>
+
+									<div className="grid gap-1.5 rounded-[10px]  px-3 py-2.5 sm:col-span-2">
+										<p className="m-0 text-[0.74rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Descripcion</p>
+										<p className="m-0 text-[0.9rem] leading-6 break-words whitespace-pre-wrap text-[var(--text-muted)]">{activeItem.description || "Sin descripcion"}</p>
+									</div>
+
+									<div className="grid gap-1.5 rounded-[10px]  px-3 py-2.5">
+										<p className="m-0 text-[0.74rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Hora inicio</p>
+										<p className="m-0 text-[0.9rem] font-semibold text-[var(--text)]">{activeItem.startTime || activeItem.time || "-"}</p>
+									</div>
+									<div className="grid gap-1.5 rounded-[10px] px-3 py-2.5">
+										<p className="m-0 text-[0.74rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Hora termino</p>
+										<p className="m-0 text-[0.9rem] font-semibold text-[var(--text)]">{activeItem.endTime || activeItem.time || "-"}</p>
+									</div>
+									<div className="grid gap-1.5 rounded-[10px] px-3 py-2.5">
+										<p className="m-0 text-[0.74rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Sala</p>
+										<p className="m-0 text-[0.9rem] font-semibold text-[var(--text)]">{activeItem.room || activeItem.place || "Sin sala"}</p>
+									</div>
+									<div className="grid gap-1.5 rounded-[10px] px-3 py-2.5">
+										<p className="m-0 text-[0.74rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Fecha</p>
+										<p className="m-0 text-[0.9rem] font-semibold text-[var(--text)]">{formatDateForChile(activeItem.date, { day: "2-digit", month: "long", year: "numeric" })}</p>
+									</div>
+									<div className="grid gap-1.5 rounded-[10px] px-3 py-2.5">
+										<p className="m-0 text-[0.74rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Propuesto por</p>
+										<p className="m-0 text-[0.9rem] font-semibold text-[var(--text)]">{activeItem.manager || "Sin encargado"}</p>
+									</div>
+									<div className="grid gap-1.5 rounded-[10px] px-3 py-2.5">
+										<p className="m-0 text-[0.74rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Cupos</p>
+										<p className="m-0 text-[0.9rem] font-semibold text-[var(--text)]">{activeItem.enrolled}/{activeItem.capacity}</p>
+									</div>
 								</div>
 							</div>
 
@@ -277,7 +303,6 @@ export default function AdminApprovals() {
 								<p className="m-0 text-[0.88rem] text-[var(--text-muted)]">Esta revisión impacta directamente en la publicación de la actividad dentro del calendario del sistema.</p>
 								<div className="grid gap-2 rounded-[12px] border border-[#dce7df] bg-white p-3">
 									<p className="m-0 text-[0.78rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Resumen</p>
-									<p className="m-0 text-[0.88rem] text-[var(--text-muted)]"><strong className="text-[var(--text)]">Aforo:</strong> {activeItem.enrolled}/{activeItem.capacity}</p>
 									<p className="m-0 text-[0.88rem] text-[var(--text-muted)]"><strong className="text-[var(--text)]">Duración:</strong> {activeItem.time || `${activeItem.startTime || "-"} - ${activeItem.endTime || "-"}`}</p>
 								</div>
 							</div>

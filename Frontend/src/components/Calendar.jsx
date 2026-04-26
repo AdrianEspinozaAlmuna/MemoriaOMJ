@@ -322,10 +322,10 @@ export default function Calendar({ activities, viewMode, monthDate, onActivityCl
           </span>
         ))}
       </div>
-      <div className="grid min-w-[640px] grid-cols-7 gap-2 max-[640px]:min-w-[560px] max-[640px]:gap-1.5">
+        <div className="grid min-w-[640px] grid-cols-7 gap-2 max-[640px]:min-w-[560px] max-[640px]:gap-1.5">
         {daysToRender.map((day, index) => {
           if (!day) {
-            return <div key={`empty-${index}`} className="h-[126px] rounded-xl border border-dashed border-[#d9e5de] bg-white p-2 max-[640px]:h-[108px] max-[640px]:p-1.5" />;
+            return <div key={`empty-${index}`} className="h-[126px] rounded-xl border border-dashed border-[#d9e5de] bg-white p-2 overflow-hidden max-[640px]:h-[108px] max-[640px]:p-1.5" />;
           }
 
           const dateKey = day.toISOString().slice(0, 10);
@@ -337,7 +337,7 @@ export default function Calendar({ activities, viewMode, monthDate, onActivityCl
           return (
             <article
               key={dateKey}
-              className={`h-[126px] cursor-pointer rounded-xl border p-2.5 transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-[1px] hover:shadow-[0_12px_20px_-18px_rgba(7,45,27,0.48)] max-[640px]:h-[108px] max-[640px]:p-2 ${
+              className={`h-[126px] cursor-pointer overflow-hidden rounded-xl border p-2.5 transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-[1px] hover:shadow-[0_12px_20px_-18px_rgba(7,45,27,0.48)] max-[640px]:h-[108px] max-[640px]:p-2 ${
                 today
                   ? "border-[#4f9f70] bg-white"
                   : isWeekend
@@ -362,11 +362,11 @@ export default function Calendar({ activities, viewMode, monthDate, onActivityCl
                   </span>
                 )}
               </header>
-              <div className="flex h-[78px] items-end max-[640px]:h-[64px]">
+              <div className="flex h-[78px] items-end overflow-hidden max-[640px]:h-[64px]">
                 {dayActivities.length > 0 ? (
-                  <div className="w-full rounded-md border border-[#0f8f4e] bg-[linear-gradient(135deg,#12924f,#0f8f4e)] px-2.5 py-2 text-white max-[640px]:px-2 max-[640px]:py-1.5">
-                    <p className="text-[0.76rem] font-bold max-[640px]:text-[0.68rem]">{dayActivities.length} actividades en el dia</p>
-                    <p className="mt-0.5 text-[0.7rem] font-semibold text-white/85 max-[640px]:text-[0.64rem]">{enrolledCount} inscritas</p>
+                  <div className="w-full rounded-md border border-[#0f8f4e] bg-[linear-gradient(135deg,#12924f,#0f8f4e)] px-2.5 py-2 text-white overflow-hidden max-[640px]:px-2 max-[640px]:py-1.5">
+                    <p className="text-[0.76rem] font-bold leading-tight break-words max-[640px]:text-[0.66rem]">{dayActivities.length} actividades en el dia</p>
+                    <p className="mt-0.5 text-[0.7rem] font-semibold leading-tight text-white/85 max-[640px]:hidden">{enrolledCount} inscritas</p>
                   </div>
                 ) : (
                   <div className="w-full" aria-hidden="true" />

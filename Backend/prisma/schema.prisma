@@ -90,6 +90,7 @@ model usuario {
   nombre                  String                    @db.VarChar(100)
   apellido                String                    @db.VarChar(100)
   mail                    String                    @unique @db.VarChar(255)
+  password_hash           String?                   @db.VarChar(255)
   telefono                String?                   @db.VarChar(20)
   estado                  Boolean                   @default(true)
   rol                     rol_usuario

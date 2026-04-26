@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { createUser, login } from "../services/userService";
+import { getPasswordHelpText, validateStrongPassword } from "../utils/passwordRules";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -39,9 +40,8 @@ export default function Register() {
       return "El telefono debe tener entre 8 y 11 digitos.";
     }
 
-    if (formValues.registerPassword.length < 8) {
-      return "La contrasena debe tener al menos 8 caracteres.";
-    }
+    const passwordError = validateStrongPassword(formValues.registerPassword);
+    if (passwordError) return passwordError;
 
     if (formValues.confirmPassword !== formValues.registerPassword) {
       return "Las contrasenas no coinciden.";
@@ -68,7 +68,8 @@ export default function Register() {
         apellido: formValues.lastName.trim(),
         mail: formValues.registerEmail.trim().toLowerCase(),
         telefono: formValues.phone.trim(),
-        rol: "participante"
+        rol: "participante",
+        password: formValues.registerPassword
       });
 
       const loginResponse = await login(
@@ -169,13 +170,14 @@ export default function Register() {
             id="registerPassword"
             name="registerPassword"
             type="password"
-            placeholder="Minimo 8 caracteres"
+            placeholder="Minimo 10 caracteres"
             required
-            minLength={8}
+            minLength={10}
             value={formValues.registerPassword}
             onChange={handleChange}
             autoComplete="new-password"
           />
+          <p className="m-0 text-[0.76rem] text-[var(--text-muted)]">{getPasswordHelpText()}</p>
 
           <label htmlFor="confirmPassword" className="text-[0.82rem] font-semibold text-[#2f4438]">Confirmar contrasena</label>
           <input
@@ -183,15 +185,15 @@ export default function Register() {
             id="confirmPassword"
             name="confirmPassword"
             type="password"
-            placeholder="Minimo 8 caracteres"
+            placeholder="Repite la contrasena"
             required
-            minLength={8}
+            minLength={10}
             value={formValues.confirmPassword}
             onChange={handleChange}
             autoComplete="new-password"
           />
 
-          {error && <p className="m-0 rounded-lg border border-[#f2cbc4] bg-[#fff0ee] px-3 py-2 text-[0.84rem] font-semibold text-[#8f3526]">{error}</p>}
+          {error && <p className="m-0 rounded-sm border border-[#f2cbc4] bg-[#fff0ee] px-3 py-2 text-[0.84rem] font-semibold text-[#8f3526]">{error}</p>}
 
           <button type="submit" className="btn btn-primary btn-full mt-2 rounded-[10px] py-3 text-[0.92rem] tracking-[0.01em]" disabled={loading}>
             {loading ? "Creando cuenta..." : "Crear cuenta"}
