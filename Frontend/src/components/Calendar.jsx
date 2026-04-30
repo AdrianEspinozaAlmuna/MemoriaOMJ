@@ -337,7 +337,7 @@ export default function Calendar({ activities, viewMode, monthDate, onActivityCl
           return (
             <article
               key={dateKey}
-              className={`h-[126px] cursor-pointer overflow-hidden rounded-xl border p-2.5 transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-[1px] hover:shadow-[0_12px_20px_-18px_rgba(7,45,27,0.48)] max-[640px]:h-[108px] max-[640px]:p-2 ${
+              className={`h-[126px] cursor-pointer overflow-hidden rounded-xl border p-2.5 transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-[1px] hover:shadow-[0_12px_20px_-18px_rgba(7,45,27,0.48)] hover:border-[var(--primary-soft)] max-[640px]:h-[108px] max-[640px]:p-2 ${
                 today
                   ? "border-[#4f9f70] bg-white"
                   : isWeekend

@@ -109,8 +109,8 @@ function serializeActivity(activity, currentUserId = null) {
     time: toTimeLabel(activity.hora_inicio),
     hora_inicio: toTimeLabel(activity.hora_inicio),
     hora_termino: toTimeLabel(activity.hora_termino),
-    place: activity.lugar || "",
-    lugar: activity.lugar || "",
+    place: activity.sala?.nombre || activity.lugar || "Lugar por confirmar",
+    lugar: activity.sala?.nombre || activity.lugar || "Lugar por confirmar",
     manager: activity.usuario?.nombre
       ? `${activity.usuario.nombre} ${activity.usuario.apellido || ""}`.trim()
       : null,
@@ -121,6 +121,7 @@ function serializeActivity(activity, currentUserId = null) {
     inscritos: enrolledCount,
     approved: activity.aprobado,
     aprobado: activity.aprobado,
+    state: activity.estado,
     status: mapEstadoToUi(activity.estado, membership?.rol),
     estado: activity.estado,
     rol_en_actividad: membership?.rol || null,
@@ -131,15 +132,22 @@ function serializeActivity(activity, currentUserId = null) {
 async function listActivities(req, res) {
   const includePending = req.query.includePending === "1";
   const onlyMine = req.query.onlyMine === "1";
+  const estado = req.query.estado; // Nuevo: filtro por estado
+  const aprobado = req.query.aprobado; // Nuevo: filtro por aprobado
   const currentUserId = getUserIdFromToken(req.user || {});
 
   const where = {
+    ...(aprobado === "true" ? { aprobado: true } : {}),
+    ...(aprobado === "false" ? { aprobado: false } : {}),
+    ...(estado ? { estado } : {}),
     ...(includePending
       ? {}
-      : {
+      : aprobado === undefined && !estado
+      ? {
           aprobado: true,
           estado: { in: ["programada", "en_curso", "finalizada"] }
-        }),
+        }
+      : {}),
     ...(onlyMine && currentUserId ? { id_encargado: currentUserId } : {})
   };
 
@@ -151,6 +159,7 @@ async function listActivities(req, res) {
       orderBy: [{ fecha: "asc" }, { hora_inicio: "asc" }],
       include: {
         usuario: { select: { id_usuario: true, nombre: true, apellido: true } },
+        sala: { select: { id_sala: true, nombre: true, capacidad: true } },
         actividad_participantes: currentUserId
           ? {
               where: { id_usuario: currentUserId },
@@ -320,6 +329,7 @@ async function createActivity(req, res) {
     place,
     chat_bidireccional = true
   } = req.body || {};
+  const id_sala = req.body?.id_sala ?? null;
 
   const activityTitle = (title || titulo || "").trim();
   const activityDescription = (description || descripcion || "").trim();
@@ -327,7 +337,15 @@ async function createActivity(req, res) {
   const startTime = timeStringToDate(hora_inicio);
   const endTime = timeStringToDate(hora_termino);
   const maxParticipants = Number(max_participantes ?? capacity ?? 0);
-  const activityPlace = (lugar || place || "").trim();
+  let activityPlace = (lugar || place || "").trim();
+  let salaId = null;
+  if (id_sala) {
+    const sala = await prisma.salas.findUnique({ where: { id_sala: Number(id_sala) } });
+    if (sala) {
+      salaId = sala.id_sala;
+      activityPlace = sala.nombre;
+    }
+  }
 
   if (!activityTitle || !activityDate || Number.isNaN(activityDate.getTime()) || !startTime) {
     return res.status(400).json({ message: "Faltan datos requeridos de actividad" });
@@ -349,10 +367,7 @@ async function createActivity(req, res) {
     const sameRoomActivities = await prisma.actividad.findMany({
       where: {
         fecha: activityDate,
-        lugar: {
-          equals: activityPlace,
-          mode: "insensitive"
-        },
+        ...(salaId ? { id_sala: salaId } : { lugar: { equals: activityPlace, mode: "insensitive" } }),
         estado: {
           in: ["pendiente", "programada", "en_curso"]
         }
@@ -386,10 +401,11 @@ async function createActivity(req, res) {
       });
     }
 
-    const created = await prisma.$transaction(async tx => {
+      const created = await prisma.$transaction(async tx => {
       const newActivity = await tx.actividad.create({
         data: {
           id_encargado: idEncargado,
+          id_sala: salaId,
           titulo: activityTitle,
           descripcion: activityDescription || null,
           fecha: activityDate,

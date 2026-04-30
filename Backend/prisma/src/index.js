@@ -4,6 +4,8 @@ const http = require("http");
 require("dotenv").config();
 const userRoutes = require("./routes/userRoutes");
 const activityRoutes = require("./routes/activityRoutes");
+const dashboardRoutes = require("./routes/dashboardRoutes");
+const salasRoutes = require("./routes/salasRoutes");
 const { prisma } = require("./prisma/client");
 const { initRealtimeServer } = require("./realtime");
 
@@ -13,6 +15,8 @@ app.use(express.json());
 
 app.use("/api/users", userRoutes);
 app.use("/api/activities", activityRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/salas", salasRoutes);
 
 app.get("/api/health", async (req, res) => {
   // prueba simple de conexión a la BD

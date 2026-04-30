@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { DoorOpen, EllipsisVertical, PenLine, CircleCheckBig, SquareMinus, Trash2, X } from "lucide-react";
 import Modal from "../components/Modal";
+import api from "../services/api";
 
 export default function AdminSettings() {
 	const [name, setName] = useState("");
@@ -8,13 +9,35 @@ export default function AdminSettings() {
 	const [error, setError] = useState("");
 	const [searchTerm, setSearchTerm] = useState("");
 	const [statusFilter, setStatusFilter] = useState("Todos");
-	const [rooms, setRooms] = useState([
-		{ id: 1, name: "Sala Norte", capacity: 30, enabled: true },
-		{ id: 2, name: "Sala Multiuso", capacity: 45, enabled: true },
-		{ id: 3, name: "Sala Taller 2", capacity: 20, enabled: false }
-	]);
+	const [rooms, setRooms] = useState([]);
+
+	useEffect(() => {
+		let mounted = true;
+		async function loadRooms() {
+			try {
+				const res = await api.get("/salas");
+				if (!mounted) return;
+				if (Array.isArray(res.data)) {
+					setRooms(res.data.map(s => ({ id: s.id_sala || s.id, name: s.nombre || s.name, capacity: s.capacidad || s.capacity || 0, enabled: (s.estado === "habilitada") || s.enabled || false })));
+					return;
+				}
+			} catch (e) {
+				// fallback a datos locales si la llamada falla
+			}
+			// fallback por defecto
+			setRooms([
+				{ id: 1, name: "Sala Norte", capacity: 30, enabled: true },
+				{ id: 2, name: "Sala Multiuso", capacity: 45, enabled: true },
+				{ id: 3, name: "Sala Taller 2", capacity: 20, enabled: false }
+			]);
+		}
+
+		loadRooms();
+		return () => { mounted = false; };
+	}, []);
 	const [selectedRoom, setSelectedRoom] = useState(null);
 	const [actionModalOpen, setActionModalOpen] = useState(false);
+	const [actionAnchor, setActionAnchor] = useState(null);
 	const [createModalOpen, setCreateModalOpen] = useState(false);
 	const [editModalOpen, setEditModalOpen] = useState(false);
 	const [editingRoomId, setEditingRoomId] = useState(null);
@@ -45,7 +68,7 @@ export default function AdminSettings() {
 
 	const editingRoom = useMemo(() => rooms.find(room => room.id === editingRoomId) || null, [editingRoomId, rooms]);
 
-	function addRoom() {
+	async function addRoom() {
 		if (!name.trim()) {
 			setError("Ingresa un nombre de sala.");
 			return;
@@ -56,20 +79,28 @@ export default function AdminSettings() {
 			return;
 		}
 
-		setRooms(previous => [
-			{
-				id: Date.now(),
-				name: name.trim(),
-				capacity,
-				enabled: true
-			},
-			...previous
-		]);
+		try {
+			const response = await api.post("/salas", {
+				nombre: name.trim(),
+				capacidad: capacity,
+				estado: "habilitada"
+			});
 
-		setName("");
-		setCapacity(30);
-		setError("");
-		setCreateModalOpen(false);
+			const newRoom = {
+				id: response.data.id_sala || response.data.id,
+				name: response.data.nombre || name.trim(),
+				capacity: response.data.capacidad || capacity,
+				enabled: (response.data.estado === "habilitada") || true
+			};
+
+			setRooms(previous => [newRoom, ...previous]);
+			setName("");
+			setCapacity(30);
+			setError("");
+			setCreateModalOpen(false);
+		} catch (err) {
+			setError(err?.response?.data?.message || "Error al crear la sala");
+		}
 	}
 
 	function openCreateModal() {
@@ -84,14 +115,21 @@ export default function AdminSettings() {
 		setError("");
 	}
 
-	function openActionModal(room) {
+	function openActionModal(room, event) {
 		setSelectedRoom(room);
 		setActionModalOpen(true);
+		try {
+			const rect = event.currentTarget.getBoundingClientRect();
+			setActionAnchor(rect);
+		} catch (e) {
+			setActionAnchor(null);
+		}
 	}
 
 	function closeActionModal() {
 		setActionModalOpen(false);
 		setSelectedRoom(null);
+		setActionAnchor(null);
 	}
 
 	function openEditModal(room) {
@@ -108,7 +146,7 @@ export default function AdminSettings() {
 		setEditingRoomId(null);
 	}
 
-	function saveRoomChanges() {
+	async function saveRoomChanges() {
 		if (!editingRoom) return;
 
 		if (!formValues.name.trim()) {
@@ -121,10 +159,19 @@ export default function AdminSettings() {
 			return;
 		}
 
-		setRooms(previous => previous.map(room => room.id === editingRoom.id ? { ...room, name: formValues.name.trim(), capacity: formValues.capacity } : room));
-		setError("");
-		closeEditModal();
-		closeActionModal();
+		try {
+			await api.patch(`/salas/${editingRoom.id}`, {
+				nombre: formValues.name.trim(),
+				capacidad: formValues.capacity
+			});
+
+			setRooms(previous => previous.map(room => room.id === editingRoom.id ? { ...room, name: formValues.name.trim(), capacity: formValues.capacity } : room));
+			setError("");
+			closeEditModal();
+			closeActionModal();
+		} catch (err) {
+			setError(err?.response?.data?.message || "Error al actualizar la sala");
+		}
 	}
 
 	function toggleRoom(id) {
@@ -145,15 +192,29 @@ export default function AdminSettings() {
 		closeActionModal();
 	}
 
-	function toggleSelectedRoom() {
+	async function toggleSelectedRoom() {
 		if (!selectedRoom) return;
-		toggleRoom(selectedRoom.id);
-		closeActionModal();
+		try {
+			const newState = !selectedRoom.enabled ? "habilitada" : "deshabilitada";
+			await api.patch(`/salas/${selectedRoom.id}`, {
+				estado: newState
+			});
+			toggleRoom(selectedRoom.id);
+			setSelectedRoom(prevRoom => prevRoom ? { ...prevRoom, enabled: !prevRoom.enabled } : null);
+			closeActionModal();
+		} catch (err) {
+			setError(err?.response?.data?.message || "Error al cambiar el estado de la sala");
+		}
 	}
 
-	function removeSelectedRoom() {
+	async function removeSelectedRoom() {
 		if (!selectedRoom) return;
-		deleteRoom(selectedRoom.id);
+		try {
+			await api.delete(`/salas/${selectedRoom.id}`);
+			deleteRoom(selectedRoom.id);
+		} catch (err) {
+			setError(err?.response?.data?.message || "Error al eliminar la sala");
+		}
 	}
 
 	return (
@@ -251,7 +312,7 @@ export default function AdminSettings() {
 									</td>
 									<td className="border-b border-[#d8e6dd] px-3 py-3 text-center">
 										<div className="flex flex-wrap justify-center gap-2">
-											<button type="button" className="inline-flex h-9 w-9 items-center justify-center rounded-sm border border-[#d8e6dd] bg-white text-[#355447] hover:bg-[#f5f7f5]" onClick={() => openActionModal(room)} aria-label="Abrir acciones">
+											<button type="button" className="inline-flex h-9 w-9 items-center justify-center rounded-sm border border-[#d8e6dd] bg-white text-[#355447] hover:bg-[#f5f7f5]" onClick={(e) => openActionModal(room, e)} aria-label="Abrir acciones">
 												<EllipsisVertical className="h-4 w-4" strokeWidth={2} />
 											</button>
 										</div>
@@ -261,6 +322,25 @@ export default function AdminSettings() {
 						</tbody>
 					</table>
 				</div>
+
+			{actionModalOpen && actionAnchor && (
+				<div style={{ position: "fixed", top: actionAnchor.bottom + 8, left: Math.max(8, actionAnchor.left - 200) }} className="z-50 w-[300px] rounded-[10px] border border-[#dce3ea] bg-white p-2 shadow-[0_14px_30px_-18px_rgba(12,30,16,0.45)]">
+					<div className="grid gap-2 px-2 py-2">
+						<button type="button" className="flex items-center gap-2 rounded-sm border border-[#d8e6dd] bg-white px-3 py-2.5 text-left text-[0.9rem] font-semibold text-[#2f463a] hover:bg-[#f5f7f5]" onClick={() => { if (selectedRoom) openEditModal(selectedRoom); closeActionModal(); }}>
+							<PenLine className="h-4 w-4 text-[var(--primary)]" strokeWidth={2} />
+							Editar
+						</button>
+						<button type="button" className={`flex items-center gap-2 rounded-sm border px-3 py-2.5 text-left text-[0.9rem] font-semibold ${selectedRoom?.enabled ? "border-[#f0cbc2] bg-[#fff1ed] text-[#8a3b2a] hover:bg-[#ffe4d9]" : "border-[#cde2d5] bg-[#eef8f1] text-[#1f5137] hover:bg-[#e7f5ec]"}`} onClick={() => { toggleRoom(selectedRoom.id); closeActionModal(); }}>
+							{selectedRoom?.enabled ? <SquareMinus className="h-4 w-4" strokeWidth={2} /> : <CircleCheckBig className="h-4 w-4" strokeWidth={2} />}
+							{selectedRoom?.enabled ? "Deshabilitar" : "Habilitar"}
+						</button>
+						<button type="button" className="flex items-center gap-2 rounded-sm border border-[#ead6d2] bg-white px-3 py-2.5 text-left text-[0.9rem] font-semibold text-[var(--reject-hover)] hover:bg-[#fff6f4]" onClick={() => { removeSelectedRoom(); closeActionModal(); }}>
+							<Trash2 className="h-4 w-4" strokeWidth={2} />
+							Eliminar
+						</button>
+					</div>
+				</div>
+			)}
 			</section>
 
 			<Modal
@@ -302,49 +382,6 @@ export default function AdminSettings() {
 					</label>
 
 					{error && <p className="m-0 text-[0.82rem] font-semibold text-[#a03d2e]">{error}</p>}
-				</div>
-			</Modal>
-
-			<Modal
-				isOpen={actionModalOpen}
-				title={selectedRoom ? selectedRoom.name : "Acciones de sala"}
-				onClose={closeActionModal}
-				hideHeader
-				panelClassName="sm:max-w-[420px] sm:rounded-[16px] sm:border-[#d7e4dc] sm:shadow-[0_22px_46px_-30px_rgba(16,24,40,0.48)]"
-				contentClassName="px-0 pb-0 pt-0"
-				footerClassName="border-t border-[#dce7df] bg-[#f8fbf9] px-5 py-4 sm:px-6"
-				footer={
-					<button type="button" className="btn btn-ghost btn-inline" onClick={closeActionModal}>
-						Cerrar
-					</button>
-				}
-			>
-				<div className="border-b border-[#dce7df] bg-[linear-gradient(180deg,#f8fbf9,rgba(248,251,249,0.88))] px-5 py-5 sm:px-6">
-					<div className="flex items-start justify-between gap-4">
-						<div>
-							<p className="m-0 text-[0.78rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Gestion interna</p>
-							<h3 className="mt-1 text-[1.08rem] font-semibold text-[var(--text)]">Acciones de sala</h3>
-							<p className="mt-1 mb-0 text-[0.88rem] text-[var(--text-muted)]">Elige la accion que quieres aplicar.</p>
-						</div>
-						<button type="button" className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#d7e0d9] bg-white text-[#496053] transition-colors hover:bg-[#f4f7f5]" onClick={closeActionModal} aria-label="Cerrar modal">
-							<X className="h-4 w-4" strokeWidth={2} />
-						</button>
-					</div>
-				</div>
-
-				<div className="grid gap-2 px-5 py-5 sm:px-6">
-					<button type="button" className="flex items-center gap-2 rounded-sm border border-[#d8e6dd] bg-white px-3 py-2.5 text-left text-[0.9rem] font-semibold text-[#2f463a] hover:bg-[#f5f7f5]" onClick={() => { if (selectedRoom) openEditModal(selectedRoom); setActionModalOpen(false); }}>
-						<PenLine className="h-4 w-4 text-[var(--primary)]" strokeWidth={2} />
-						Editar
-					</button>
-					<button type="button" className={`flex items-center gap-2 rounded-sm border px-3 py-2.5 text-left text-[0.9rem] font-semibold ${selectedRoom?.enabled ? "border-[#f0cbc2] bg-[#fff1ed] text-[#8a3b2a] hover:bg-[#ffe4d9]" : "border-[#cde2d5] bg-[#eef8f1] text-[#1f5137] hover:bg-[#e7f5ec]"}`} onClick={toggleSelectedRoom}>
-						{selectedRoom?.enabled ? <SquareMinus className="h-4 w-4" strokeWidth={2} /> : <CircleCheckBig className="h-4 w-4" strokeWidth={2} />}
-						{selectedRoom?.enabled ? "Deshabilitar" : "Habilitar"}
-					</button>
-					<button type="button" className="flex items-center gap-2 rounded-sm border border-[#ead6d2] bg-white px-3 py-2.5 text-left text-[0.9rem] font-semibold text-[var(--reject-hover)] hover:bg-[#fff6f4]" onClick={removeSelectedRoom}>
-						<Trash2 className="h-4 w-4" strokeWidth={2} />
-						Eliminar
-					</button>
 				</div>
 			</Modal>
 
@@ -392,3 +429,4 @@ export default function AdminSettings() {
 		</section>
 	);
 }
+

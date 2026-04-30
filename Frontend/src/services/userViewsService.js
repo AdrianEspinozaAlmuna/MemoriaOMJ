@@ -429,8 +429,66 @@ export async function getMyActivitiesData() {
   }
 }
 
-export function getAttendanceData() {
-  return mockResponse(attendancePayload);
+export async function getAttendanceData() {
+  try {
+    const data = await getMyActivitiesData();
+
+    const participating = Array.isArray(data.participating) ? data.participating : [];
+    const completed = Array.isArray(data.completed) ? data.completed : [];
+
+    // Build history from participating and completed activities
+    const combined = [...participating, ...completed];
+    const seen = new Set();
+    const history = combined
+      .map(item => ({
+        id: String(item.id ?? item.id_actividad ?? ""),
+        name: item.title || item.titulo || "Actividad",
+        type: item.type || item.category || "Actividad",
+        date: item.date || item.fecha || null,
+        time: item.time || item.hora_inicio || null,
+        hora_termino: item.hora_termino || null,
+        place: item.place || item.lugar || "",
+        status: item.status || (item.attended ? "asistido" : "inscrito"),
+        participants: item.enrolled ?? item.participants ?? 0,
+        capacity: item.capacity ?? item.max_participantes ?? null,
+        rating: item.rating ?? null
+      }))
+      .filter(h => {
+        if (!h.id) return false;
+        if (seen.has(h.id)) return false;
+        seen.add(h.id);
+        return true;
+      });
+
+    // Group monthly
+    const monthlyMap = {};
+    history.forEach(h => {
+      const d = new Date(h.date);
+      if (isNaN(d)) return;
+      const month = d.toLocaleString("es-CL", { month: "long" });
+      const year = d.getFullYear();
+      const key = `${month}-${year}`;
+      if (!monthlyMap[key]) monthlyMap[key] = { month, year, done: 0, total: 0 };
+      monthlyMap[key].total += 1;
+      if (isAttendedStatus(h.status)) monthlyMap[key].done += 1;
+    });
+
+    const monthly = Object.values(monthlyMap).map(m => ({ month: m.month, data: `${m.done}/${m.total} (${Math.round((m.done / m.total) * 100)}%)`, year: m.year }));
+
+    const total = history.length;
+    const attended = history.filter(h => isAttendedStatus(h.status)).length;
+    const rate = total > 0 ? `${Math.round((attended / total) * 100)}%` : "0%";
+
+    const stats = {
+      rate,
+      total: `${attended} de ${total}`,
+      month: monthly.length > 0 ? monthly[monthly.length - 1].data : ""
+    };
+
+    return { stats, monthly, history };
+  } catch (error) {
+    return mockResponse(attendancePayload);
+  }
 }
 
 export async function submitActivityProposal(payload) {

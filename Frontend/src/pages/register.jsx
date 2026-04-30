@@ -4,6 +4,32 @@ import { useNavigate } from "react-router-dom";
 import { createUser, login } from "../services/userService";
 import { getPasswordHelpText, validateStrongPassword } from "../utils/passwordRules";
 
+// Función para formatear RUT
+function formatRUT(value) {
+  const cleaned = value.replace(/[^\dkK]/g, "");
+  if (cleaned.length <= 8) {
+    return cleaned;
+  }
+  const body = cleaned.slice(0, -1);
+  const dv = cleaned.slice(-1);
+  return `${body}-${dv}`;
+}
+
+// Función para formatear teléfono
+function formatPhone(value) {
+  return value.replace(/[^\d]/g, "").slice(0, 11);
+}
+
+// Función para evaluar fortaleza de contraseña
+function getPasswordStrength(password) {
+  return {
+    hasUpperCase: /[A-Z]/.test(password),
+    hasNumber: /\d/.test(password),
+    hasSpecialChar: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password),
+    hasMinLength: password.length >= 10
+  };
+}
+
 export default function Register() {
   const navigate = useNavigate();
   const [formValues, setFormValues] = useState({
@@ -20,7 +46,15 @@ export default function Register() {
 
   function handleChange(event) {
     const { name, value } = event.target;
-    setFormValues(previous => ({ ...previous, [name]: value }));
+    
+    // Aplicar formateo especial para RUT y teléfono
+    if (name === "rut") {
+      setFormValues(previous => ({ ...previous, [name]: formatRUT(value) }));
+    } else if (name === "phone") {
+      setFormValues(previous => ({ ...previous, [name]: formatPhone(value) }));
+    } else {
+      setFormValues(previous => ({ ...previous, [name]: value }));
+    }
   }
 
   function validateRegisterForm() {
@@ -133,6 +167,7 @@ export default function Register() {
             type="text"
             placeholder="12345678-9"
             required
+            maxLength="12"
             value={formValues.rut}
             onChange={handleChange}
             pattern="\d{7,8}-[\dkK]"
@@ -159,6 +194,7 @@ export default function Register() {
             type="text"
             placeholder="987654321"
             required
+            maxLength="11"
             value={formValues.phone}
             onChange={handleChange}
             pattern="\d{8,11}"
@@ -177,6 +213,30 @@ export default function Register() {
             onChange={handleChange}
             autoComplete="new-password"
           />
+          
+          {formValues.registerPassword && (
+            <div className="mt-2 grid gap-2 rounded-lg bg-[#f5f7fa] p-3">
+              <p className="text-[0.75rem] font-semibold text-[#2f4438]">Requisitos de contraseña:</p>
+              <div className="grid gap-1.5">
+                <PasswordRequirement
+                  met={getPasswordStrength(formValues.registerPassword).hasMinLength}
+                  text="Mínimo 10 caracteres"
+                />
+                <PasswordRequirement
+                  met={getPasswordStrength(formValues.registerPassword).hasUpperCase}
+                  text="Al menos una mayúscula"
+                />
+                <PasswordRequirement
+                  met={getPasswordStrength(formValues.registerPassword).hasNumber}
+                  text="Al menos un número"
+                />
+                <PasswordRequirement
+                  met={getPasswordStrength(formValues.registerPassword).hasSpecialChar}
+                  text="Al menos un carácter especial (!@#$%^&*)"
+                />
+              </div>
+            </div>
+          )}
           <p className="m-0 text-[0.76rem] text-[var(--text-muted)]">{getPasswordHelpText()}</p>
 
           <label htmlFor="confirmPassword" className="text-[0.82rem] font-semibold text-[#2f4438]">Confirmar contrasena</label>
@@ -205,5 +265,20 @@ export default function Register() {
         </p>
       </article>
     </section>
+  );
+}
+
+function PasswordRequirement({ met, text }) {
+  return (
+    <div className={`flex items-center gap-2 rounded px-2.5 py-1.5 text-[0.75rem] transition-colors ${
+      met 
+        ? 'bg-[#e7f5ed] text-[#047857]' 
+        : 'bg-[#fef2f2] text-[#991b1b]'
+    }`}>
+      <span className="text-sm">
+        {met ? '✓' : '○'}
+      </span>
+      <span>{text}</span>
+    </div>
   );
 }

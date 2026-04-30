@@ -1,59 +1,10 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { ArrowRight, Activity, BarChart3, CalendarDays, CheckCircle2, Clock3, TrendingUp, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import ActivityCard from "../components/ActivityCard";
-
-const summary = [
-	{ label: "Total Usuarios", value: 247 },
-	{ label: "Actividades Activas", value: 18 },
-	{ label: "Aprobadas Recientes", value: 5 },
-	{ label: "Asistencia Promedio", value: "82%" }
-];
-
-const upcomingApprovedActivities = [
-	{
-		id: "approved-001",
-		title: "Taller de Guitarra para Principiantes",
-		description: "Actividad ya aprobada y lista para realizarse esta semana.",
-		manager: "Ana Martinez",
-		category: "Taller",
-		place: "Sala de Musica",
-		date: "2026-04-17",
-		time: "16:00",
-		capacity: 18,
-		enrolled: 12,
-		state: "Aprobada",
-		image: "https://images.unsplash.com/photo-1510915361894-db8b60106cb1?auto=format&fit=crop&w=1200&q=80"
-	},
-	{
-		id: "approved-002",
-		title: "Torneo de Ajedrez",
-		description: "Competencia confirmada con cupos ya publicados.",
-		manager: "Pedro Soto",
-		category: "Deporte",
-		place: "Salon Principal",
-		date: "2026-04-21",
-		time: "18:30",
-		capacity: 24,
-		enrolled: 20,
-		state: "Aprobada",
-		image: "https://images.unsplash.com/photo-1528819622765-d6bcf132b6f4?auto=format&fit=crop&w=1200&q=80"
-	},
-	{
-		id: "approved-003",
-		title: "Cine Foro: Peliculas Latinoamericanas",
-		description: "Sesión aprobada y próxima a comenzar.",
-		manager: "Laura Diaz",
-		category: "Cultural",
-		place: "Auditorio",
-		date: "2026-04-24",
-		time: "19:00",
-		capacity: 40,
-		enrolled: 28,
-		state: "Aprobada",
-		image: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=1200&q=80"
-	}
-];
+import { getApprovedActivities } from "../services/activityService";
+import { getDashboardStats } from "../services/userService";
+import LoadingState from "../components/LoadingState";
 
 const quickActions = [
 	{ label: "Gestionar usuarios", subtitle: "Revisa perfiles, grupos y estados activos.", to: "/admin/usuarios", icon: "users" },
@@ -95,6 +46,51 @@ function QuickIcon({ type, className = "h-[1.2rem] w-[1.2rem]" }) {
 }
 
 export default function AdminDashboard() {
+	const [stats, setStats] = useState([
+		{ label: "Total Usuarios", value: "—" },
+		{ label: "Actividades Activas", value: "—" },
+		{ label: "Aprobadas Recientes", value: "—" },
+		{ label: "Asistencia Promedio", value: "—" }
+	]);
+	const [upcomingActivities, setUpcomingActivities] = useState([]);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState("");
+
+	useEffect(() => {
+		async function loadDashboardData() {
+			try {
+				setLoading(true);
+				const [statsRes, activitiesRes] = await Promise.all([
+					getDashboardStats(),
+					getApprovedActivities()
+				]);
+
+				// Actualizar stats
+				const statsArray = [
+					{ label: "Total Usuarios", value: statsRes.totalUsers || 247 },
+					{ label: "Actividades Activas", value: statsRes.activeActivities || 18 },
+					{ label: "Aprobadas Recientes", value: statsRes.recentApprovals || 5 },
+					{ label: "Asistencia Promedio", value: statsRes.averageAttendance || "82%" }
+				];
+				setStats(statsArray);
+
+				// Actualizar actividades
+				setUpcomingActivities(activitiesRes.actividades || []);
+			} catch (err) {
+				console.error("Error loading dashboard data:", err);
+				setError("No se pudieron cargar los datos del dashboard");
+			} finally {
+				setLoading(false);
+			}
+		}
+
+		loadDashboardData();
+	}, []);
+
+	if (loading) {
+		return <LoadingState message="Cargando dashboard..." />;
+	}
+
 	return (
 		<section className="animate-[revealUp_0.7s_ease_both] space-y-8">
 			<header className="space-y-2">
@@ -104,7 +100,7 @@ export default function AdminDashboard() {
 			</header>
 
 			<section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-				{summary.map((card, index) => (
+				{stats.map((card, index) => (
 					<article key={card.label} className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-bg)] px-4 py-3.5 transition-colors">
 						<div className="flex items-center justify-between gap-2">
 							<p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.06em] text-[var(--text)]">{card.label}</p>
@@ -122,12 +118,12 @@ export default function AdminDashboard() {
 					<h2 className="m-0 text-[1rem] font-semibold text-[var(--text)]">Próximas actividades aprobadas</h2>
 					<p className="mb-4 mt-1 text-[0.92rem] text-[var(--text-muted)]">Actividades ya validadas para las próximas fechas.</p>
 					<div className="grid gap-3.5">
-						{upcomingApprovedActivities.map(activity => (
+						{upcomingActivities.map(activity => (
 							<ActivityCard
-								key={activity.id}
+								key={activity.id_actividad}
 								activity={activity}
 								actionLabel="Ver detalle"
-								to={`/admin/actividad/${activity.id}`}
+								to={`/admin/actividad/${activity.id_actividad}`}
 							/>
 						))}
 					</div>

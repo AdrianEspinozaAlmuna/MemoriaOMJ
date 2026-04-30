@@ -1,30 +1,28 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Pencil, ShieldCheck, UserCheck, UserPlus, UserRoundPlus, Users } from "lucide-react";
+import { Pencil, ShieldCheck, UserCheck, UserPlus, UserRoundPlus, Users, EllipsisVertical, PenLine, SquareMinus, CircleCheckBig, Trash2, X } from "lucide-react";
 import Modal from "../components/Modal";
 import { formatDateForChile } from "../utils/chileDate";
 import { getPasswordHelpText, validateStrongPassword } from "../utils/passwordRules";
-
-const initialUsers = [
-	{ id: 1, nombre: "Camila", apellido: "Torres", rut: "12345678-9", mail: "camila@email.cl", telefono: "987654321", estado: true, rol: "participante", fechaRegistro: "2025-04-10" },
-	{ id: 2, nombre: "Diego", apellido: "Perez", rut: "23456789-0", mail: "diego@email.cl", telefono: "912345678", estado: true, rol: "participante", fechaRegistro: "2025-02-18" },
-	{ id: 3, nombre: "Valentina", apellido: "Rojas", rut: "34567890-1", mail: "vale@email.cl", telefono: "923456789", estado: false, rol: "participante", fechaRegistro: "2024-10-22" },
-	{ id: 4, nombre: "Matias", apellido: "Silva", rut: "45678901-2", mail: "matias@email.cl", telefono: "934567890", estado: true, rol: "participante", fechaRegistro: "2025-01-12" },
-	{ id: 5, nombre: "Sofia", apellido: "Munoz", rut: "56789012-3", mail: "sofia@email.cl", telefono: "945678901", estado: true, rol: "admin", fechaRegistro: "2024-12-03" },
-	{ id: 6, nombre: "Lucas", apellido: "Ramirez", rut: "67890123-4", mail: "lucas@email.cl", telefono: "956789012", estado: false, rol: "participante", fechaRegistro: "2025-03-05" }
-];
+import { getAllUsers } from "../services/userService";
+import LoadingState from "../components/LoadingState";
 
 export default function AdminUsers() {
 	const ITEMS_PER_PAGE = 10;
-	const [users, setUsers] = useState(initialUsers);
+	const [users, setUsers] = useState([]);
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-	const [loading, setLoading] = useState(false);
+	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState("");
 	const [searchTerm, setSearchTerm] = useState("");
 	const [statusFilter, setStatusFilter] = useState("Todos");
 	const [roleFilter, setRoleFilter] = useState("Todos");
 	const [currentPage, setCurrentPage] = useState(1);
 	const [editingUserId, setEditingUserId] = useState(null);
+
+	// Para modal de acciones pequeño
+	const [selectedUser, setSelectedUser] = useState(null);
+	const [actionModalOpen, setActionModalOpen] = useState(false);
+	const [actionAnchor, setActionAnchor] = useState(null);
 	const [formValues, setFormValues] = useState({
 		fullName: "",
 		lastName: "",
@@ -34,6 +32,37 @@ export default function AdminUsers() {
 		password: "",
 		confirmPassword: ""
 	});
+
+	// Cargar usuarios de la BD al montar el componente
+	useEffect(() => {
+		async function loadUsers() {
+			try {
+				setLoading(true);
+				const res = await getAllUsers();
+				// Mapear los nombres de campos de BD a los del componente
+				const formattedUsers = res.users.map(user => ({
+					...user,
+					id: user.id_usuario,
+					nombre: user.nombre,
+					apellido: user.apellido,
+					rut: user.rut,
+					mail: user.mail,
+					telefono: user.telefono,
+					estado: user.estado,
+					rol: user.rol,
+					fechaRegistro: user.fecha_registro
+				}));
+				setUsers(formattedUsers);
+			} catch (err) {
+				console.error("Error loading users:", err);
+				setError("No se pudieron cargar los usuarios");
+			} finally {
+				setLoading(false);
+			}
+		}
+
+		loadUsers();
+	}, []);
 
 	const summary = useMemo(() => {
 		return {
@@ -131,6 +160,50 @@ export default function AdminUsers() {
 		setError("");
 	}
 
+	function openActionModal(user, event) {
+		setSelectedUser(user);
+		setActionModalOpen(true);
+		try {
+			const rect = event.currentTarget.getBoundingClientRect();
+			setActionAnchor(rect);
+		} catch (e) {
+			setActionAnchor(null);
+		}
+	}
+
+	function closeActionModal() {
+		setSelectedUser(null);
+		setActionModalOpen(false);
+		setActionAnchor(null);
+	}
+
+	async function toggleSelectedUserState() {
+		if (!selectedUser) return;
+		try {
+			const api = (await import("../services/api")).default;
+			const newState = !selectedUser.estado;
+			await api.patch(`/users/${selectedUser.id}`, { estado: newState });
+			setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, estado: newState } : u));
+			closeActionModal();
+		} catch (err) {
+			console.error("Error updating user state:", err);
+			setError("No se pudo actualizar el estado del usuario");
+		}
+	}
+
+	async function removeSelectedUser() {
+		if (!selectedUser) return;
+		try {
+			const api = (await import("../services/api")).default;
+			await api.delete(`/users/${selectedUser.id}`);
+			setUsers(prev => prev.filter(u => u.id !== selectedUser.id));
+			closeActionModal();
+		} catch (err) {
+			console.error("Error deleting user:", err);
+			setError("No se pudo eliminar el usuario");
+		}
+	}
+
 	function validateUserForm({ requirePassword }) {
 		if (!formValues.fullName.trim()) return "Ingresa el nombre.";
 		if (!formValues.lastName.trim()) return "Ingresa el apellido.";
@@ -192,18 +265,25 @@ export default function AdminUsers() {
 
 		setLoading(true);
 		try {
+			const api = (await import("../services/api")).default;
+			const payload = {
+				nombre: formValues.fullName.trim(),
+				apellido: formValues.lastName.trim(),
+				mail: formValues.email.trim().toLowerCase(),
+				telefono: formValues.phone.trim()
+			};
+			await api.patch(`/users/${editingUser.id}`, payload);
 			setUsers(previous => previous.map(user => {
 				if (user.id !== editingUser.id) return user;
 				return {
 					...user,
-					nombre: formValues.fullName.trim(),
-					apellido: formValues.lastName.trim(),
-					rut: formValues.rut.trim(),
-					mail: formValues.email.trim().toLowerCase(),
-					telefono: formValues.phone.trim()
+					...payload
 				};
 			}));
 			closeEditModal();
+		} catch (err) {
+			console.error("Error updating user:", err);
+			setError(err?.response?.data?.message || "No se pudo actualizar el usuario");
 		} finally {
 			setLoading(false);
 		}
@@ -218,6 +298,10 @@ export default function AdminUsers() {
 
 	function formatRoleLabel(role) {
 		return role === "admin" ? "Admin" : "Participante";
+	}
+
+	if (loading) {
+		return <LoadingState message="Cargando usuarios..." />;
 	}
 
 	return (
@@ -305,11 +389,8 @@ export default function AdminUsers() {
 									<td className="border-b border-[#d8e6dd] px-3 py-3 text-center text-[var(--text)]">{formatDateForChile(user.fechaRegistro, { day: "2-digit", month: "short", year: "numeric" })}</td>
 									<td className="border-b border-[#d8e6dd] px-3 py-3 text-center">
 										<div className="flex flex-wrap justify-center gap-2">
-											<button type="button" className="inline-flex h-[32px] w-[32px] items-center justify-center rounded-sm  bg-[var(--primary)] text-white transition-colors hover:bg-[var(--primary-strong)]" onClick={() => openEditModal(user)} aria-label="Editar usuario">
-												<Pencil className="h-3.5 w-3.5" strokeWidth={2} />
-											</button>
-											<button type="button" className={`inline-flex w-[108px] justify-center rounded-sm border px-2.5 py-1.5 text-[0.78rem] font-semibold transition-colors ${user.estado ? "border-[#f0cbc2] bg-[#fff1ed] text-[#8a3b2a] hover:bg-[#ffe4d9]" : "border-[#cde2d5] bg-[#eef8f1] text-[#1f5137] hover:bg-[#e7f5ec]"}`} onClick={() => toggleUserState(user.id)}>
-												{user.estado ? "Deshabilitar" : "Habilitar"}
+											<button type="button" className="inline-flex h-9 w-9 items-center justify-center rounded-sm border border-[#d8e6dd] bg-white text-[#355447] hover:bg-[#f5f7f5]" onClick={(e) => openActionModal(user, e)} aria-label="Abrir acciones">
+												<EllipsisVertical className="h-4 w-4" strokeWidth={2} />
 											</button>
 										</div>
 									</td>
@@ -318,6 +399,25 @@ export default function AdminUsers() {
 						</tbody>
 					</table>
 				</div>
+
+						{actionModalOpen && actionAnchor && (
+							<div style={{ position: "fixed", top: actionAnchor.bottom + 8, left: Math.max(8, actionAnchor.left - 200) }} className="z-50 w-[300px] rounded-[10px] border border-[#dce3ea] bg-white p-2 shadow-[0_14px_30px_-18px_rgba(12,30,16,0.45)]">
+								<div className="grid gap-2 px-2 py-2">
+									<button type="button" className="flex items-center gap-2 rounded-sm border border-[#d8e6dd] bg-white px-3 py-2.5 text-left text-[0.9rem] font-semibold text-[#2f463a] hover:bg-[#f5f7f5]" onClick={() => { if (selectedUser) { openEditModal(selectedUser); } closeActionModal(); }}>
+										<PenLine className="h-4 w-4 text-[var(--primary)]" strokeWidth={2} />
+										Editar
+									</button>
+									<button type="button" className={`flex items-center gap-2 rounded-sm border px-3 py-2.5 text-left text-[0.9rem] font-semibold ${selectedUser?.estado ? "border-[#f0cbc2] bg-[#fff1ed] text-[#8a3b2a] hover:bg-[#ffe4d9]" : "border-[#cde2d5] bg-[#eef8f1] text-[#1f5137] hover:bg-[#e7f5ec]"}`} onClick={() => { toggleSelectedUserState(); }}>
+										{selectedUser?.estado ? <SquareMinus className="h-4 w-4" strokeWidth={2} /> : <CircleCheckBig className="h-4 w-4" strokeWidth={2} />}
+										{selectedUser?.estado ? "Deshabilitar" : "Habilitar"}
+									</button>
+									<button type="button" className="flex items-center gap-2 rounded-sm border border-[#ead6d2] bg-white px-3 py-2.5 text-left text-[0.9rem] font-semibold text-[var(--reject-hover)] hover:bg-[#fff6f4]" onClick={() => { removeSelectedUser(); closeActionModal(); }}>
+										<Trash2 className="h-4 w-4" strokeWidth={2} />
+										Eliminar
+									</button>
+								</div>
+							</div>
+						)}
 				<div className="flex items-center justify-between gap-3 pt-2 text-[0.82rem] text-[#6f8176] max-[760px]:flex-col max-[760px]:items-start">
 					<span>Mostrando {paginationRange.start}-{paginationRange.end} de {filteredUsers.length}</span>
 					<div className="inline-flex items-center gap-1.5">
@@ -469,7 +569,7 @@ export default function AdminUsers() {
 						</div>
 						<div className="grid gap-1.5">
 							<label className="text-[0.82rem] font-semibold text-[#2f4438]" htmlFor="edit-rut">RUT</label>
-							<input id="edit-rut" name="rut" className="w-full rounded-[10px] border border-[#d4dae2] bg-[var(--surface)] px-3 py-2.5 text-[0.9rem] text-[var(--text)] outline-none transition-shadow duration-200 focus:border-[var(--primary)] focus:bg-[#fbfefc] focus:shadow-[0_0_0_3px_rgba(5,166,61,0.11)]" type="text" value={formValues.rut} onChange={handleFieldChange} />
+							<input id="edit-rut" name="rut" readOnly title="El RUT no se puede editar" className="w-full rounded-[10px] border border-[#d4dae2] bg-[#f3f4f6] px-3 py-2.5 text-[0.9rem] text-[#6f8176] outline-none" type="text" value={formValues.rut} onChange={handleFieldChange} />
 						</div>
 						<div className="grid gap-1.5">
 							<label className="text-[0.82rem] font-semibold text-[#2f4438]" htmlFor="edit-phone">Telefono</label>
@@ -496,3 +596,4 @@ export default function AdminUsers() {
 		</section>
 	);
 }
+

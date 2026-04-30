@@ -1,20 +1,14 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { submitActivityProposal } from "../services/userViewsService";
+import api from "../services/api";
 
-const roomOptions = [
-  "Sala Multimedia OMJ",
-  "Auditorio OMJ",
-  "Sala Taller 1",
-  "Sala Taller 2",
-  "Gimnasio Municipal",
-  "Casa de la Cultura"
-];
+// Las opciones de salas vendran desde la API (/salas)
 
 const initialForm = {
   title: "",
   description: "",
-  room: roomOptions[0],
+  room: "",
   date: "",
   hora_inicio: "",
   hora_termino: "",
@@ -32,6 +26,7 @@ export default function CreateActivity() {
   const [form, setForm] = useState(initialForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState({ type: "", title: "", message: "", hint: "" });
+  const [roomOptions, setRoomOptions] = useState([]);
 
   function handleChange(event) {
     const { name, value, type, checked } = event.target;
@@ -79,7 +74,7 @@ export default function CreateActivity() {
       const response = await submitActivityProposal({
         title: form.title.trim(),
         description: form.description.trim(),
-        lugar: form.room,
+        id_sala: Number(form.room),
         date: form.date,
         hora_inicio: form.hora_inicio,
         hora_termino: form.hora_termino,
@@ -125,6 +120,36 @@ export default function CreateActivity() {
       setIsSubmitting(false);
     }
   }
+
+  useEffect(() => {
+    let mounted = true;
+    async function loadRooms() {
+      try {
+        const res = await api.get("/salas");
+        if (!mounted) return;
+        if (Array.isArray(res.data) && res.data.length > 0) {
+          const opts = res.data.map(s => ({ id: s.id_sala || s.id, name: s.nombre || s.name }));
+          setRoomOptions(opts);
+          setForm(previous => ({ ...previous, room: String(opts[0].id) }));
+          return;
+        }
+      } catch (e) {
+        // ignore and fallback
+      }
+      setRoomOptions([
+        { id: "1", name: "Sala Multimedia OMJ" },
+        { id: "2", name: "Auditorio OMJ" },
+        { id: "3", name: "Sala Taller 1" },
+        { id: "4", name: "Sala Taller 2" },
+        { id: "5", name: "Gimnasio Municipal" },
+        { id: "6", name: "Casa de la Cultura" }
+      ]);
+      setForm(previous => ({ ...previous, room: "1" }));
+    }
+
+    loadRooms();
+    return () => { mounted = false; };
+  }, []);
 
   return (
     <section className="max-w-7xl mx-auto px-4 py-6 space-y-8">
@@ -184,8 +209,8 @@ export default function CreateActivity() {
                 onChange={handleChange}
               >
                 {roomOptions.map(room => (
-                  <option key={room} value={room}>
-                    {room}
+                  <option key={room.id} value={String(room.id)}>
+                    {room.name}
                   </option>
                 ))}
               </select>

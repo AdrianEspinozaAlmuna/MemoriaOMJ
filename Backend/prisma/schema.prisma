@@ -10,17 +10,18 @@ datasource db {
 model actividad {
   id_actividad            Int                       @id @default(autoincrement())
   id_encargado            Int
+  id_sala                 Int?
   titulo                  String                    @db.VarChar(255)
   descripcion             String?
   fecha                   DateTime                  @db.Date
   hora_inicio             DateTime                  @db.Time(6)
   hora_termino            DateTime?                 @db.Time(6)
   max_participantes       Int?
-  lugar                   String?                   @db.VarChar(255)
   chat_bidireccional      Boolean                   @default(true)
   aprobado                Boolean                   @default(false)
   estado                  estado_actividad          @default(pendiente)
   usuario                 usuario                   @relation(fields: [id_encargado], references: [id_usuario], onUpdate: NoAction)
+  sala                    salas?                    @relation(fields: [id_sala], references: [id_sala], onDelete: SetNull, onUpdate: NoAction)
   actividad_mensaje       actividad_mensaje[]
   actividad_participantes actividad_participantes[]
 
@@ -63,12 +64,12 @@ model grupo {
 model notificaciones {
   id_notificacion Int               @id @default(autoincrement())
   id_usuario      Int
-  id_sistema      Int?
   id_actividad    Int?
   tipo            tipo_notificacion
   titulo          String            @db.VarChar(255)
   descripcion     String?
   fecha_envio     DateTime          @default(now()) @db.Timestamptz(6)
+  visto           Boolean           @default(false)
   usuario         usuario           @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([id_usuario], map: "idx_notificaciones_usuario")
@@ -82,6 +83,14 @@ model participantes_grupo {
   usuario    usuario   @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade, onUpdate: NoAction)
 
   @@id([id_grupo, id_usuario])
+}
+
+model salas {
+  id_sala      Int         @id @default(autoincrement())
+  nombre       String      @unique @db.VarChar(255)
+  capacidad    Int
+  estado       estado_sala @default(habilitada)
+  actividades  actividad[]
 }
 
 model usuario {
@@ -131,4 +140,9 @@ enum rol_usuario {
 enum tipo_notificacion {
   sistema
   actividad
+}
+
+enum estado_sala {
+  habilitada
+  deshabilitada
 }

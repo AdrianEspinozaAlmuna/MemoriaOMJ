@@ -36,6 +36,7 @@ export default function Navbar() {
   const isAuthenticated = !!user;
   const rol = user?.rol || null;
 	const displayName = user?.nombre || "Usuario";
+	const fullName = user?.nombre ? `${user.nombre} ${user.apellido || ""}`.trim() : displayName;
 
 	useEffect(() => {
 		function handleDocumentClick(event) {
@@ -184,13 +185,13 @@ export default function Navbar() {
 				<div className="flex items-center justify-self-end gap-5 max-[1120px]:gap-3 max-[860px]:col-start-2 max-[860px]:row-start-1 max-[860px]:gap-2">
                     
 
-					<div className="flex items-center gap-2 max-[1120px]:gap-1.5">
+					<div className="flex items-center gap-4 max-[1120px]:gap-1.5">
 
 					{isAuthenticated && (
 						<div className="relative">
 							<button
 								type="button"
-								className="relative inline-flex h-[2.15rem] w-[2.15rem] items-center justify-center cursor-pointer rounded-md bg-[white] transition-colors duration-200 hover:bg-[#ecf6ef]"
+								className="relative inline-flex h-[2.15rem] w-[2.15rem] items-center justify-center cursor-pointer rounded-md bg-[color:var(--nav-bg,white)] transition-colors duration-200 hover:bg-[color:var(--nav-bg,white)]/90"
 								aria-label="Notificaciones"
 								onClick={() => {
 									setNotificationsOpen(previous => !previous);
@@ -202,8 +203,8 @@ export default function Navbar() {
 								<span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-[var(--primary)] px-1 text-[0.7rem] font-bold text-white">3</span>
 							</button>
 
-							{notificationsOpen && (
-								<div className="absolute right-0 top-[calc(100%+0.4rem)] z-[21] w-[min(380px,82vw)] overflow-hidden rounded-[14px] border border-[#d7e4dc] bg-white shadow-[0_18px_32px_-24px_rgba(11,38,24,0.38)] max-[860px]:top-[calc(100%+0.5rem)] max-[860px]:w-[min(320px,calc(100vw-1.4rem))] max-[640px]:w-[min(300px,calc(100vw-1rem))]" role="dialog" aria-label="Notificaciones">
+								{notificationsOpen && (
+								<div className="absolute right-0 top-[calc(100%+0.4rem)] z-[21] w-[min(380px,82vw)] overflow-hidden rounded-[14px] border border-[#d7e4dc] bg-[color:var(--nav-bg,white)] shadow-[0_18px_32px_-24px_rgba(11,38,24,0.38)] max-[860px]:top-[calc(100%+0.5rem)] max-[860px]:w-[min(320px,calc(100vw-1.4rem))] max-[640px]:w-[min(300px,calc(100vw-1rem))]" role="dialog" aria-label="Notificaciones">
 									<div className="border-b border-[#e1ebe4] bg-[linear-gradient(180deg,#f8fbf9,rgba(248,251,249,0.9))] px-4 py-3">
 										<p className="m-0 text-[0.78rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Centro de alertas</p>
 										<p className="mt-1 m-0 text-[0.92rem] font-semibold text-[#244235]">Notificaciones recientes</p>
@@ -231,7 +232,7 @@ export default function Navbar() {
 						<div className="relative">
 							<button
 								type="button"
-								className="inline-flex h-[2.15rem] items-center gap-2 rounded-sm bg-[white] px-2.5 text-[0.89rem] font-semibold leading-none text-[#2e4c3d] transition-colors duration-200 hover:bg-[#ecf6ef] focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(5,166,61,0.15)] max-[860px]:min-w-[2.15rem] max-[860px]:justify-center max-[860px]:px-0"
+								className="inline-flex h-[2.15rem] items-center gap-2 rounded-sm bg-[color:var(--nav-bg,white)] px-2.5 text-[0.89rem] font-semibold leading-none text-[#2e4c3d] transition-colors duration-200 hover:bg-[color:var(--nav-bg,white)]/90 focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(5,166,61,0.15)] max-[860px]:min-w-[2.15rem] max-[860px]:justify-center max-[860px]:px-0"
 								onClick={() => {
 									setMenuOpen(previous => !previous);
 									setNotificationsOpen(false);
@@ -240,14 +241,20 @@ export default function Navbar() {
 								aria-haspopup="menu"
 							>
 								<UserRound aria-hidden="true" focusable="false" className="h-4 w-4 text-[#2e4c3d]" strokeWidth={1.9} />
-								<span className="max-w-[9.2rem] overflow-hidden text-ellipsis whitespace-nowrap max-[860px]:hidden">{displayName}</span>
+								<span className="max-w-[12rem] min-w-0 overflow-hidden max-[860px]:hidden">
+									<span className="block truncate">{fullName}</span>
+									{user?.mail && <span className="block truncate text-[0.72rem] font-normal text-[#60716a]">{user.mail}</span>}
+								</span>
 							</button>
 
 							{menuOpen && (
-								<div className="absolute right-0 top-[calc(100%+0.42rem)] z-[35] min-w-[10.5rem] rounded-[10px] border border-[#dce3ea] bg-white p-1.5 shadow-[0_12px_26px_-20px_rgba(18,32,25,0.42)] max-[860px]:top-[calc(100%+0.5rem)] max-[860px]:w-[min(320px,calc(100vw-1.4rem))] max-[640px]:w-[min(300px,calc(100vw-1rem))]" role="menu">
-									<button type="button" className="w-full cursor-pointer rounded-sm bg-transparent px-2.5 py-2 text-left text-[0.87rem] font-semibold text-[#2b3f34] transition-colors duration-150 hover:bg-[#f1f6f3] hover:text-[#173326] focus-visible:bg-[#ecf6ef] focus-visible:outline-none" role="menuitem" onClick={handleLogout}>
-										Cerrar sesion
-									</button>
+								<div className="absolute right-0 top-[calc(100%+0.42rem)] z-[35] min-w-[10.5rem] rounded-[10px] border border-[#dce3ea] bg-[color:var(--nav-bg,white)] p-1.5 shadow-[0_12px_26px_-20px_rgba(18,32,25,0.42)] max-[860px]:top-[calc(100%+0.5rem)] max-[860px]:w-[min(320px,calc(100vw-1.4rem))] max-[640px]:w-[min(300px,calc(100vw-1rem))]" role="menu">
+									<div className="grid gap-1">
+										<button type="button" className="w-full inline-flex items-center gap-2 rounded-sm bg-transparent px-2.5 py-2 text-left text-[0.87rem] font-semibold text-[#2b3f34] transition-colors duration-150 hover:bg-[#f1f6f3] hover:text-[#173326] focus-visible:bg-[#ecf6ef] focus-visible:outline-none" role="menuitem" onClick={handleLogout}>
+											<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b2f2f" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+											Cerrar sesion
+										</button>
+									</div>
 								</div>
 							)}
 						</div>

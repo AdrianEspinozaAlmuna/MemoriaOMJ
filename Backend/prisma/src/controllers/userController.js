@@ -30,13 +30,14 @@ async function getUsers(req, res) {
         nombre: true,
         apellido: true,
         mail: true,
+        telefono: true,
         rol: true,
         estado: true,
         fecha_registro: true
       },
       orderBy: { id_usuario: "asc" }
     });
-    return res.json(users);
+    return res.json({ users });
   } catch (e) {
     return res.status(500).json({ message: "Error al obtener usuarios", detail: e.message });
   }
@@ -197,4 +198,36 @@ async function testEndpoint(_req, res) {
 }
 
 module.exports = { getUsers, createUser, loginUser, getMe, getMyActivityRole, testEndpoint };
+// Actualizar usuario (solo campos permitidos)
+async function updateUser(req, res) {
+  const id = Number(req.params.id);
+  const allowed = ["nombre", "apellido", "mail", "telefono", "estado", "rol"];
+  const updates = {};
+  for (const key of allowed) if (req.body[key] !== undefined) updates[key] = req.body[key];
+
+  try {
+    const user = await prisma.usuario.update({ where: { id_usuario: id }, data: updates });
+    return res.json({ ok: true, user });
+  } catch (e) {
+    return res.status(500).json({ message: "Error actualizando usuario", detail: e.message });
+  }
+}
+
+// Eliminar usuario (intenta delete, si falla marca como deshabilitado)
+async function deleteUser(req, res) {
+  const id = Number(req.params.id);
+  try {
+    const deleted = await prisma.usuario.delete({ where: { id_usuario: id } });
+    return res.json({ ok: true, deleted });
+  } catch (e) {
+    try {
+      const disabled = await prisma.usuario.update({ where: { id_usuario: id }, data: { estado: false } });
+      return res.json({ ok: true, disabled, note: "deleted failed, set estado=false" });
+    } catch (err) {
+      return res.status(500).json({ message: "Error eliminando usuario", detail: err.message });
+    }
+  }
+}
+
+module.exports = { getUsers, createUser, loginUser, getMe, getMyActivityRole, testEndpoint, updateUser, deleteUser };
 // Referencias: [`userController.getUsers`](Backend/src/controllers/userController.js)
