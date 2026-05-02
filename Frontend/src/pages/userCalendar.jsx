@@ -98,8 +98,8 @@ export default function UserCalendar() {
               Categoria
             </span>
             <select className="hover:cursor-pointer rounded-sm border border-[#d8e6dd] bg-[var(--panel-bg)] px-3 py-2 text-[0.9rem] text-[var(--text)] outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[#05a63d]/20" value={selectedCategory} onChange={event => setSelectedCategory(event.target.value)}>
-              {categories.map(category => (
-                <option key={category} value={category}>
+              {categories.map((category, index) => (
+                <option key={`cat-${String(category)}-${index}`} value={category}>
                   {category}
                 </option>
               ))}

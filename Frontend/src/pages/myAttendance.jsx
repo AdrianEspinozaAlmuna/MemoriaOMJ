@@ -66,6 +66,9 @@ function getAttendanceLabel(status = "") {
 function getFinalStatus(status = "") {
   const normalized = String(status).toLowerCase();
   if (normalized.includes("cancel")) return "Cancelado";
+  if (normalized.includes("inscrit") || normalized.includes("pend")) return "Inscrito";
+  if (normalized.includes("curso")) return "En curso";
+  if (normalized.includes("program")) return "Programado";
   if (isAttendedStatus(status)) return "Completado";
   return "Finalizado";
 }
@@ -130,6 +133,7 @@ function ChartTooltip({ active, payload, label, unit = "" }) {
 
 export default function MyAttendance() {
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [stats, setStats] = useState({});
   const [monthly, setMonthly] = useState([]);
   const [history, setHistory] = useState([]);
@@ -146,28 +150,11 @@ export default function MyAttendance() {
 
     getAttendanceData().then(data => {
       if (!mounted) return;
-      // Append demo examples if not present to illustrate low attendance and low ratings
-      const currentYear = new Date().getFullYear();
-
-      const incomingMonthly = Array.isArray(data.monthly) ? data.monthly.slice() : [];
-      const demoMonthKey = "__demo_low_month";
-      if (!incomingMonthly.some(m => m._demo === demoMonthKey)) {
-        incomingMonthly.push({ month: "Noviembre", data: "1/5 (20%)", year: currentYear, _demo: demoMonthKey });
-      }
-
-      const incomingHistory = Array.isArray(data.history) ? data.history.slice() : [];
-      const demoNoId = "__demo_no_1";
-      const demoLowStarsId = "__demo_lowstars_1";
-      if (!incomingHistory.some(h => String(h.id) === demoNoId)) {
-        incomingHistory.push({ id: demoNoId, name: "Charla: No asistido (demo)", type: "Charla", date: `${currentYear}-03-10`, time: "10:00", hora_termino: "11:30", place: "Sala Demo", status: "inasistencia", participants: 0, capacity: 30 });
-      }
-      if (!incomingHistory.some(h => String(h.id) === demoLowStarsId)) {
-        incomingHistory.push({ id: demoLowStarsId, name: "Taller: Poca calificación (demo)", type: "Taller", date: `${currentYear}-02-16`, time: "17:30", hora_termino: "19:30", place: "Aula Demo", status: "asistido", rating: 2, participants: 5, capacity: 20 });
-      }
-
+      setLoadError(data?.error || "");
       setStats(data.stats || {});
-      setMonthly(incomingMonthly);
-      setHistory(incomingHistory);
+      setMonthly(Array.isArray(data.monthly) ? data.monthly.slice() : []);
+      setHistory(Array.isArray(data.history) ? data.history.slice() : []);
+      setHistoryPage(1);
       setLoading(false);
     });
 
@@ -288,6 +275,12 @@ export default function MyAttendance() {
         </div>
       </header>
 
+      {!loading && loadError && (
+        <div className="rounded-lg border border-[#f2cbc4] bg-[#fff0ee] px-3 py-2 text-[0.84rem] font-semibold text-[#8f3526]">
+          {loadError}
+        </div>
+      )}
+
       <section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-bg)] p-5 shadow-sm">
         <h2 className="mb-4 mt-0 text-[1.08rem] font-semibold text-[var(--text)]">Indicadores principales</h2>
         {loading ? (
@@ -378,106 +371,6 @@ export default function MyAttendance() {
         )}
       </section>
 
-      <section className="rounded-xl border border-[#d8e6dd] bg-white p-6 shadow-sm">
-        <div className="mb-4 flex items-baseline justify-between gap-3 max-[760px]:flex-col max-[760px]:items-start">
-          <h2 className="m-0 text-[1rem] font-semibold text-[var(--text)]">Asistencia mensual</h2>
-          <p className="text-[0.92rem] text-[var(--text-muted)]">Mostrando {filteredMonthlyRows.length} de {monthlyRows.length}</p>
-        </div>
-
-        <div className="mb-6 grid items-center gap-4 min-[761px]:grid-cols-[1.25fr_auto]">
-          <div className="relative">
-            <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6f8176]" />
-            <input
-              value={monthlyQuery}
-              onChange={event => setMonthlyQuery(event.target.value)}
-              className="w-full rounded-lg border border-[#d8e6dd] bg-white py-2 pl-9 pr-3 text-[0.92rem] outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[#05a63d]/20"
-              placeholder="Buscar mes"
-            />
-          </div>
-          <div className="flex flex-wrap items-center justify-start gap-2 min-[761px]:justify-end">
-            <label className="inline-flex items-center gap-1.5 text-[0.8rem] font-semibold text-[var(--text-muted)]">
-              <Filter aria-hidden="true" className="h-3.5 w-3.5" />
-              Rendimiento:
-              <select
-                value={monthlyFilter}
-                onChange={event => setMonthlyFilter(event.target.value)}
-                className="rounded-lg border border-[#d8e6dd] bg-white px-2.5 py-1.5 text-[0.84rem] outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[#05a63d]/20"
-              >
-                <option value="todas">Todas</option>
-                <option value="alto">Alto</option>
-                <option value="medio">Medio</option>
-                <option value="bajo">Bajo</option>
-              </select>
-            </label>
-
-            <label className="inline-flex items-center gap-1.5 text-[0.8rem] font-semibold text-[var(--text-muted)]">
-              Año:
-              <select
-                value={monthlyYear}
-                onChange={event => setMonthlyYear(event.target.value)}
-                className="rounded-lg border border-[#d8e6dd] bg-white px-2.5 py-1.5 text-[0.84rem] outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[#05a63d]/20"
-              >
-                <option value="all">Todos</option>
-                <option value={new Date().getFullYear()}>{new Date().getFullYear()}</option>
-                <option value={new Date().getFullYear() - 1}>{new Date().getFullYear() - 1}</option>
-                <option value={new Date().getFullYear() - 2}>{new Date().getFullYear() - 2}</option>
-              </select>
-            </label>
-          </div>
-        </div>
-
-        {loading ? (
-          <LoadingState
-            title="Cargando asistencia mensual"
-            description="Estamos trayendo tu desglose mensual de asistencia."
-            minHeightClass="min-h-[170px]"
-          />
-        ) : filteredMonthlyRows.length === 0 ? (
-          <div className="grid min-h-[150px] place-items-center rounded-md border border-dashed border-[#d8e6dd] bg-[var(--gray-soft)] px-5 text-center">
-            <p className="m-0 max-w-[48ch] text-[0.92rem] text-[var(--text-muted)]">Aún no hay datos mensuales de asistencia para mostrar.</p>
-          </div>
-        ) : (
-          <div className="overflow-auto rounded-md">
-            <table className="min-w-[900px] w-full text-[0.89rem] bg-white rounded-sm">
-              <thead>
-                <tr>
-                  <th className="border-b border-[#d8e6dd] bg-[var(--gray)] px-3 py-2 text-left text-[0.73rem] font-semibold text-[var(--text-muted)]">Mes</th>
-                  <th className="border-b border-[#d8e6dd] bg-[var(--gray)] px-3 py-2 text-left text-[0.73rem] font-semibold text-[var(--text-muted)]">Año</th>
-                  <th className="border-b border-[#d8e6dd] bg-[var(--gray)] px-3 py-2 text-left text-[0.73rem] font-semibold text-[var(--text-muted)]">Avance</th>
-                  <th className="border-b border-[#d8e6dd] bg-[var(--gray)] px-3 py-2 text-left text-[0.73rem] font-semibold text-[var(--text-muted)]">Asistencia</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredMonthlyRows.map(row => (
-                  <tr key={row.month}>
-                    <td className="border-b border-[#d8e6dd] px-3 py-3">
-                      <div className="flex items-center gap-2.5">
-                        <CalendarDays aria-hidden="true" className="h-4 w-4 text-[var(--primary)]" />
-                        <p className="m-0 text-[0.9rem] text-[var(--text)]">{row.month}</p>
-                      </div>
-                    </td>
-                    <td className="border-b border-[#d8e6dd] px-3 py-3 text-[var(--text)]">{row.year || "-"}</td>
-                    <td className="border-b border-[#d8e6dd] px-3 py-3 text-[var(--text)]">
-                      {row.parsed.done}/{row.parsed.total}
-                    </td>
-                    <td className="border-b border-[#d8e6dd] px-3 py-3">
-                      <div className="max-w-[200px]">
-                        <p className="m-0 text-[0.83rem] font-semibold text-[var(--text)]">{row.parsed.percent}%</p>
-                        <div className="mt-1.5 h-[0.4rem] w-full overflow-hidden rounded-full bg-[#d9e4dc]" aria-hidden="true">
-                          <span
-                            className="block h-full rounded-[inherit]"
-                            style={{ width: `${row.parsed.percent}%`, background: getProgressColor(row.parsed.percent) }}
-                          />
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
 
       <section className="rounded-xl border border-[#d8e6dd] bg-white p-6 shadow-sm">
         <div className="mb-4 flex items-baseline justify-between gap-3 max-[760px]:flex-col max-[760px]:items-start">

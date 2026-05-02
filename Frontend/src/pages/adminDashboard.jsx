@@ -65,6 +65,20 @@ export default function AdminDashboard() {
 					getApprovedActivities()
 				]);
 
+				const parseActivityDateTime = activity => {
+					const dateValue = activity?.date || activity?.fecha || "";
+					const timeValue = activity?.hora_inicio || activity?.time || "00:00";
+					const parsed = new Date(`${dateValue}T${timeValue}`);
+					return Number.isNaN(parsed.getTime()) ? new Date(0) : parsed;
+				};
+
+				const normalizedUpcoming = Array.isArray(activitiesRes.actividades)
+					? activitiesRes.actividades
+						.filter(activity => ["programada", "en_curso"].includes(String(activity?.estado || activity?.state || "").toLowerCase()))
+						.sort((left, right) => parseActivityDateTime(left) - parseActivityDateTime(right))
+						.slice(0, 3)
+					: [];
+
 				// Actualizar stats
 				const statsArray = [
 					{ label: "Total Usuarios", value: statsRes.totalUsers || 247 },
@@ -75,7 +89,7 @@ export default function AdminDashboard() {
 				setStats(statsArray);
 
 				// Actualizar actividades
-				setUpcomingActivities(activitiesRes.actividades || []);
+				setUpcomingActivities(normalizedUpcoming);
 			} catch (err) {
 				console.error("Error loading dashboard data:", err);
 				setError("No se pudieron cargar los datos del dashboard");

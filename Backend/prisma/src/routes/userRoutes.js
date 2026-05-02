@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { getUsers, createUser, loginUser, getMe, getMyActivityRole, testEndpoint, updateUser, deleteUser } = require("../controllers/userController");
+const { getUsers, createUser, loginUser, getMe, getMyActivityRole, getMyAttendance, testEndpoint, updateUser, deleteUser } = require("../controllers/userController");
 const { requireAuth, requireRole, requireActivityRole } = require("../middleware/auth");
 
 router.get("/", requireAuth, requireRole("admin"), getUsers);
@@ -9,6 +9,7 @@ router.delete("/:id", requireAuth, requireRole("admin"), deleteUser);
 router.post("/", createUser);
 router.post("/login", loginUser);
 router.get("/me", requireAuth, getMe);
+router.get("/me/attendance", requireAuth, getMyAttendance);
 router.get(
 	"/activity/:id_actividad/role",
 	requireAuth,

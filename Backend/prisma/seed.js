@@ -190,6 +190,21 @@ async function main() {
       });
     }
     console.log("✓ Actividades creadas");
+    
+    // Crear participaciones de ejemplo para generar historial de asistencias
+    const participante = await prisma.usuario.findUnique({ where: { mail: "participante1@omj.cl" } });
+    if (participante) {
+      const finishedActivities = await prisma.actividad.findMany({ where: { fecha: { lt: new Date() }, aprobado: true }, orderBy: { fecha: 'asc' } });
+      for (let i = 0; i < Math.min(finishedActivities.length, 4); i++) {
+        const act = finishedActivities[i];
+        await prisma.actividad_participantes.upsert({
+          where: { id_actividad_id_usuario: { id_actividad: act.id_actividad, id_usuario: participante.id_usuario } },
+          update: { rol: 'participante', asistio: i % 2 === 0, valoracion: i % 2 === 0 ? 5 : null },
+          create: { id_actividad: act.id_actividad, id_usuario: participante.id_usuario, rol: 'participante', asistio: i % 2 === 0, valoracion: i % 2 === 0 ? 5 : null }
+        });
+      }
+      console.log('✓ Participaciones creadas para participante1@omj.cl');
+    }
   }
 
   console.log("\n✅ Seed completado exitosamente");

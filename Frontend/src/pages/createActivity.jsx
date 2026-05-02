@@ -68,6 +68,28 @@ export default function CreateActivity() {
       return;
     }
 
+    const selectedRoom = roomOptions.find(room => String(room.id) === String(form.room));
+    const roomCapacity = Number(selectedRoom?.capacity ?? 0);
+    if (!selectedRoom) {
+      setFeedback({
+        type: "error",
+        title: "Sala invalida",
+        message: "Selecciona una sala disponible para continuar.",
+        hint: "Recarga la pagina si no aparecen salas en la lista."
+      });
+      return;
+    }
+
+    if (Number.isFinite(roomCapacity) && roomCapacity > 0 && maxParticipants > roomCapacity) {
+      setFeedback({
+        type: "error",
+        title: "Cupo superior a la sala",
+        message: `El cupo solicitado no puede superar la capacidad de ${roomCapacity} personas de la sala seleccionada.`,
+        hint: "Reduce el cupo o elige otra sala con mayor capacidad."
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -128,7 +150,7 @@ export default function CreateActivity() {
         const res = await api.get("/salas");
         if (!mounted) return;
         if (Array.isArray(res.data) && res.data.length > 0) {
-          const opts = res.data.map(s => ({ id: s.id_sala || s.id, name: s.nombre || s.name }));
+          const opts = res.data.map(s => ({ id: s.id_sala || s.id, name: s.nombre || s.name, capacity: Number(s.capacidad ?? s.capacity ?? 0) }));
           setRoomOptions(opts);
           setForm(previous => ({ ...previous, room: String(opts[0].id) }));
           return;
@@ -137,12 +159,12 @@ export default function CreateActivity() {
         // ignore and fallback
       }
       setRoomOptions([
-        { id: "1", name: "Sala Multimedia OMJ" },
-        { id: "2", name: "Auditorio OMJ" },
-        { id: "3", name: "Sala Taller 1" },
-        { id: "4", name: "Sala Taller 2" },
-        { id: "5", name: "Gimnasio Municipal" },
-        { id: "6", name: "Casa de la Cultura" }
+        { id: "1", name: "Sala Multimedia OMJ", capacity: 20 },
+        { id: "2", name: "Auditorio OMJ", capacity: 80 },
+        { id: "3", name: "Sala Taller 1", capacity: 25 },
+        { id: "4", name: "Sala Taller 2", capacity: 25 },
+        { id: "5", name: "Gimnasio Municipal", capacity: 60 },
+        { id: "6", name: "Casa de la Cultura", capacity: 40 }
       ]);
       setForm(previous => ({ ...previous, room: "1" }));
     }
@@ -204,7 +226,7 @@ export default function CreateActivity() {
               <select
                 id="room"
                 name="room"
-                className="rounded-lg border border-[#d8e6dd] bg-[var(--panel-bg)] px-3.5 py-2.5 text-[0.92rem] text-[var(--text)] outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[#05a63d]/20 hover:cursor-pointer"
+                className="rounded-sm border border-[#d8e6dd] bg-[var(--panel-bg)] px-3.5 py-2.5 text-[0.92rem] text-[var(--text)] outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[#05a63d]/20 hover:cursor-pointer"
                 value={form.room}
                 onChange={handleChange}
               >
@@ -224,7 +246,7 @@ export default function CreateActivity() {
                 id="date"
                 name="date"
                 type="date"
-                className="rounded-lg border border-[#d8e6dd] bg-[var(--panel-bg)] px-3.5 py-2.5 text-[0.92rem] text-[var(--text)] outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[#05a63d]/20 hover:cursor-pointer"
+                className="rounded-sm border border-[#d8e6dd] bg-[var(--panel-bg)] px-3.5 py-2.5 text-[0.92rem] text-[var(--text)] outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[#05a63d]/20 hover:cursor-pointer"
                 value={form.date}
                 onChange={handleChange}
                 required
@@ -239,7 +261,7 @@ export default function CreateActivity() {
                 id="hora_inicio"
                 name="hora_inicio"
                 type="time"
-                className="rounded-lg border border-[#d8e6dd] bg-[var(--panel-bg)] px-3.5 py-2.5 text-[0.92rem] text-[var(--text)] outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[#05a63d]/20 hover:cursor-pointer"
+                className="rounded-sm border border-[#d8e6dd] bg-[var(--panel-bg)] px-3.5 py-2.5 text-[0.92rem] text-[var(--text)] outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[#05a63d]/20 hover:cursor-pointer"
                 value={form.hora_inicio}
                 onChange={handleChange}
                 required
@@ -254,7 +276,7 @@ export default function CreateActivity() {
                 id="hora_termino"
                 name="hora_termino"
                 type="time"
-                className="rounded-lg border border-[#d8e6dd] bg-[var(--panel-bg)] px-3.5 py-2.5 text-[0.92rem] text-[var(--text)] outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[#05a63d]/20 hover:cursor-pointer"
+                className="rounded-sm border border-[#d8e6dd] bg-[var(--panel-bg)] px-3.5 py-2.5 text-[0.92rem] text-[var(--text)] outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[#05a63d]/20 hover:cursor-pointer"
                 value={form.hora_termino}
                 onChange={handleChange}
                 required
@@ -273,7 +295,7 @@ export default function CreateActivity() {
                 type="number"
                 min="1"
                 max="500"
-                className="rounded-lg border border-[#d8e6dd] bg-[var(--panel-bg)] px-3.5 py-2.5 text-[0.92rem] text-[var(--text)] outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[#05a63d]/20 hover:cursor-pointer"
+                className="rounded-sm border border-[#d8e6dd] bg-[var(--panel-bg)] px-3.5 py-2.5 text-[0.92rem] text-[var(--text)] outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[#05a63d]/20 hover:cursor-pointer"
                 value={form.max_participantes}
                 onChange={handleChange}
                 required
@@ -282,7 +304,7 @@ export default function CreateActivity() {
 
             <div className="grid gap-2">
               <p className="m-0 text-[0.88rem] font-semibold text-[var(--text)]">Chat bidireccional</p>
-              <label className="inline-flex items-center gap-3 rounded-lg border border-[#d8e6dd] bg-white px-3.5 py-2.5 hover:cursor-pointer">
+              <label className="inline-flex items-center gap-3 rounded-sm border border-[#d8e6dd] bg-white px-3.5 py-2.5 hover:cursor-pointer">
                 <input
                   id="chat_bidireccional"
                   name="chat_bidireccional"
@@ -336,7 +358,7 @@ export default function CreateActivity() {
           <div className="flex flex-wrap items-center gap-3 pt-1">
             <button
               type="submit"
-              className="inline-flex items-center rounded-lg border border-[var(--primary)] bg-[var(--primary)] px-5 py-2.5 text-[0.9rem] font-semibold text-white transition-all hover:bg-[#0a7f3d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#05a63d]/30 disabled:cursor-not-allowed disabled:opacity-70"
+              className="inline-flex items-center rounded-sm border border-[var(--primary)] bg-[var(--primary)] px-5 py-2.5 text-[0.9rem] font-semibold text-white transition-all hover:bg-[#0a7f3d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#05a63d]/30 disabled:cursor-not-allowed disabled:opacity-70"
               disabled={isSubmitting}
             >
               {isSubmitting ? "Enviando..." : "Enviar propuesta"}
@@ -344,7 +366,7 @@ export default function CreateActivity() {
 
             <Link
               to="/user/dashboard"
-              className="inline-flex items-center rounded-lg border border-[#d8e6dd] bg-white px-5 py-2.5 text-[0.9rem] font-semibold text-[#284536] transition-colors hover:bg-[#f5f9f7]"
+              className="inline-flex items-center rounded-sm border border-[#d8e6dd] bg-white px-5 py-2.5 text-[0.9rem] font-semibold text-[#284536] transition-colors hover:bg-[#f5f9f7]"
             >
               Volver al inicio
             </Link>

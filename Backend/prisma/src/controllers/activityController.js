@@ -109,8 +109,8 @@ function serializeActivity(activity, currentUserId = null) {
     time: toTimeLabel(activity.hora_inicio),
     hora_inicio: toTimeLabel(activity.hora_inicio),
     hora_termino: toTimeLabel(activity.hora_termino),
-    place: activity.sala?.nombre || activity.lugar || "Lugar por confirmar",
-    lugar: activity.sala?.nombre || activity.lugar || "Lugar por confirmar",
+    place: activity.sala?.nombre || "Lugar por confirmar",
+    lugar: activity.sala?.nombre || "Lugar por confirmar",
     manager: activity.usuario?.nombre
       ? `${activity.usuario.nombre} ${activity.usuario.apellido || ""}`.trim()
       : null,
@@ -154,26 +154,29 @@ async function listActivities(req, res) {
   try {
     await syncActivityStatuses();
 
-    const items = await prisma.actividad.findMany({
-      where,
-      orderBy: [{ fecha: "asc" }, { hora_inicio: "asc" }],
-      include: {
-        usuario: { select: { id_usuario: true, nombre: true, apellido: true } },
-        sala: { select: { id_sala: true, nombre: true, capacidad: true } },
-        actividad_participantes: currentUserId
-          ? {
-              where: { id_usuario: currentUserId },
-              select: { id_usuario: true, rol: true }
-            }
-          : false,
-        _count: {
-          select: {
-            actividad_participantes: {
-              where: { rol: "participante" }
-            }
+    const include = {
+      usuario: { select: { id_usuario: true, nombre: true, apellido: true } },
+      sala: { select: { id_sala: true, nombre: true, capacidad: true } },
+      _count: {
+        select: {
+          actividad_participantes: {
+            where: { rol: "participante" }
           }
         }
       }
+    };
+
+    if (currentUserId) {
+      include.actividad_participantes = {
+        where: { id_usuario: currentUserId },
+        select: { id_usuario: true, rol: true }
+      };
+    }
+
+    const items = await prisma.actividad.findMany({
+      where,
+      orderBy: [{ fecha: "asc" }, { hora_inicio: "asc" }],
+      include
     });
 
     return res.json(items.map(item => serializeActivity(item, currentUserId)));
@@ -325,8 +328,6 @@ async function createActivity(req, res) {
     hora_termino,
     max_participantes,
     capacity,
-    lugar,
-    place,
     chat_bidireccional = true
   } = req.body || {};
   const id_sala = req.body?.id_sala ?? null;
@@ -337,14 +338,15 @@ async function createActivity(req, res) {
   const startTime = timeStringToDate(hora_inicio);
   const endTime = timeStringToDate(hora_termino);
   const maxParticipants = Number(max_participantes ?? capacity ?? 0);
-  let activityPlace = (lugar || place || "").trim();
   let salaId = null;
-  if (id_sala) {
-    const sala = await prisma.salas.findUnique({ where: { id_sala: Number(id_sala) } });
-    if (sala) {
-      salaId = sala.id_sala;
-      activityPlace = sala.nombre;
-    }
+
+  if (!id_sala) {
+    return res.status(400).json({ message: "id_sala es requerido" });
+  }
+
+  salaId = Number(id_sala);
+  if (!Number.isInteger(salaId) || salaId < 1) {
+    return res.status(400).json({ message: "id_sala invalido" });
   }
 
   if (!activityTitle || !activityDate || Number.isNaN(activityDate.getTime()) || !startTime) {
@@ -359,15 +361,24 @@ async function createActivity(req, res) {
     return res.status(400).json({ message: "max_participantes invalido" });
   }
 
-  if (!activityPlace) {
-    return res.status(400).json({ message: "lugar es requerido" });
-  }
-
   try {
+    const sala = await prisma.salas.findUnique({ where: { id_sala: salaId } });
+    if (!sala) {
+      return res.status(400).json({ message: "La sala seleccionada no existe" });
+    }
+
+    const roomCapacity = Number(sala.capacidad ?? sala.capacity ?? 0);
+    if (Number.isInteger(roomCapacity) && roomCapacity > 0 && maxParticipants > roomCapacity) {
+      return res.status(400).json({
+        message: "El cupo no puede superar la capacidad de la sala.",
+        capacity: roomCapacity
+      });
+    }
+
     const sameRoomActivities = await prisma.actividad.findMany({
       where: {
         fecha: activityDate,
-        ...(salaId ? { id_sala: salaId } : { lugar: { equals: activityPlace, mode: "insensitive" } }),
+        id_sala: salaId,
         estado: {
           in: ["pendiente", "programada", "en_curso"]
         }
@@ -412,7 +423,6 @@ async function createActivity(req, res) {
           hora_inicio: startTime,
           hora_termino: endTime,
           max_participantes: maxParticipants,
-          lugar: activityPlace || null,
           chat_bidireccional: Boolean(chat_bidireccional),
           aprobado: false,
           estado: "pendiente"

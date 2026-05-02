@@ -722,8 +722,8 @@ export default function ActivityDetail() {
 								</div>
 
 								{canRateInActivity && hasExistingRating && !showRatingEditor && (
-									<div className="mt-4 space-y-3 rounded-sm border border-[#d8e6dd] bg-[var(--gray-soft)] px-4 py-4">
-										<p className="m-0 text-[0.88rem] text-[var(--text-muted)]">Ya registraste tu valoración: <strong>{currentUserRating}</strong> estrella{currentUserRating === 1 ? "" : "s"}.</p>
+									<div className="mt-4 space-y-3 rounded-sm border border-[var(--primary-soft)] bg-[var(--gray-soft)] px-4 py-4 text-center">
+										<p className="m-0 text-[0.88rem] text-[var(--text-muted)] mb-2">Ya registraste tu valoración: <strong>{currentUserRating}</strong> estrella{currentUserRating === 1 ? "" : "s"}.</p>
 										<button
 											type="button"
 											onClick={openRatingEditor}
@@ -891,7 +891,7 @@ export default function ActivityDetail() {
 														<p className={`m-0 text-[0.72rem] font-semibold ${own ? "text-[#daf8e6]" : "text-[#537564]"}`}>{senderLabel}</p>
 														<span className={`text-[0.69rem] ${own ? "text-[#c5f1d7]" : "text-[#7b9286]"}`}>{messageMoment}</span>
 													</div>
-													<p className="m-0 leading-relaxed">{message.text}</p>
+													<p className="m-0 leading-relaxed break-words whitespace-pre-wrap">{message.text}</p>
 												</div>
 											</div>
 										);

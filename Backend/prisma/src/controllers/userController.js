@@ -119,6 +119,7 @@ async function loginUser(req, res) {
         id_usuario: user.id_usuario,
         mail: user.mail,
         nombre: user.nombre,
+        apellido: user.apellido,
         rol: user.rol
       },
       JWT_SECRET,
@@ -185,6 +186,61 @@ function getMyActivityRole(req, res) {
   });
 }
 
+async function getMyAttendance(req, res) {
+  const idUsuario = getUserIdFromToken(req.user);
+  if (!idUsuario) {
+    return res.status(403).json({ message: "Token sin id_usuario válido" });
+  }
+
+  try {
+    const memberships = await prisma.actividad_participantes.findMany({
+      where: {
+        id_usuario: idUsuario,
+        rol: "participante"
+      },
+      include: {
+        actividad: {
+          include: {
+            sala: {
+              select: { nombre: true }
+            }
+          }
+        }
+      }
+    });
+
+    const records = memberships
+      .slice()
+      .sort((left, right) => new Date(right.actividad.fecha) - new Date(left.actividad.fecha))
+      .map(item => {
+      const activity = item.actividad;
+      const attended = item.asistio === true;
+      const finished = activity.estado === "finalizada";
+
+      return {
+        id_actividad: activity.id_actividad,
+        titulo: activity.titulo,
+        descripcion: activity.descripcion,
+        fecha: activity.fecha,
+        hora_inicio: activity.hora_inicio,
+        hora_termino: activity.hora_termino,
+        place: activity.sala?.nombre || "Lugar por confirmar",
+        max_participantes: activity.max_participantes,
+        asistentes: null,
+        estado: activity.estado,
+        aprobado: activity.aprobado,
+        asistio: attended,
+        valoracion: item.valoracion,
+        status: attended ? "Asistido" : finished ? "No asistido" : "Inscrito"
+      };
+    });
+
+    return res.json({ records });
+  } catch (e) {
+    return res.status(500).json({ message: "Error obteniendo asistencias", detail: e.message });
+  }
+}
+
 // Endpoint de prueba que lee la BD y devuelve datos
 async function testEndpoint(_req, res) {
   try {
@@ -197,7 +253,7 @@ async function testEndpoint(_req, res) {
   }
 }
 
-module.exports = { getUsers, createUser, loginUser, getMe, getMyActivityRole, testEndpoint };
+module.exports = { getUsers, createUser, loginUser, getMe, getMyActivityRole, getMyAttendance, testEndpoint };
 // Actualizar usuario (solo campos permitidos)
 async function updateUser(req, res) {
   const id = Number(req.params.id);
@@ -229,5 +285,5 @@ async function deleteUser(req, res) {
   }
 }
 
-module.exports = { getUsers, createUser, loginUser, getMe, getMyActivityRole, testEndpoint, updateUser, deleteUser };
+module.exports = { getUsers, createUser, loginUser, getMe, getMyActivityRole, getMyAttendance, testEndpoint, updateUser, deleteUser };
 // Referencias: [`userController.getUsers`](Backend/src/controllers/userController.js)

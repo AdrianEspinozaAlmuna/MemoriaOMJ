@@ -353,6 +353,11 @@ function toUiActivity(item = {}) {
   };
 }
 
+function isAttendedStatus(status = "") {
+  const normalized = String(status).toLowerCase();
+  return normalized.includes("asist") && !normalized.includes("inasist");
+}
+
 export async function getDashboardData() {
   try {
     const { data } = await api.get("/activities");
@@ -431,27 +436,27 @@ export async function getMyActivitiesData() {
 
 export async function getAttendanceData() {
   try {
-    const data = await getMyActivitiesData();
+    const { data } = await api.get("/users/me/attendance");
+    const records = Array.isArray(data?.records) ? data.records : [];
 
-    const participating = Array.isArray(data.participating) ? data.participating : [];
-    const completed = Array.isArray(data.completed) ? data.completed : [];
+    // Historial: incluir todas las inscripciones del usuario autenticado
+    // (programadas/en curso/finalizadas/canceladas). El agregado mensual usa solo finalizadas.
 
-    // Build history from participating and completed activities
-    const combined = [...participating, ...completed];
     const seen = new Set();
-    const history = combined
+    const history = records
       .map(item => ({
         id: String(item.id ?? item.id_actividad ?? ""),
-        name: item.title || item.titulo || "Actividad",
+        name: item.title || item.titulo || item.nombre || "Actividad",
         type: item.type || item.category || "Actividad",
         date: item.date || item.fecha || null,
         time: item.time || item.hora_inicio || null,
         hora_termino: item.hora_termino || null,
-        place: item.place || item.lugar || "",
-        status: item.status || (item.attended ? "asistido" : "inscrito"),
-        participants: item.enrolled ?? item.participants ?? 0,
+        place: item.place || item.lugar || item.sala || "",
+        status: item.status || (item.asistio ? "Asistido" : "Inscrito"),
+        state: String(item.estado || "").toLowerCase(),
+        participants: item.enrolled ?? item.participants ?? item.asistentes ?? 0,
         capacity: item.capacity ?? item.max_participantes ?? null,
-        rating: item.rating ?? null
+        rating: item.rating ?? item.valoracion ?? null
       }))
       .filter(h => {
         if (!h.id) return false;
@@ -460,24 +465,29 @@ export async function getAttendanceData() {
         return true;
       });
 
-    // Group monthly
+    // Group monthly solo en actividades finalizadas
     const monthlyMap = {};
-    history.forEach(h => {
+    history
+      .filter(h => h.state === "finalizada")
+      .forEach(h => {
       const d = new Date(h.date);
       if (isNaN(d)) return;
       const month = d.toLocaleString("es-CL", { month: "long" });
       const year = d.getFullYear();
       const key = `${month}-${year}`;
-      if (!monthlyMap[key]) monthlyMap[key] = { month, year, done: 0, total: 0 };
+      if (!monthlyMap[key]) monthlyMap[key] = { month, year, order: year * 12 + d.getMonth(), done: 0, total: 0 };
       monthlyMap[key].total += 1;
       if (isAttendedStatus(h.status)) monthlyMap[key].done += 1;
     });
 
-    const monthly = Object.values(monthlyMap).map(m => ({ month: m.month, data: `${m.done}/${m.total} (${Math.round((m.done / m.total) * 100)}%)`, year: m.year }));
+    const monthly = Object.values(monthlyMap)
+      .sort((left, right) => left.order - right.order)
+      .map(m => ({ month: m.month, data: `${m.done}/${m.total} (${m.total > 0 ? Math.round((m.done / m.total) * 100) : 0}%)`, year: m.year }));
 
     const total = history.length;
+    const evaluable = history.filter(h => h.state === "finalizada").length;
     const attended = history.filter(h => isAttendedStatus(h.status)).length;
-    const rate = total > 0 ? `${Math.round((attended / total) * 100)}%` : "0%";
+    const rate = evaluable > 0 ? `${Math.round((attended / evaluable) * 100)}%` : "0%";
 
     const stats = {
       rate,
@@ -485,9 +495,22 @@ export async function getAttendanceData() {
       month: monthly.length > 0 ? monthly[monthly.length - 1].data : ""
     };
 
-    return { stats, monthly, history };
-  } catch (error) {
-    return mockResponse(attendancePayload);
+    return {
+      stats,
+      monthly,
+      history,
+      source: "api",
+      error: null
+    };
+  } catch (_error) {
+    console.error('Error loading attendance data:', _error);
+    return {
+      stats: { rate: "0%", total: "0 de 0", month: "" },
+      monthly: [],
+      history: [],
+      source: "api-error",
+      error: _error?.response?.data?.message || _error?.message || "No se pudieron cargar las asistencias"
+    };
   }
 }
 

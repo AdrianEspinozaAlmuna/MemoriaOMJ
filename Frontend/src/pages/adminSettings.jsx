@@ -1,7 +1,8 @@
-import React, { useMemo, useState, useEffect } from "react";
-import { DoorOpen, EllipsisVertical, PenLine, CircleCheckBig, SquareMinus, Trash2, X } from "lucide-react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
+import { DoorOpen, EllipsisVertical, PenLine, CircleCheckBig, SquareMinus, Trash2 } from "lucide-react";
 import Modal from "../components/Modal";
 import api from "../services/api";
+import ActionPopover from "../components/ActionPopover";
 
 export default function AdminSettings() {
 	const [name, setName] = useState("");
@@ -37,7 +38,8 @@ export default function AdminSettings() {
 	}, []);
 	const [selectedRoom, setSelectedRoom] = useState(null);
 	const [actionModalOpen, setActionModalOpen] = useState(false);
-	const [actionAnchor, setActionAnchor] = useState(null);
+	const actionPopoverRef = useRef(null);
+	const actionTriggerRef = useRef(null);
 	const [createModalOpen, setCreateModalOpen] = useState(false);
 	const [editModalOpen, setEditModalOpen] = useState(false);
 	const [editingRoomId, setEditingRoomId] = useState(null);
@@ -119,18 +121,40 @@ export default function AdminSettings() {
 		setSelectedRoom(room);
 		setActionModalOpen(true);
 		try {
-			const rect = event.currentTarget.getBoundingClientRect();
-			setActionAnchor(rect);
-		} catch (e) {
-			setActionAnchor(null);
-		}
+			actionTriggerRef.current = event.currentTarget;
+		} catch (e) {}
 	}
 
 	function closeActionModal() {
 		setActionModalOpen(false);
 		setSelectedRoom(null);
-		setActionAnchor(null);
+		actionTriggerRef.current = null;
 	}
+
+	useEffect(() => {
+		if (!actionModalOpen) return undefined;
+
+		function handleDocumentMouseDown(event) {
+			if (actionPopoverRef.current?.contains(event.target)) return;
+			if (actionTriggerRef.current?.contains(event.target)) return;
+			closeActionModal();
+		}
+
+		function handleEscape(event) {
+			if (event.key === "Escape") {
+				closeActionModal();
+			}
+		}
+
+		document.addEventListener("mousedown", handleDocumentMouseDown);
+		document.addEventListener("keydown", handleEscape);
+
+		return () => {
+			document.removeEventListener("mousedown", handleDocumentMouseDown);
+			document.removeEventListener("keydown", handleEscape);
+		};
+	}, [actionModalOpen]);
+
 
 	function openEditModal(room) {
 		setEditingRoomId(room.id);
@@ -288,7 +312,7 @@ export default function AdminSettings() {
 					</div>
 				</div>
 
-				<div className="mt-5 overflow-x-auto rounded-[10px]">
+				<div className="relative mt-5 overflow-x-auto overflow-y-visible rounded-[10px]">
 					<table className="w-full min-w-[760px] text-[0.89rem] max-[640px]:min-w-[700px]">
 						<thead>
 							<tr>
@@ -311,10 +335,23 @@ export default function AdminSettings() {
 										</span>
 									</td>
 									<td className="border-b border-[#d8e6dd] px-3 py-3 text-center">
-										<div className="flex flex-wrap justify-center gap-2">
+										<div className="relative inline-flex justify-center">
 											<button type="button" className="inline-flex h-9 w-9 items-center justify-center rounded-sm border border-[#d8e6dd] bg-white text-[#355447] hover:bg-[#f5f7f5]" onClick={(e) => openActionModal(room, e)} aria-label="Abrir acciones">
 												<EllipsisVertical className="h-4 w-4" strokeWidth={2} />
 											</button>
+											<ActionPopover anchorRef={actionTriggerRef} open={actionModalOpen && selectedRoom?.id === room.id} onClose={closeActionModal}>
+												<div ref={actionPopoverRef}>
+													<button type="button" className="w-full rounded-md px-2.5 py-2 text-left text-[0.82rem] font-medium text-[#274634] hover:bg-[#f4faf7]" onClick={() => { openEditModal(room); }}>
+														Editar
+													</button>
+													<button type="button" className={`w-full rounded-md px-2.5 py-2 text-left text-[0.82rem] font-medium ${room.enabled ? "text-[#8a3b2a] hover:bg-[#fff4ef]" : "text-[#1f5137] hover:bg-[#eef8f1]"}`} onClick={() => { setSelectedRoom(room); toggleSelectedRoom(); }}>
+														{room.enabled ? "Deshabilitar" : "Habilitar"}
+													</button>
+													<button type="button" className="w-full rounded-md px-2.5 py-2 text-left text-[0.82rem] font-medium text-[#8a3b2a] hover:bg-[#fff4ef]" onClick={() => { setSelectedRoom(room); removeSelectedRoom(); }}>
+														Eliminar
+													</button>
+												</div>
+											</ActionPopover>
 										</div>
 									</td>
 								</tr>
@@ -322,25 +359,6 @@ export default function AdminSettings() {
 						</tbody>
 					</table>
 				</div>
-
-			{actionModalOpen && actionAnchor && (
-				<div style={{ position: "fixed", top: actionAnchor.bottom + 8, left: Math.max(8, actionAnchor.left - 200) }} className="z-50 w-[300px] rounded-[10px] border border-[#dce3ea] bg-white p-2 shadow-[0_14px_30px_-18px_rgba(12,30,16,0.45)]">
-					<div className="grid gap-2 px-2 py-2">
-						<button type="button" className="flex items-center gap-2 rounded-sm border border-[#d8e6dd] bg-white px-3 py-2.5 text-left text-[0.9rem] font-semibold text-[#2f463a] hover:bg-[#f5f7f5]" onClick={() => { if (selectedRoom) openEditModal(selectedRoom); closeActionModal(); }}>
-							<PenLine className="h-4 w-4 text-[var(--primary)]" strokeWidth={2} />
-							Editar
-						</button>
-						<button type="button" className={`flex items-center gap-2 rounded-sm border px-3 py-2.5 text-left text-[0.9rem] font-semibold ${selectedRoom?.enabled ? "border-[#f0cbc2] bg-[#fff1ed] text-[#8a3b2a] hover:bg-[#ffe4d9]" : "border-[#cde2d5] bg-[#eef8f1] text-[#1f5137] hover:bg-[#e7f5ec]"}`} onClick={() => { toggleRoom(selectedRoom.id); closeActionModal(); }}>
-							{selectedRoom?.enabled ? <SquareMinus className="h-4 w-4" strokeWidth={2} /> : <CircleCheckBig className="h-4 w-4" strokeWidth={2} />}
-							{selectedRoom?.enabled ? "Deshabilitar" : "Habilitar"}
-						</button>
-						<button type="button" className="flex items-center gap-2 rounded-sm border border-[#ead6d2] bg-white px-3 py-2.5 text-left text-[0.9rem] font-semibold text-[var(--reject-hover)] hover:bg-[#fff6f4]" onClick={() => { removeSelectedRoom(); closeActionModal(); }}>
-							<Trash2 className="h-4 w-4" strokeWidth={2} />
-							Eliminar
-						</button>
-					</div>
-				</div>
-			)}
 			</section>
 
 			<Modal

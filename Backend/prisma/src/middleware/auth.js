@@ -34,7 +34,7 @@ function requireRole(...allowedRoles) {
 }
 
 function getUserIdFromToken(userPayload = {}) {
-  const raw = userPayload.id_usuario ?? userPayload.userId ?? userPayload.sub;
+  const raw = userPayload.id_usuario ?? userPayload.id ?? userPayload.userId ?? userPayload.sub;
   const parsed = Number(raw);
   return Number.isInteger(parsed) ? parsed : null;
 }

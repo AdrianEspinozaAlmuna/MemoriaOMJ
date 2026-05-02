@@ -47,7 +47,7 @@ export async function getApprovedActivities() {
   }
 
   try {
-    const res = await api.get("/activities?aprobado=true&estado=programada");
+    const res = await api.get("/activities?aprobado=true");
     return { actividades: res.data };
   } catch (error) {
     console.error("Error fetching approved activities:", error);
