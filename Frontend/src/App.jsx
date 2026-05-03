@@ -8,6 +8,7 @@ import UserCalendar from "./pages/userCalendar";
 import MyActivities from "./pages/myActivities";
 import MyAttendance from "./pages/myAttendance";
 import CreateActivity from "./pages/createActivity";
+import UserNotifications from "./pages/userNotifications";
 import Navbar from "./components/Navbar";
 import AdminLayout from "./components/AdminLayout";
 import AdminDashboard from "./pages/adminDashboard";
@@ -45,6 +46,7 @@ export default function App() {
             <Route path="/user/mis-actividades" element={<MyActivities />} />
             <Route path="/user/actividad/:activityId" element={<ActivityDetail />} />
             <Route path="/user/asistencia" element={<MyAttendance />} />
+            <Route path="/user/notificaciones" element={<UserNotifications />} />
             <Route path="/user/crear-actividad" element={<CreateActivity />} />
           </Route>
 

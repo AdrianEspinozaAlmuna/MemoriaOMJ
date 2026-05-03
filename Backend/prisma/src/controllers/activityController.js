@@ -1,6 +1,12 @@
 const { prisma } = require("../prisma/client");
 const { getUserIdFromToken } = require("../middleware/auth");
 const { emitActivityMessage } = require("../realtime");
+const {
+  notifyAdminUsers,
+  notifyActivityOwner,
+  notifyActivityParticipants,
+  notifyUsersByIds
+} = require("../services/notificationService");
 
 function parseActivityId(value) {
   const parsed = Number(value);
@@ -447,6 +453,13 @@ async function createActivity(req, res) {
         }
       });
 
+      await notifyAdminUsers(tx, idEncargado, {
+        titulo: "Nueva propuesta de actividad",
+        descripcion: `Se creó la actividad ${activityTitle} para revisión.`,
+        tipo: "actividad",
+        id_actividad: newActivity.id_actividad
+      });
+
       return newActivity;
     });
 
@@ -522,6 +535,12 @@ async function enrollInActivity(req, res) {
       }
     });
 
+    await notifyActivityOwner(prisma, idUsuario, idActividad, {
+      titulo: "Nueva inscripción en tu actividad",
+      descripcion: "Un usuario se inscribió en tu actividad.",
+      tipo: "actividad"
+    });
+
     return res.status(201).json({ ok: true, enrolled: true });
   } catch (error) {
     return res.status(500).json({ message: "Error inscribiendo en actividad", detail: error.message });
@@ -576,6 +595,12 @@ async function cancelEnrollment(req, res) {
           id_usuario: idUsuario
         }
       }
+    });
+
+    await notifyActivityOwner(prisma, idUsuario, idActividad, {
+      titulo: "Un participante abandonó la actividad",
+      descripcion: "Un participante canceló su inscripción.",
+      tipo: "actividad"
     });
 
     return res.json({ ok: true, enrolled: false });
@@ -640,6 +665,13 @@ async function markMyAttendance(req, res) {
       data: {
         asistio: true
       }
+    });
+
+    await notifyUsersByIds(prisma, idUsuario, [idUsuario], {
+      titulo: "Asistencia registrada",
+      descripcion: "Tu asistencia fue registrada correctamente.",
+      tipo: "actividad",
+      id_actividad: idActividad
     });
 
     return res.json({ ok: true, message: "Asistencia registrada correctamente" });
@@ -713,6 +745,13 @@ async function markParticipantAttendance(req, res) {
       }
     });
 
+    await notifyUsersByIds(prisma, idUsuario, [idUsuarioObjetivo], {
+      titulo: "Asistencia registrada por un encargado",
+      descripcion: "Tu asistencia fue registrada en la actividad.",
+      tipo: "actividad",
+      id_actividad: idActividad
+    });
+
     return res.json({ ok: true, message: "Asistencia registrada correctamente" });
   } catch (error) {
     return res.status(500).json({ message: "Error registrando asistencia de participante", detail: error.message });
@@ -775,6 +814,13 @@ async function removeParticipant(req, res) {
           id_usuario: idUsuarioObjetivo
         }
       }
+    });
+
+    await notifyUsersByIds(prisma, idUsuario, [idUsuarioObjetivo], {
+      titulo: "Has sido removido de una actividad",
+      descripcion: "Un administrador o encargado te eliminó de la actividad.",
+      tipo: "actividad",
+      id_actividad: idActividad
     });
 
     return res.json({ ok: true, message: "Participante expulsado correctamente" });
@@ -910,6 +956,20 @@ async function reviewActivity(req, res) {
     });
 
     if (action === "approve") {
+      await notifyActivityOwner(prisma, idUsuario, idActividad, {
+        titulo: "Tu actividad fue aprobada",
+        descripcion: "La actividad ya quedó habilitada para publicarse.",
+        tipo: "actividad"
+      });
+    } else {
+      await notifyActivityOwner(prisma, idUsuario, idActividad, {
+        titulo: "Tu actividad fue rechazada",
+        descripcion: "La actividad no fue aprobada por administración.",
+        tipo: "actividad"
+      });
+    }
+
+    if (action === "approve") {
       await syncActivityStatuses();
     }
 
@@ -987,6 +1047,12 @@ async function cancelActivity(req, res) {
         }
       }
     });
+
+    await notifyActivityParticipants(prisma, idUsuario, idActividad, {
+      titulo: "Actividad cancelada",
+      descripcion: "La actividad fue cancelada y ya no está disponible.",
+      tipo: "actividad"
+    }, { includeOwner: true });
 
     return res.json({
       ok: true,

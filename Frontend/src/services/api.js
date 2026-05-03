@@ -9,8 +9,26 @@ const api = axios.create({
 
 api.interceptors.request.use(config => {
   const token = localStorage.getItem("token");
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
   return config;
 });
+
+api.interceptors.response.use(
+  response => response,
+  error => {
+    if (error.response?.status === 401) {
+      console.error("[API Interceptor] 401 Unauthorized for:", error.config?.url);
+      // Token is invalid/expired, clear it and redirect to login
+      localStorage.removeItem("token");
+      // Reload page to trigger login redirect
+      if (window.location.pathname !== "/login" && window.location.pathname !== "/") {
+        window.location.href = "/login";
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 export default api;

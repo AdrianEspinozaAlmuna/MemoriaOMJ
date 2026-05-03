@@ -24,6 +24,7 @@ model actividad {
   sala                    salas?                    @relation(fields: [id_sala], references: [id_sala], onDelete: SetNull, onUpdate: NoAction)
   actividad_mensaje       actividad_mensaje[]
   actividad_participantes actividad_participantes[]
+  notificaciones          notificaciones[]
 
   @@index([fecha], map: "idx_actividad_fecha")
 }
@@ -63,16 +64,23 @@ model grupo {
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model notificaciones {
   id_notificacion Int               @id @default(autoincrement())
-  id_usuario      Int
+  id_emisor       Int
+  id_receptor     Int?
   id_actividad    Int?
   tipo            tipo_notificacion
   titulo          String            @db.VarChar(255)
   descripcion     String?
+  leida           Boolean           @default(false)
+  fecha_lectura   DateTime?         @db.Timestamptz(6)
   fecha_envio     DateTime          @default(now()) @db.Timestamptz(6)
-  visto           Boolean           @default(false)
-  usuario         usuario           @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade, onUpdate: NoAction)
+  emisor          usuario           @relation("NotificacionEmisor", fields: [id_emisor], references: [id_usuario], onDelete: Cascade, onUpdate: NoAction)
+  receptor        usuario?          @relation("NotificacionReceptor", fields: [id_receptor], references: [id_usuario], onDelete: SetNull, onUpdate: NoAction)
+  actividad       actividad?        @relation(fields: [id_actividad], references: [id_actividad], onDelete: SetNull, onUpdate: NoAction)
 
-  @@index([id_usuario], map: "idx_notificaciones_usuario")
+  @@index([id_emisor], map: "idx_notificaciones_emisor")
+  @@index([id_receptor], map: "idx_notificaciones_receptor")
+  @@index([id_receptor, leida, fecha_envio], map: "idx_notificaciones_receptor_leida_fecha")
+  @@index([id_actividad], map: "idx_notificaciones_actividad")
 }
 
 model participantes_grupo {
@@ -108,7 +116,8 @@ model usuario {
   actividad_mensaje       actividad_mensaje[]
   actividad_participantes actividad_participantes[]
   grupo                   grupo[]
-  notificaciones          notificaciones[]
+  notificaciones_emitidas notificaciones[]  @relation("NotificacionEmisor")
+  notificaciones_recibidas notificaciones[]  @relation("NotificacionReceptor")
   participantes_grupo     participantes_grupo[]
 
   @@index([mail], map: "idx_usuario_mail")

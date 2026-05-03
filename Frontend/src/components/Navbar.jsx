@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Bell, UserRound } from "lucide-react";
+import { Bell, BellRing, CheckCheck, ChevronRight, LoaderCircle, UserRound } from "lucide-react";
 import { Link, NavLink } from "react-router-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import api from "../services/api";
+import { getMyNotifications, getUnreadNotificationCount, markNotificationAsRead } from "../services/notificationsService";
 
 function decodeToken(token) {
   if (!token) return null;
@@ -25,13 +26,11 @@ export default function Navbar() {
 	const [notificationsOpen, setNotificationsOpen] = useState(false);
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 	const [profileUser, setProfileUser] = useState(null);
+	const [notificationItems, setNotificationItems] = useState([]);
+	const [unreadCount, setUnreadCount] = useState(0);
+	const [notificationsLoading, setNotificationsLoading] = useState(false);
+	const [notificationsError, setNotificationsError] = useState("");
 	const navRef = useRef(null);
-
-	const notifications = [
-		{ id: "usr-notif-1", title: "Actividad proxima", detail: "Taller de liderazgo manana a las 17:00", time: "Hace 20 min" },
-		{ id: "usr-notif-2", title: "Inscripcion confirmada", detail: "Feria de emprendimiento fue confirmada", time: "Ayer" },
-		{ id: "usr-notif-3", title: "Recordatorio", detail: "Completa tu asistencia de la semana", time: "Ayer" }
-	];
 
   const token = localStorage.getItem("token");
   const user = decodeToken(token);
@@ -40,10 +39,14 @@ export default function Navbar() {
   const rol = mergedUser?.rol || null;
 	const displayName = mergedUser?.nombre || "Usuario";
 	const fullName = mergedUser?.nombre ? `${mergedUser.nombre} ${mergedUser.apellido || ""}`.trim() : displayName;
+	const notificationPreview = notificationItems.slice(0, 5);
 
 	useEffect(() => {
 		if (!isAuthenticated) {
 			setProfileUser(null);
+			setNotificationItems([]);
+			setUnreadCount(0);
+			setNotificationsError("");
 			return;
 		}
 
@@ -73,6 +76,43 @@ export default function Navbar() {
 			mounted = false;
 		};
 	}, [isAuthenticated, user?.apellido]);
+
+	useEffect(() => {
+		if (!isAuthenticated) {
+			return;
+		}
+
+		let mounted = true;
+
+		async function loadNotifications() {
+			try {
+				setNotificationsLoading(true);
+				const [items, count] = await Promise.all([
+					getMyNotifications(),
+					getUnreadNotificationCount()
+				]);
+
+				if (!mounted) return;
+
+				setNotificationItems(items);
+				setUnreadCount(count);
+				setNotificationsError("");
+			} catch (_error) {
+				if (!mounted) return;
+				setNotificationsError("No se pudieron cargar tus notificaciones.");
+			} finally {
+				if (mounted) {
+					setNotificationsLoading(false);
+				}
+			}
+		}
+
+		loadNotifications();
+
+		return () => {
+			mounted = false;
+		};
+	}, [isAuthenticated]);
 
 	useEffect(() => {
 		function handleDocumentClick(event) {
@@ -125,6 +165,25 @@ export default function Navbar() {
 
 	function handleNavItemClick() {
 		setMobileMenuOpen(false);
+	}
+
+	function getNotificationTypeLabel(item) {
+		return item?.themeLabel || item?.source || "Notificación";
+	}
+
+	async function openNotificationItem(item) {
+		if (item?.id && !item.read) {
+			try {
+				await markNotificationAsRead(item.id);
+				setUnreadCount(previous => Math.max(0, previous - 1));
+				setNotificationItems(previous => previous.map(entry => (entry.id === item.id ? { ...entry, read: true, leida: true } : entry)));
+			} catch (_error) {
+				// No bloquea navegación si falla el marcado como leida.
+			}
+		}
+
+		setNotificationsOpen(false);
+		navigate("/user/notificaciones");
 	}
 
 	const navLinkClass = ({ isActive }) =>
@@ -202,6 +261,13 @@ export default function Navbar() {
 							>
 								Mis asistencias
 							</NavLink>
+							<NavLink
+								to="/user/notificaciones"
+								onClick={handleNavItemClick}
+								className={navLinkClass}
+							>
+								Notificaciones
+							</NavLink>
 						</>
 					)}
 				</div>
@@ -236,7 +302,7 @@ export default function Navbar() {
 								aria-expanded={notificationsOpen}
 							>
 								<Bell aria-hidden="true" focusable="false" className="h-4 w-4 text-[#3e5b4c]" strokeWidth={1.8} />
-								<span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-[var(--primary)] px-1 text-[0.7rem] font-bold text-white">3</span>
+								{unreadCount > 0 && <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-[var(--primary)] px-1 text-[0.7rem] font-bold text-white">{unreadCount > 9 ? "9+" : unreadCount}</span>}
 							</button>
 
 								{notificationsOpen && (
@@ -246,18 +312,36 @@ export default function Navbar() {
 										<p className="mt-1 m-0 text-[0.92rem] font-semibold text-[#244235]">Notificaciones recientes</p>
 									</div>
 									<div className="grid gap-0 bg-white">
-										{notifications.map(item => (
-											<article key={item.id} className="grid grid-cols-[auto_1fr_auto] items-start gap-3 border-b border-[#e7eee9] px-4 py-3 last:border-b-0">
-												<span className="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#eef7f1] text-[var(--primary)]">
-													<Bell aria-hidden="true" focusable="false" className="h-4 w-4" strokeWidth={1.9} />
-												</span>
-												<div className="min-w-0">
-													<strong className="block text-[0.9rem] leading-tight text-[#214234]">{item.title}</strong>
-													<small className="mt-1 block text-[0.8rem] leading-relaxed text-[#60716a]">{item.detail}</small>
-												</div>
-												<span className="inline-flex shrink-0 rounded-md bg-[#eef8f1] px-2 py-1 text-[0.72rem] font-semibold text-[#5f7a6a]">{item.time}</span>
-											</article>
-										))}
+										{notificationsError ? (
+											<div className="px-4 py-4 text-[0.86rem] font-semibold text-[#a03d2e]">{notificationsError}</div>
+										) : notificationsLoading ? (
+											<div className="px-4 py-4 text-[0.86rem] text-[#60716a]">Cargando notificaciones...</div>
+										) : notificationPreview.length === 0 ? (
+											<div className="px-4 py-5 text-center text-[0.86rem] text-[#60716a]">No tienes notificaciones pendientes.</div>
+										) : (
+											notificationPreview.map(item => (
+												<button key={item.id} type="button" className="grid w-full grid-cols-[auto_1fr_auto] items-start gap-3 border-b border-[#e7eee9] px-4 py-3 text-left last:border-b-0 hover:bg-[#f6faf7]" onClick={() => openNotificationItem(item)}>
+													<span className="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#eef7f1] text-[var(--primary)]">
+														<BellRing aria-hidden="true" focusable="false" className="h-4 w-4" strokeWidth={1.9} />
+													</span>
+													<div className="min-w-0">
+														<strong className="block text-[0.9rem] leading-tight text-[#214234]">{item.title}</strong>
+														<small className="mt-1 block text-[0.8rem] leading-relaxed text-[#60716a]">{item.detail}</small>
+														<small className="mt-1 block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">{getNotificationTypeLabel(item)}</small>
+													</div>
+													<span className="inline-flex shrink-0 rounded-md bg-[#eef8f1] px-2 py-1 text-[0.72rem] font-semibold text-[#5f7a6a]">{item.date}</span>
+												</button>
+										))
+									)}
+								</div>
+								<div className="border-t border-[#e7eee9] bg-[#fbfcfb] px-4 py-3">
+									<button type="button" className="inline-flex items-center gap-2 text-[0.84rem] font-semibold text-[var(--primary)] hover:text-[var(--primary-strong)]" onClick={() => {
+										setNotificationsOpen(false);
+										navigate("/user/notificaciones");
+									}}>
+										Ver todas las notificaciones
+										<ChevronRight className="h-4 w-4" strokeWidth={1.8} />
+									</button>
 								</div>
 								</div>
 							)}

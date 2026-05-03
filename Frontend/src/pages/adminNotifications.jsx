@@ -1,27 +1,81 @@
-import React, { useState } from "react";
-import { BellRing, Megaphone, Send } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { BellRing, LoaderCircle, Megaphone, RefreshCw, Send, ShieldAlert } from "lucide-react";
 import Modal from "../components/Modal";
+import { createBroadcastNotification, getAdminNotifications, markAllNotificationsAsRead } from "../services/notificationsService";
 
-const initialNotifications = [
-	{ id: "sys-001", title: "Nueva propuesta de actividad", detail: "Sofia Munoz envio una actividad para aprobacion", date: "Hace 10 min", source: "Sistema" },
-	{ id: "sys-002", title: "Recordatorio de asistencia", detail: "Manana hay 4 actividades con alto cupo", date: "Hace 1 hora", source: "Sistema" },
-	{ id: "sys-003", title: "Usuario nuevo registrado", detail: "Matias Silva se registro en la plataforma", date: "Hace 2 horas", source: "Sistema" }
+const filters = [
+	{ key: "all", label: "Todas" },
+	{ key: "review", label: "Aprobación / rechazo" },
+	{ key: "activity-change", label: "Cambios de actividad" },
+	{ key: "general", label: "Generales" }
 ];
 
+function pillClass(themeKey, read) {
+	const base = read ? "bg-[#eef3ef] text-[#5d7165]" : "bg-[#eef8f1] text-[#2e5a45]";
+
+	if (themeKey === "review") {
+		return read ? "bg-[#f3eff8] text-[#6f5a86]" : "bg-[#efe7fb] text-[#5c3f8e]";
+	}
+
+	if (themeKey === "activity-change") {
+		return read ? "bg-[#eff4fb] text-[#5a6d8a]" : "bg-[#e8f0ff] text-[#294b86]";
+	}
+
+	return base;
+}
+
 export default function AdminNotifications() {
-	const [notifications, setNotifications] = useState(initialNotifications);
+	const [notifications, setNotifications] = useState([]);
+	const [loading, setLoading] = useState(true);
+	const [refreshing, setRefreshing] = useState(false);
+	const [filter, setFilter] = useState("all");
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [title, setTitle] = useState("");
 	const [detail, setDetail] = useState("");
 	const [error, setError] = useState("");
+	const [actionError, setActionError] = useState("");
+	const [submitting, setSubmitting] = useState(false);
 
-	function sourcePill(source) {
-		if (source === "Admin") {
-			return "bg-[#e9eefb] text-[#334f93]";
+	const filteredNotifications = useMemo(() => {
+		if (filter === "all") {
+			return notifications;
 		}
 
-		return "bg-[#eef8f1] text-[#2e5a45]";
+		return notifications.filter(item => item.themeKey === filter);
+	}, [filter, notifications]);
+
+	const unreadCount = useMemo(() => notifications.filter(item => !item.read).length, [notifications]);
+
+	async function loadNotifications() {
+		try {
+			setActionError("");
+			const items = await getAdminNotifications();
+			setNotifications(items);
+		} catch (fetchError) {
+			setActionError(fetchError?.response?.data?.message || "No se pudieron cargar las notificaciones.");
+		}
 	}
+
+	useEffect(() => {
+		let mounted = true;
+
+		async function run() {
+			try {
+				setLoading(true);
+				await loadNotifications();
+			} finally {
+				if (mounted) {
+					setLoading(false);
+				}
+			}
+		}
+
+		run();
+
+		return () => {
+			mounted = false;
+		};
+	}, []);
 
 	function openModal() {
 		setError("");
@@ -35,7 +89,28 @@ export default function AdminNotifications() {
 		setError("");
 	}
 
-	function publishNotification() {
+	async function handleRefresh() {
+		try {
+			setRefreshing(true);
+			await loadNotifications();
+		} finally {
+			setRefreshing(false);
+		}
+	}
+
+	async function handleMarkAllRead() {
+		try {
+			setRefreshing(true);
+			await markAllNotificationsAsRead();
+			await loadNotifications();
+		} catch (markError) {
+			setActionError(markError?.response?.data?.message || "No se pudieron marcar como leidas.");
+		} finally {
+			setRefreshing(false);
+		}
+	}
+
+	async function publishNotification() {
 		if (!title.trim()) {
 			setError("Ingresa un titulo para la notificacion.");
 			return;
@@ -46,18 +121,19 @@ export default function AdminNotifications() {
 			return;
 		}
 
-		setNotifications(previous => [
-			{
-				id: `sys-${Date.now()}`,
-				title: title.trim(),
-				detail: detail.trim(),
-				date: "Ahora",
-				source: "Admin"
-			},
-			...previous
-		]);
-
-		closeModal();
+		try {
+			setSubmitting(true);
+			await createBroadcastNotification({
+				titulo: title.trim(),
+				descripcion: detail.trim(),
+				tipo: "sistema"
+			});
+			await loadNotifications();
+		} catch (submitError) {
+			setError(submitError?.response?.data?.message || "No se pudo publicar la notificacion.");
+		} finally {
+			setSubmitting(false);
+		}
 	}
 
 	return (
@@ -66,48 +142,109 @@ export default function AdminNotifications() {
 				<div>
 					<p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Panel de administrador</p>
 					<h1 className="mt-2 text-[clamp(1.8rem,2.5vw,2.3rem)] font-bold text-[var(--text)]">Notificaciones</h1>
-					<p className="mt-2 text-[0.92rem] text-[var(--text-muted)]">Listado cronologico de alertas internas y comunicaciones publicadas.</p>
+					<p className="mt-2 text-[0.92rem] text-[var(--text-muted)]">Aprobaciones, cambios de actividad y avisos generales alimentados desde la BD.</p>
 				</div>
-				<button type="button" className="inline-flex items-center gap-2 rounded-sm border border-[var(--primary)] bg-[var(--primary)] px-3.5 py-2 text-[0.9rem] font-semibold text-white hover:bg-[var(--primary-strong)]" onClick={openModal}>
-					<Send className="h-4 w-4" strokeWidth={1.9} />
-					Nueva notificacion
-				</button>
-			</header>
+
+				<div className="flex flex-wrap items-center gap-2">
+					 {/*<button type="button" className="inline-flex items-center gap-2 rounded-sm border border-[#cfded5] bg-white px-3.5 py-2 text-[0.9rem] font-semibold text-[var(--text)] hover:bg-[#f6faf7]" onClick={handleMarkAllRead} disabled={refreshing || unreadCount === 0}>
+						<ShieldAlert className="h-4 w-4" strokeWidth={1.9} />
+						Marcar todas leidas
+					</button>*/}
+					<button type="button" className="inline-flex items-center gap-2 rounded-sm border border-[#cfded5] bg-white px-3.5 py-2 text-[0.9rem] font-semibold text-[var(--text)] hover:bg-[#f6faf7]" onClick={handleRefresh} disabled={refreshing}>
+						{refreshing ? <LoaderCircle className="h-4 w-4 animate-spin" strokeWidth={1.9} /> : <RefreshCw className="h-4 w-4" strokeWidth={1.9} />}
+						Actualizar
+					</button>
+					<button type="button" className="inline-flex items-center gap-2 rounded-sm border border-[var(--primary)] bg-[var(--primary)] px-3.5 py-2 text-[0.9rem] font-semibold text-white hover:bg-[var(--primary-strong)]" onClick={openModal}>
+						<Send className="h-4 w-4" strokeWidth={1.9} />
+						Publicar aviso
+					</button>
+				</div>
+			</header> 
+			{/*<section className="grid gap-4 sm:grid-cols-3">
+				<article className="rounded-xl border border-[#d8e6dd] bg-white p-4 shadow-sm">
+					<p className="m-0 text-[0.8rem] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">Total</p>
+					<p className="mt-2 text-[1.8rem] font-bold text-[var(--text)]">{notifications.length}</p>
+				</article>
+				<article className="rounded-xl border border-[#d8e6dd] bg-white p-4 shadow-sm">
+					<p className="m-0 text-[0.8rem] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">No leidas</p>
+					<p className="mt-2 text-[1.8rem] font-bold text-[var(--text)]">{unreadCount}</p>
+				</article>
+				<article className="rounded-xl border border-[#d8e6dd] bg-white p-4 shadow-sm">
+					<p className="m-0 text-[0.8rem] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">Generales publicadas</p>
+					<p className="mt-2 text-[1.8rem] font-bold text-[var(--text)]">{notifications.filter(item => item.tipo === "sistema").length}</p>
+				</article>
+			</section>*/}
 
 			<section className="rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-6 shadow-sm">
-				<div className="mb-4 flex items-baseline justify-between gap-3 max-[760px]:flex-col max-[760px]:items-start">
-					<h2 className="m-0 text-[1rem] font-semibold text-[var(--text)]">Bandeja de notificaciones</h2>
-					<p className="m-0 text-[0.9rem] text-[var(--text-muted)]">Mostrando {notifications.length} registros</p>
+				<div className="mb-4 flex items-center justify-between gap-3 max-[760px]:flex-col max-[760px]:items-start">
+					<div>
+						<h2 className="m-0 text-[1rem] font-semibold text-[var(--text)]">Bandeja de notificaciones</h2>
+						<p className="mt-1 m-0 text-[0.9rem] text-[var(--text-muted)]">Mostrando {filteredNotifications.length} registros</p>
+					</div>
+
+					<div className="flex flex-wrap gap-2">
+						{filters.map(item => (
+							<button
+								key={item.key}
+								type="button"
+								className={`rounded-sm px-3 py-2 text-[0.84rem] font-semibold transition-colors ${filter === item.key ? "bg-[var(--primary)] text-white" : "border border-[#d0ded5] bg-white text-[var(--text)] hover:bg-[#f6faf7]"}`}
+								onClick={() => setFilter(item.key)}
+							>
+								{item.label}
+							</button>
+						))}
+					</div>
 				</div>
 
-				<div className="grid gap-3.5">
-					{notifications.map(item => (
-						<article key={item.id} className="grid gap-4 rounded-[14px] border border-[#d8e6dd] bg-white px-4 py-4 shadow-[0_8px_18px_-20px_rgba(16,24,40,0.28)] lg:grid-cols-[auto_1fr_auto] lg:items-start">
-							<span className="inline-flex h-11 w-11 items-center justify-center rounded-[12px] bg-[var(--primary)] text-white shadow-[0_10px_22px_-18px_rgba(5,166,61,0.45)]">
-								<BellRing className="h-4 w-4" strokeWidth={1.9} />
-							</span>
+				{actionError && <p className="mb-4 rounded-sm border border-[#f0c8c1] bg-[#fff7f5] px-3 py-2 text-[0.86rem] font-semibold text-[#a03d2e]">{actionError}</p>}
 
-							<div className="min-w-0 space-y-2">
-								<div className="flex flex-wrap items-center gap-2">
-									<p className="m-0 text-[0.78rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Notificación</p>
-									<span className={`inline-flex rounded-md px-2 py-1 text-[0.74rem] font-semibold ${sourcePill(item.source)}`}>{item.source}</span>
+				{loading ? (
+					<div className="grid gap-3">
+						<div className="h-24 rounded-xl border border-[#e1ebe4] bg-white/70" />
+						<div className="h-24 rounded-xl border border-[#e1ebe4] bg-white/70" />
+						<div className="h-24 rounded-xl border border-[#e1ebe4] bg-white/70" />
+					</div>
+				) : filteredNotifications.length === 0 ? (
+					<div className="rounded-xl border border-dashed border-[#d0ded5] bg-white px-6 py-10 text-center">
+						<BellRing className="mx-auto h-10 w-10 text-[var(--primary)]" strokeWidth={1.7} />
+						<p className="mt-4 text-[1rem] font-semibold text-[var(--text)]">No hay notificaciones para este filtro.</p>
+						<p className="mt-1 text-[0.9rem] text-[var(--text-muted)]">Las nuevas aprobaciones, cambios y avisos aparecerán aquí automáticamente.</p>
+					</div>
+				) : (
+					<div className="grid gap-3.5">
+						{filteredNotifications.map(item => (
+							<article key={item.id} className={`grid gap-4 rounded-[14px] border px-4 py-4 shadow-[0_8px_18px_-20px_rgba(16,24,40,0.28)] lg:grid-cols-[auto_1fr_auto] lg:items-start ${item.read ? "border-[#d8e6dd] bg-white" : "border-[color:rgba(5,166,61,0.25)] bg-[#fafffb]"}`}>
+								<span className="inline-flex h-11 w-11 items-center justify-center rounded-[12px] bg-[var(--primary)] text-white shadow-[0_10px_22px_-18px_rgba(5,166,61,0.45)]">
+									<BellRing className="h-4 w-4" strokeWidth={1.9} />
+								</span>
+
+								<div className="min-w-0 space-y-2">
+									<div className="flex flex-wrap items-center gap-2">
+										<p className="m-0 text-[0.78rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">{item.themeLabel}</p>
+										<span className={`inline-flex rounded-md px-2 py-1 text-[0.74rem] font-semibold ${pillClass(item.themeKey, item.read)}`}>{item.source}</span>
+										{!item.read && <span className="inline-flex rounded-md bg-[#fff2e8] px-2 py-1 text-[0.74rem] font-semibold text-[#9a5a1a]">Nueva</span>}
+									</div>
+									<h3 className="m-0 text-[1rem] font-semibold leading-tight text-[var(--text)]">{item.title}</h3>
+									<p className="m-0 text-[0.9rem] leading-relaxed text-[var(--text-muted)]">{item.detail}</p>
+									{item.activity?.title && <p className="m-0 text-[0.82rem] font-semibold text-[#55705e]">Actividad relacionada: {item.activity.title}</p>}
 								</div>
-								<h3 className="m-0 text-[1rem] font-semibold leading-tight text-[var(--text)]">{item.title}</h3>
-								<p className="m-0 text-[0.9rem] leading-relaxed text-[var(--text-muted)]">{item.detail}</p>
-							</div>
 
-							<div className="flex flex-col items-end gap-2 self-start max-[760px]:items-start lg:pt-1">
-								<span className="inline-flex rounded-md bg-[#eef8f1] px-2 py-1 text-[0.75rem] font-semibold text-[#2e5a45]">{item.date}</span>
-								{item.source === "Admin" && (
-									<span className="inline-flex items-center gap-1 rounded-md bg-[#edf1ff] px-2 py-1 text-[0.72rem] font-semibold text-[#39559a]">
-										<Megaphone className="h-3.5 w-3.5" strokeWidth={1.9} />
-										Difusion
+								<div className="flex flex-col items-end gap-2 self-start max-[760px]:items-start lg:pt-1">
+									<span className="inline-flex rounded-md bg-[#eef8f1] px-2 py-1 text-[0.75rem] font-semibold text-[#2e5a45]">{item.date}</span>
+									<span className={`inline-flex rounded-md px-2 py-1 text-[0.72rem] font-semibold ${item.read ? "bg-[#eef3ef] text-[#5f7168]" : "bg-[#e8f7ec] text-[#2e5a45]"}`}>
+										{item.read ? "Leida" : "Pendiente"}
 									</span>
-								)}
-							</div>
-						</article>
-					))}
-				</div>
+									{item.themeKey === "general" && (
+										<span className="inline-flex items-center gap-1 rounded-md bg-[#edf1ff] px-2 py-1 text-[0.72rem] font-semibold text-[#39559a]">
+											<Megaphone className="h-3.5 w-3.5" strokeWidth={1.9} />
+											Aviso
+										</span>
+									)}
+								</div>
+							</article>
+						))}
+					</div>
+				)}
 			</section>
 
 			<Modal
@@ -120,11 +257,11 @@ export default function AdminNotifications() {
 				footerClassName="border-t border-[#dce7df] bg-[#f8fbf9] px-6 py-4 sm:px-7"
 				footer={
 					<>
-						<button type="button" className="btn btn-ghost btn-inline" onClick={closeModal}>
+						<button type="button" className="btn btn-ghost btn-inline" onClick={closeModal} disabled={submitting}>
 							Cancelar
 						</button>
-						<button type="button" className="btn btn-primary btn-inline" onClick={publishNotification}>
-							Publicar notificacion
+						<button type="button" className="btn btn-primary btn-inline" onClick={publishNotification} disabled={submitting}>
+							{submitting ? "Publicando..." : "Publicar notificacion"}
 						</button>
 					</>
 				}
@@ -133,10 +270,10 @@ export default function AdminNotifications() {
 					<div className="flex items-start justify-between gap-4">
 						<div>
 							<p className="m-0 text-[0.78rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Comunicacion interna</p>
-							<h3 className="mt-1 text-[1.12rem] font-semibold text-[var(--text)]">Crear notificacion</h3>
-							<p className="mt-1 mb-0 text-[0.88rem] text-[var(--text-muted)]">Redacta un aviso claro para participantes o equipo admin.</p>
+							<h3 className="mt-1 text-[1.12rem] font-semibold text-[var(--text)]">Crear aviso general</h3>
+							<p className="mt-1 mb-0 text-[0.88rem] text-[var(--text-muted)]">Este formulario publica un aviso persistente para todos los usuarios.</p>
 						</div>
-						<button type="button" className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#d7e0d9] bg-white text-[#496053] transition-colors hover:bg-[#f4f7f5]" onClick={closeModal} aria-label="Cerrar modal">
+						<button type="button" className="inline-flex h-8 w-8 items-center justify-center rounded-sm border border-[#d7e0d9] bg-white text-[#496053] transition-colors hover:bg-[#f4f7f5]" onClick={closeModal} aria-label="Cerrar modal">
 							x
 						</button>
 					</div>
@@ -153,7 +290,7 @@ export default function AdminNotifications() {
 								setTitle(event.target.value);
 								if (error) setError("");
 							}}
-							placeholder="Ejemplo: Mantencion programada"
+							placeholder="Ejemplo: Aviso institucional"
 						/>
 					</div>
 
@@ -167,7 +304,7 @@ export default function AdminNotifications() {
 								setDetail(event.target.value);
 								if (error) setError("");
 							}}
-							placeholder="Ejemplo: El sistema estara en mantencion este sabado de 23:00 a 01:00."
+							placeholder="Ejemplo: Este viernes la plataforma tendra mantenimiento entre 22:00 y 23:00."
 						/>
 						{error && <p className="m-0 text-[0.82rem] font-semibold text-[#a03d2e]">{error}</p>}
 					</div>
