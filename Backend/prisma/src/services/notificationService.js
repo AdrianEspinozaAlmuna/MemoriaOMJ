@@ -10,14 +10,14 @@ function uniqueIntegerIds(values = []) {
   return [...new Set(values.map(value => Number(value)).filter(value => Number.isInteger(value) && value > 0))];
 }
 
-function normalizeSenderId(payload = {}) {
-  const senderId = Number(payload.id_emisor ?? payload.senderId ?? payload.id_usuario);
-  return Number.isInteger(senderId) && senderId > 0 ? senderId : null;
+function normalizeUserId(payload = {}) {
+  const userId = Number(payload.id_usuario ?? payload.id_receptor ?? payload.receiverId ?? payload.userId);
+  return Number.isInteger(userId) && userId > 0 ? userId : null;
 }
 
 async function createNotificationRecord(db = prisma, payload = {}) {
-  const idEmisor = normalizeSenderId(payload);
-  if (!idEmisor) {
+  const idUsuario = normalizeUserId(payload);
+  if (!idUsuario) {
     return null;
   }
 
@@ -31,10 +31,30 @@ async function createNotificationRecord(db = prisma, payload = {}) {
   const tipo = payload.tipo === "actividad" ? "actividad" : "sistema";
   const descripcion = payload.descripcion == null ? null : String(payload.descripcion).trim() || null;
 
+  // Evitar duplicados recientes: si ya existe una notificación con los mismos
+  // campos clave en los últimos 2 minutos, no crearla de nuevo.
+  try {
+    const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
+    const existing = await db.notificaciones.findFirst({
+      where: {
+        id_usuario: idUsuario,
+        id_actividad: Number.isInteger(idActividadRaw) ? idActividadRaw : null,
+        titulo,
+        descripcion,
+        fecha_envio: { gte: twoMinutesAgo }
+      }
+    });
+
+    if (existing) {
+      return null;
+    }
+  } catch (_e) {
+    // Si la comprobación falla por alguna razón, continuamos y permitimos la creación.
+  }
+
   return db.notificaciones.create({
     data: {
-      id_emisor: idEmisor,
-      id_receptor: Number.isInteger(idReceptorRaw) ? idReceptorRaw : null,
+      id_usuario: idUsuario,
       id_actividad: Number.isInteger(idActividadRaw) ? idActividadRaw : null,
       tipo,
       titulo,
@@ -51,8 +71,8 @@ async function createNotificationsForUsers(db = prisma, idEmisor, userIds = [], 
   }
 
   const notifications = [];
-  for (const id_receptor of recipients) {
-    const created = await createNotificationRecord(db, { ...payload, id_emisor: idEmisor, id_receptor });
+  for (const id_usuario of recipients) {
+    const created = await createNotificationRecord(db, { ...payload, id_usuario });
     if (created) {
       notifications.push(created);
     }
@@ -62,12 +82,7 @@ async function createNotificationsForUsers(db = prisma, idEmisor, userIds = [], 
 }
 
 async function createSystemNotification(db = prisma, idEmisor, payload = {}) {
-  return createNotificationRecord(db, {
-    ...payload,
-    id_emisor: idEmisor,
-    id_receptor: null,
-    tipo: "sistema"
-  });
+  return createNotificationRecord(db, { ...payload, id_usuario: idEmisor, tipo: "sistema" });
 }
 
 async function notifyAdminUsers(db = prisma, idEmisor, payload = {}) {

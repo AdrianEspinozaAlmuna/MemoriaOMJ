@@ -35,6 +35,15 @@ const PORT = process.env.PORT || 4000;
 if (require.main === module && process.env.VERCEL !== "1") {
   const server = http.createServer(app);
   initRealtimeServer(server);
+  server.on("error", (err) => {
+    if (err && err.code === "EADDRINUSE") {
+      console.error(`Puerto ${PORT} en uso. Asegúrate de cerrar instancias previas antes de iniciar.`);
+      process.exit(1);
+    }
+    console.error("Error en el servidor:", err);
+    process.exit(1);
+  });
+
   server.listen(PORT, "localhost", () => console.log(`Backend iniciado en http://localhost:${PORT}`));
 }
 

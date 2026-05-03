@@ -64,8 +64,7 @@ model grupo {
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model notificaciones {
   id_notificacion Int               @id @default(autoincrement())
-  id_emisor       Int
-  id_receptor     Int?
+  id_usuario      Int
   id_actividad    Int?
   tipo            tipo_notificacion
   titulo          String            @db.VarChar(255)
@@ -73,13 +72,11 @@ model notificaciones {
   leida           Boolean           @default(false)
   fecha_lectura   DateTime?         @db.Timestamptz(6)
   fecha_envio     DateTime          @default(now()) @db.Timestamptz(6)
-  emisor          usuario           @relation("NotificacionEmisor", fields: [id_emisor], references: [id_usuario], onDelete: Cascade, onUpdate: NoAction)
-  receptor        usuario?          @relation("NotificacionReceptor", fields: [id_receptor], references: [id_usuario], onDelete: SetNull, onUpdate: NoAction)
+  usuario         usuario           @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade, onUpdate: NoAction)
   actividad       actividad?        @relation(fields: [id_actividad], references: [id_actividad], onDelete: SetNull, onUpdate: NoAction)
 
-  @@index([id_emisor], map: "idx_notificaciones_emisor")
-  @@index([id_receptor], map: "idx_notificaciones_receptor")
-  @@index([id_receptor, leida, fecha_envio], map: "idx_notificaciones_receptor_leida_fecha")
+  @@index([id_usuario], map: "idx_notificaciones_usuario")
+  @@index([id_usuario, leida, fecha_envio], map: "idx_notificaciones_usuario_leida_fecha")
   @@index([id_actividad], map: "idx_notificaciones_actividad")
 }
 
@@ -116,8 +113,7 @@ model usuario {
   actividad_mensaje       actividad_mensaje[]
   actividad_participantes actividad_participantes[]
   grupo                   grupo[]
-  notificaciones_emitidas notificaciones[]  @relation("NotificacionEmisor")
-  notificaciones_recibidas notificaciones[]  @relation("NotificacionReceptor")
+  notificaciones          notificaciones[]
   participantes_grupo     participantes_grupo[]
 
   @@index([mail], map: "idx_usuario_mail")

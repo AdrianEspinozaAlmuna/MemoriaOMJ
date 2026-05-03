@@ -903,6 +903,7 @@ async function rateActivity(req, res) {
 async function reviewActivity(req, res) {
   const idActividad = parseActivityId(req.params.id_actividad);
   const { action } = req.body || {};
+  const idUsuario = getUserIdFromToken(req.user);
 
   if (!idActividad) {
     return res.status(400).json({ message: "id_actividad invalido" });
@@ -962,9 +963,11 @@ async function reviewActivity(req, res) {
         tipo: "actividad"
       });
     } else {
+      const reason = String(req.body?.descripcion ?? req.body?.reason ?? "").trim();
+      const activityTitle = existing?.titulo || updated?.titulo || `#${idActividad}`;
       await notifyActivityOwner(prisma, idUsuario, idActividad, {
-        titulo: "Tu actividad fue rechazada",
-        descripcion: "La actividad no fue aprobada por administración.",
+        titulo: `Rechazo de actividad ${activityTitle}`,
+        descripcion: reason || "La actividad no fue aprobada por administración.",
         tipo: "actividad"
       });
     }

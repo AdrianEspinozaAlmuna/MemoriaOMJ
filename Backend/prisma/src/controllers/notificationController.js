@@ -62,10 +62,8 @@ function serializeNotification(notification) {
   return {
     id: notification.id_notificacion,
     id_notificacion: notification.id_notificacion,
-    id_emisor: notification.id_emisor,
-    id_receptor: notification.id_receptor,
-    senderId: notification.id_emisor,
-    receiverId: notification.id_receptor,
+    id_usuario: notification.id_usuario,
+    receiverId: notification.id_usuario,
     activityId: notification.id_actividad,
     id_actividad: notification.id_actividad,
     type: notification.tipo,
@@ -80,22 +78,14 @@ function serializeNotification(notification) {
     fecha_lectura: notification.fecha_lectura,
     sentAt: notification.fecha_envio,
     fecha_envio: notification.fecha_envio,
-    sender: notification.emisor
+    sender: null,
+    receiver: notification.usuario
       ? {
-          id: notification.emisor.id_usuario,
-          nombre: notification.emisor.nombre,
-          apellido: notification.emisor.apellido,
-          mail: notification.emisor.mail,
-          rol: notification.emisor.rol
-        }
-      : null,
-    receiver: notification.receptor
-      ? {
-          id: notification.receptor.id_usuario,
-          nombre: notification.receptor.nombre,
-          apellido: notification.receptor.apellido,
-          mail: notification.receptor.mail,
-          rol: notification.receptor.rol
+          id: notification.usuario.id_usuario,
+          nombre: notification.usuario.nombre,
+          apellido: notification.usuario.apellido,
+          mail: notification.usuario.mail,
+          rol: notification.usuario.rol
         }
       : null,
     activity: notification.actividad
@@ -123,13 +113,13 @@ async function listMyNotifications(req, res) {
       where: {
         ...(unreadOnly ? { leida: false } : {}),
         OR: [
-          { id_receptor: idUsuario },
-          { tipo: "sistema", id_receptor: null }
+          { id_usuario: idUsuario },
+          { tipo: "sistema", id_usuario: idUsuario }
         ]
       },
       orderBy: [{ fecha_envio: "desc" }, { id_notificacion: "desc" }],
       include: {
-        emisor: {
+        usuario: {
           select: {
             id_usuario: true,
             nombre: true,
@@ -181,12 +171,11 @@ async function listAdminNotifications(req, res) {
         ...(unreadOnly ? { leida: false } : {}),
         ...(tipo && ["sistema", "actividad"].includes(tipo) ? { tipo } : {}),
         ...(Number.isInteger(idActividad) ? { id_actividad: idActividad } : {}),
-        ...(Number.isInteger(idReceptorFiltro) ? { id_receptor: idReceptorFiltro } : {}),
-        ...(Number.isInteger(idEmisorFiltro) ? { id_emisor: idEmisorFiltro } : {})
+        ...(Number.isInteger(idReceptorFiltro) ? { id_usuario: idReceptorFiltro } : {})
       },
       orderBy: [{ fecha_envio: "desc" }, { id_notificacion: "desc" }],
       include: {
-        emisor: {
+        usuario: {
           select: {
             id_usuario: true,
             nombre: true,
@@ -232,8 +221,8 @@ async function countUnreadNotifications(req, res) {
       where: {
         leida: false,
         OR: [
-          { id_receptor: idUsuario },
-          { tipo: "sistema", id_receptor: null }
+          { id_usuario: idUsuario },
+          { tipo: "sistema", id_usuario: idUsuario }
         ]
       }
     });
@@ -261,8 +250,8 @@ async function markNotificationAsRead(req, res) {
       where: {
         id_notificacion: idNotificacion,
         OR: [
-          { id_receptor: idUsuario },
-          { tipo: "sistema", id_receptor: null }
+          { id_usuario: idUsuario },
+          { tipo: "sistema", id_usuario: idUsuario }
         ]
       }
     });
@@ -278,7 +267,7 @@ async function markNotificationAsRead(req, res) {
         fecha_lectura: existing.fecha_lectura || new Date()
       },
       include: {
-        emisor: {
+        usuario: {
           select: {
             id_usuario: true,
             nombre: true,
@@ -324,8 +313,8 @@ async function markAllNotificationsAsRead(req, res) {
       where: {
         leida: false,
         OR: [
-          { id_receptor: idUsuario },
-          { tipo: "sistema", id_receptor: null }
+          { id_usuario: idUsuario },
+          { tipo: "sistema", id_usuario: idUsuario }
         ]
       },
       data: {
@@ -360,15 +349,19 @@ async function createBroadcastNotification(req, res) {
   }
 
   try {
-    const created = await createSystemNotification(prisma, idEmisor, {
+    const recipients = await prisma.usuario.findMany({
+      where: { estado: true },
+      select: { id_usuario: true }
+    });
+
+    const created = await createNotificationsForUsers(prisma, idEmisor, recipients.map(user => user.id_usuario), {
       titulo,
       descripcion,
       tipo: "sistema",
       id_actividad: Number.isInteger(idActividad) ? idActividad : null
     });
 
-    const serialized = await serializeNotificationWithRelations(created);
-    return res.status(201).json({ ok: true, notification: serialized });
+    return res.status(201).json({ ok: true, updatedCount: created.length, notifications: created.map(serializeNotification) });
   } catch (error) {
     return res.status(500).json({ message: "Error creando notificacion", detail: error.message });
   }
@@ -399,8 +392,7 @@ async function createDirectNotification(req, res) {
 
   try {
     const created = await createNotificationRecord(prisma, {
-      id_emisor: idEmisor,
-      id_receptor: targetId,
+      id_usuario: targetId,
       titulo,
       descripcion,
       tipo: req.body?.tipo === "actividad" ? "actividad" : "sistema",

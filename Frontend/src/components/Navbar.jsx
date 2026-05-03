@@ -3,7 +3,7 @@ import { Bell, BellRing, CheckCheck, ChevronRight, LoaderCircle, UserRound } fro
 import { Link, NavLink } from "react-router-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import api from "../services/api";
-import { getMyNotifications, getUnreadNotificationCount, markNotificationAsRead } from "../services/notificationsService";
+import { getMyNotifications } from "../services/notificationsService";
 
 function decodeToken(token) {
   if (!token) return null;
@@ -27,7 +27,6 @@ export default function Navbar() {
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 	const [profileUser, setProfileUser] = useState(null);
 	const [notificationItems, setNotificationItems] = useState([]);
-	const [unreadCount, setUnreadCount] = useState(0);
 	const [notificationsLoading, setNotificationsLoading] = useState(false);
 	const [notificationsError, setNotificationsError] = useState("");
 	const navRef = useRef(null);
@@ -45,7 +44,6 @@ export default function Navbar() {
 		if (!isAuthenticated) {
 			setProfileUser(null);
 			setNotificationItems([]);
-			setUnreadCount(0);
 			setNotificationsError("");
 			return;
 		}
@@ -87,15 +85,11 @@ export default function Navbar() {
 		async function loadNotifications() {
 			try {
 				setNotificationsLoading(true);
-				const [items, count] = await Promise.all([
-					getMyNotifications(),
-					getUnreadNotificationCount()
-				]);
+				const items = await getMyNotifications();
 
 				if (!mounted) return;
 
 				setNotificationItems(items);
-				setUnreadCount(count);
 				setNotificationsError("");
 			} catch (_error) {
 				if (!mounted) return;
@@ -140,7 +134,6 @@ export default function Navbar() {
 
 	useEffect(() => {
 		setMenuOpen(false);
-		setNotificationsOpen(false);
 		setMobileMenuOpen(false);
 	}, [location.pathname]);
 
@@ -172,16 +165,6 @@ export default function Navbar() {
 	}
 
 	async function openNotificationItem(item) {
-		if (item?.id && !item.read) {
-			try {
-				await markNotificationAsRead(item.id);
-				setUnreadCount(previous => Math.max(0, previous - 1));
-				setNotificationItems(previous => previous.map(entry => (entry.id === item.id ? { ...entry, read: true, leida: true } : entry)));
-			} catch (_error) {
-				// No bloquea navegación si falla el marcado como leida.
-			}
-		}
-
 		setNotificationsOpen(false);
 		navigate("/user/notificaciones");
 	}
@@ -193,7 +176,7 @@ export default function Navbar() {
 		].join(" ");
 
 	return (
-		<header className="sticky top-0 z-30 bg-[color:var(--nav-bg,white)]/95 backdrop-blur supports-[backdrop-filter]:bg-[color:var(--nav-bg,white)]/80 shadow-[0_8px_20px_-20px_rgba(6,40,24,0.55)]">
+		<header className="sticky top-0 z-50 bg-[color:var(--nav-bg,white)]/95 backdrop-blur supports-[backdrop-filter]:bg-[color:var(--nav-bg,white)]/80 shadow-[0_8px_20px_-20px_rgba(6,40,24,0.55)]">
 			<nav className="mx-auto grid min-h-16 w-[min(98vw,1680px)] grid-cols-[auto_1fr_auto] items-center gap-x-8 px-4 sm:px-6 lg:gap-x-10 max-[1120px]:grid-cols-[auto_minmax(0,1fr)_auto] max-[860px]:min-h-[4.2rem] max-[860px]:w-full max-[860px]:grid-cols-[minmax(0,1fr)_auto] max-[860px]:gap-y-2 max-[860px]:py-2" ref={navRef}>
 				<div className="inline-flex items-center gap-2.5 justify-self-start min-[861px]:min-w-0">
 					<button
@@ -261,13 +244,6 @@ export default function Navbar() {
 							>
 								Mis asistencias
 							</NavLink>
-							<NavLink
-								to="/user/notificaciones"
-								onClick={handleNavItemClick}
-								className={navLinkClass}
-							>
-								Notificaciones
-							</NavLink>
 						</>
 					)}
 				</div>
@@ -284,7 +260,7 @@ export default function Navbar() {
 					)}
 				</div>
 
-				<div className="flex items-center justify-self-end gap-5 max-[1120px]:gap-3 max-[860px]:col-start-2 max-[860px]:row-start-1 max-[860px]:gap-2">
+				<div className="relative z-50 flex items-center justify-self-end gap-5 max-[1120px]:gap-3 max-[860px]:col-start-2 max-[860px]:row-start-1 max-[860px]:gap-2">
                     
 
 					<div className="flex items-center gap-4 max-[1120px]:gap-1.5">
@@ -302,7 +278,6 @@ export default function Navbar() {
 								aria-expanded={notificationsOpen}
 							>
 								<Bell aria-hidden="true" focusable="false" className="h-4 w-4 text-[#3e5b4c]" strokeWidth={1.8} />
-								{unreadCount > 0 && <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-[var(--primary)] px-1 text-[0.7rem] font-bold text-white">{unreadCount > 9 ? "9+" : unreadCount}</span>}
 							</button>
 
 								{notificationsOpen && (

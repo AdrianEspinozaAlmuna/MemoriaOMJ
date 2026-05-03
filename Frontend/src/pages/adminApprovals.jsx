@@ -245,7 +245,7 @@ export default function AdminApprovals() {
 					<div className="border-b border-[#dce7df] bg-[var(--bg)] px-6 py-5 sm:px-7">
 						<div className="flex items-start justify-between gap-4">
 							<div>
-								<p className="m-0 text-[0.78rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Revision</p>
+								<h1 className="m-0 text-[1.15rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Revision</h1>
 								<p className="mt-1 max-w-[58ch] text-[0.88rem] text-[var(--text-muted)]">Valida la propuesta antes de publicarla o registra un rechazo con motivo.</p>
 							</div>
 							<button type="button" className="inline-flex h-8 w-8 items-center justify-center rounded-sm border border-[#d7e0d9] bg-white text-[#496053] transition-colors hover:bg-[#f4f7f5]" onClick={closeItemModal} aria-label="Cerrar modal">
