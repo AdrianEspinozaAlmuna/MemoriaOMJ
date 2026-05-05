@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Bell, BellRing, ChevronRight, LoaderCircle, LogOut, UserRound } from "lucide-react";
+import { Bell, BellRing, ChevronRight, LoaderCircle, LogOut, UserRound, Menu, RefreshCw } from "lucide-react";
 import { Link, NavLink } from "react-router-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
@@ -232,6 +232,24 @@ export default function Navbar() {
 		return item?.themeLabel || item?.source || "Notificación";
 	}
 
+	function toggleSidebar() {
+		try {
+			document.body.classList.toggle("sidebar-collapsed");
+		} catch (e) {
+			// noop
+		}
+	}
+
+	function getAdminPageTitle() {
+		const path = (location.pathname || "").replace(/\/$/, "");
+		if (path.includes("/admin/notificaciones")) return "Notificaciones";
+		if (path.includes("/admin/dashboard")) return "Panel administrador";
+		if (path.includes("/admin/actividades")) return "Actividades";
+		if (path.includes("/admin/usuarios")) return "Usuarios";
+		const parts = path.split("/").filter(Boolean);
+		return parts.length ? parts[parts.length - 1].replace(/[-_]/g, " ") : "Admin";
+	}
+
 	function getNotificationDisplayTitle(item) {
 		if (item?.type === "sistema") {
 			return "Notificación de sistema";
@@ -275,6 +293,8 @@ export default function Navbar() {
 		navigate("/user/notificaciones");
 	}
 
+	const isAdmin = String(rol || "").toLowerCase().includes("admin");
+
 	const navLinkClass = ({ isActive }) =>
 		[
 			"rounded-xl px-3.5 py-2 text-[0.92rem] font-semibold text-[#355447] [transition:background-color_150ms_ease,color_120ms_ease] hover:bg-[#def3e7] hover:text-[var(--primary-strong)] active:bg-[var(--primary-active)]",
@@ -317,7 +337,7 @@ export default function Navbar() {
 						</NavLink>
 					)}
 
-					{isAuthenticated && rol === "admin" && (
+					{isAuthenticated && isAdmin && (
 						<NavLink
 							to="/admin/dashboard"
 							onClick={handleNavItemClick}
@@ -478,6 +498,24 @@ export default function Navbar() {
 					</div>
 				</div>
 			</nav>
+			{isAdmin && (
+				<div className="border-t border-b border-[#e7eee9] bg-white/95 py-2">
+					<div className="mx-auto w-[min(98vw,1680px)] flex items-center justify-between px-4 sm:px-6">
+						<div className="flex items-center gap-3">
+							<button type="button" onClick={toggleSidebar} className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-[#f3faf5] hover:bg-[#eef7ef]">
+								<Menu className="h-4 w-4" />
+							</button>
+							<h2 className="m-0 text-[1rem] font-semibold text-[var(--text)]">{getAdminPageTitle()}</h2>
+						</div>
+						<div className="flex items-center gap-2">
+							<button type="button" onClick={() => window.location.reload()} className="inline-flex items-center gap-2 rounded-sm px-3 py-1.5 bg-white border border-[#d8e6dd]">
+								<RefreshCw className="h-4 w-4" />
+								Actualizar
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
 		</header>
 	);
 }

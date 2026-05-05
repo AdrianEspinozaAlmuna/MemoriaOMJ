@@ -15,6 +15,10 @@ function getUserRoomName(userId) {
   return `user:${userId}`;
 }
 
+function getAdminRoomName() {
+  return "role:admin";
+}
+
 function extractToken(socket) {
   const authToken = socket.handshake?.auth?.token;
   if (authToken) return String(authToken).replace(/^Bearer\s+/i, "");
@@ -83,6 +87,10 @@ function initRealtimeServer(httpServer) {
       socket.join(getUserRoomName(userId));
     }
 
+    if (socket.data.user?.rol === "admin") {
+      socket.join(getAdminRoomName());
+    }
+
     socket.on("activity:join", async (payload = {}, ack) => {
       try {
         const activityId = Number(payload?.activityId ?? payload?.id_actividad);
@@ -126,6 +134,11 @@ function emitNotificationCreated(notification, options = {}) {
     return;
   }
 
+  if (options.broadcastAdmins) {
+    ioInstance.to(getAdminRoomName()).emit("notification:new", notification);
+    return;
+  }
+
   for (const targetUserId of targetUserIds) {
     ioInstance.to(getUserRoomName(targetUserId)).emit("notification:new", notification);
   }
@@ -134,5 +147,6 @@ function emitNotificationCreated(notification, options = {}) {
 module.exports = {
   initRealtimeServer,
   emitActivityMessage,
-  emitNotificationCreated
+  emitNotificationCreated,
+  getAdminRoomName
 };

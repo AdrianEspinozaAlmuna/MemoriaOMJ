@@ -471,7 +471,9 @@ async function createActivity(req, res) {
       return { newActivity, adminNotifications };
     });
 
-    emitNotificationBatch(created.adminNotifications);
+    if (created.adminNotifications?.[0]) {
+      emitNotificationCreated(created.adminNotifications[0], { broadcastAdmins: true });
+    }
 
     return res.status(201).json({ ok: true, activity: serializeActivity(created.newActivity, idEncargado) });
   } catch (error) {
@@ -1006,7 +1008,10 @@ async function reviewActivity(req, res) {
     const ownerNotifications = await notifyActivityOwner(prisma, idUsuario, idActividad, ownerNotification);
     const adminNotifications = await notifyAdminUsers(prisma, idUsuario, adminNotification);
 
-    emitNotificationBatch([...ownerNotifications, ...adminNotifications]);
+    emitNotificationBatch(ownerNotifications);
+    if (adminNotifications?.[0]) {
+      emitNotificationCreated(adminNotifications[0], { broadcastAdmins: true });
+    }
 
     if (action === "approve") {
       await syncActivityStatuses();

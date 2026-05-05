@@ -147,13 +147,19 @@ async function notifyAdminUsers(db = prisma, idEmisor, payload = {}) {
       rol: "admin",
       estado: true
     },
+    orderBy: { id_usuario: "asc" },
     select: { id_usuario: true }
   });
+
+  // Use a single shared admin recipient so the notification is stored once
+  // and then broadcast to all admins in realtime.
+  const sharedAdminId = admins[0]?.id_usuario ?? null;
+  const recipientIds = sharedAdminId ? [sharedAdminId] : [];
 
   return createNotificationsForUsers(
     db,
     idEmisor,
-    admins.map(user => user.id_usuario),
+    recipientIds,
     { ...payload, tipo: payload.tipo || "actividad" }
   );
 }

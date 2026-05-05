@@ -22,6 +22,27 @@ function pillClass(themeKey, read) {
 	return "bg-[#eef8f1] text-[#2e5a45]";
 }
 
+function getSourceClass(item) {
+	return item?.type === "actividad" ? "bg-[#e8f7ec] text-[var(--primary)]" : "bg-[#ffe8e8] text-[#d43c3c]";
+}
+
+function getDisplayTitle(item) {
+	if (item?.type === "sistema") return "Notificación de sistema";
+	const title = String(item.title || "").toLowerCase();
+	if (title.includes("rechaz")) return "Rechazo propuesta actividad";
+	if (title.includes("aprobad")) return "Aprobación propuesta actividad";
+	return item.title || "Notificación";
+}
+
+function getDisplayDetail(item) {
+	if (item?.type === "sistema") return item?.title || item?.detail || "";
+	if (item.activity?.title) return `Actividad: "${item.activity.title}"`;
+	const title = item.title || "";
+	const idx = title.indexOf(":");
+	if (idx !== -1) return `Actividad: "${title.substring(idx + 1).trim()}"`;
+	return item.detail || "";
+}
+
 export default function AdminNotifications() {
 	const [notifications, setNotifications] = useState([]);
 	const [loading, setLoading] = useState(true);
@@ -180,18 +201,18 @@ export default function AdminNotifications() {
 					<div className="grid gap-3.5">
 						{filteredNotifications.map(item => (
 							<article key={item.id} className="grid gap-4 rounded-[14px] border border-[#d8e6dd] bg-white px-4 py-4 shadow-[0_8px_18px_-20px_rgba(16,24,40,0.28)] lg:grid-cols-[auto_1fr_auto] lg:items-start">
-								<span className="inline-flex h-11 w-11 items-center justify-center rounded-[12px] bg-[var(--primary)] text-white shadow-[0_10px_22px_-18px_rgba(5,166,61,0.45)]">
+								<div className="inline-flex h-11 w-11 items-center justify-center rounded-[12px] bg-white text-[var(--primary)] shadow-[0_6px_14px_-12px_rgba(16,24,40,0.35)]">
 									<BellRing className="h-4 w-4" strokeWidth={1.9} />
-								</span>
+								</div>
 
 								<div className="min-w-0 space-y-2">
 									<div className="flex flex-wrap items-center gap-2">
 										<p className="m-0 text-[0.78rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">{item.themeLabel}</p>
-										<span className={`inline-flex rounded-md px-2 py-1 text-[0.74rem] font-semibold ${pillClass(item.themeKey)}`}>{item.source}</span>
+										<span className={`inline-flex rounded-sm px-2 py-1 text-[0.66rem] font-bold uppercase tracking-[0.08em] ${getSourceClass(item)}`}>{item.source}</span>
 									</div>
-									<h3 className="m-0 text-[1rem] font-semibold leading-tight text-[var(--text)]">{item.title}</h3>
-									<p className="m-0 text-[0.9rem] leading-relaxed text-[var(--text-muted)]">{item.detail}</p>
-									{item.activity?.title && <p className="m-0 text-[0.82rem] font-semibold text-[#55705e]">Actividad relacionada: {item.activity.title}</p>}
+									<h3 className="m-0 text-[1rem] font-semibold leading-tight text-[var(--text)]">{getDisplayTitle(item)}</h3>
+									<div className="block truncate font-semibold text-[0.95rem] leading-tight text-[#1f3328]">{getDisplayDetail(item)}</div>
+									{item.detail && <p className="m-0 text-[0.9rem] leading-relaxed text-[var(--text-muted)]">{item.detail}</p>}
 								</div>
 
 								<div className="flex flex-col items-end gap-2 self-start max-[760px]:items-start lg:pt-1">
