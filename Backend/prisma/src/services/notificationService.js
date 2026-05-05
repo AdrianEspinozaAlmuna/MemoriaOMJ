@@ -16,8 +16,16 @@ function normalizeUserId(payload = {}) {
 }
 
 async function createNotificationRecord(db = prisma, payload = {}) {
-  const idUsuario = normalizeUserId(payload);
-  if (!idUsuario) {
+  // receptor (destinatario) — puede venir como id_usuario o id_receptor
+  const idReceptor = payload.id_receptor == null ? normalizeUserId(payload) : Number(payload.id_receptor);
+  const idReceptorValid = Number.isInteger(Number(idReceptor)) && idReceptor > 0 ? idReceptor : null;
+
+  // emisor (quien envía) — debe venir en payload.id_emisor
+  const idEmisor = payload.id_emisor == null ? null : Number(payload.id_emisor);
+  const idEmisorValid = Number.isInteger(Number(idEmisor)) && idEmisor > 0 ? idEmisor : null;
+
+  // receptor is required for per-user notifications; for system (broadcast) receptor can be null
+  if (!idReceptorValid && !idEmisorValid) {
     return null;
   }
 
@@ -26,8 +34,9 @@ async function createNotificationRecord(db = prisma, payload = {}) {
     return null;
   }
 
-  const idReceptorRaw = payload.id_receptor == null ? null : Number(payload.id_receptor);
+  const idReceptorRaw = idReceptorValid;
   const idActividadRaw = payload.id_actividad == null ? null : Number(payload.id_actividad);
+  const idEmisorRaw = idEmisorValid;
   const tipo = payload.tipo === "actividad" ? "actividad" : "sistema";
   const descripcion = payload.descripcion == null ? null : String(payload.descripcion).trim() || null;
 
@@ -35,33 +44,54 @@ async function createNotificationRecord(db = prisma, payload = {}) {
   // campos clave en los últimos 2 minutos, no crearla de nuevo.
   try {
     const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
-    const existing = await db.notificaciones.findFirst({
-      where: {
-        id_usuario: idUsuario,
-        id_actividad: Number.isInteger(idActividadRaw) ? idActividadRaw : null,
-        titulo,
-        descripcion,
-        fecha_envio: { gte: twoMinutesAgo }
-      }
-    });
+    const dupQuery = await db.$queryRaw`
+      SELECT 1 FROM notificaciones n
+      WHERE n.titulo = ${titulo}
+        AND (n.descripcion IS NOT DISTINCT FROM ${descripcion})
+        AND (n.id_actividad IS NOT DISTINCT FROM ${Number.isInteger(idActividadRaw) ? idActividadRaw : null})
+        AND n.fecha_envio >= ${twoMinutesAgo}
+        AND (
+          (${idReceptorRaw} IS NOT NULL AND n.id_receptor = ${idReceptorRaw})
+          OR (${idReceptorRaw} IS NULL AND n.id_receptor IS NULL)
+        )
+      LIMIT 1
+    `;
 
-    if (existing) {
+    if (Array.isArray(dupQuery) && dupQuery.length > 0) {
       return null;
     }
   } catch (_e) {
-    // Si la comprobación falla por alguna razón, continuamos y permitimos la creación.
+    // si falla la comprobación de duplicados, continuamos
   }
 
-  return db.notificaciones.create({
-    data: {
-      id_usuario: idUsuario,
-      id_actividad: Number.isInteger(idActividadRaw) ? idActividadRaw : null,
-      tipo,
-      titulo,
-      descripcion,
-      ...(payload.leida == null ? {} : { leida: Boolean(payload.leida) })
+  // Inserción cruda usando las columnas reales: id_emisor, id_receptor
+  try {
+    const inserted = await db.$queryRaw`
+      INSERT INTO notificaciones (id_emisor, id_receptor, id_actividad, tipo, titulo, descripcion, leida)
+      VALUES (${idEmisorRaw}, ${idReceptorRaw}, ${Number.isInteger(idActividadRaw) ? idActividadRaw : null}, ${tipo}, ${titulo}, ${descripcion}, ${payload.leida == null ? false : Boolean(payload.leida)})
+      RETURNING *
+    `;
+
+    // $queryRaw returns an array for SELECT-like queries; for INSERT RETURNING may be array too
+    const row = Array.isArray(inserted) ? inserted[0] : inserted;
+    return row || null;
+  } catch (err) {
+    // fallback: intentar con Prisma ORM si la inserción cruda falla
+    try {
+      return await db.notificaciones.create({
+        data: {
+          id_usuario: idReceptorRaw || idEmisorRaw,
+          id_actividad: Number.isInteger(idActividadRaw) ? idActividadRaw : null,
+          tipo,
+          titulo,
+          descripcion,
+          ...(payload.leida == null ? {} : { leida: Boolean(payload.leida) })
+        }
+      });
+    } catch (err2) {
+      throw err; // regresa el error original para logging upstream
     }
-  });
+  }
 }
 
 async function createNotificationsForUsers(db = prisma, idEmisor, userIds = [], payload = {}) {
@@ -72,7 +102,7 @@ async function createNotificationsForUsers(db = prisma, idEmisor, userIds = [], 
 
   const notifications = [];
   for (const id_usuario of recipients) {
-    const created = await createNotificationRecord(db, { ...payload, id_usuario });
+    const created = await createNotificationRecord(db, { ...payload, id_receptor: id_usuario, id_emisor: idEmisor });
     if (created) {
       notifications.push(created);
     }
@@ -82,7 +112,7 @@ async function createNotificationsForUsers(db = prisma, idEmisor, userIds = [], 
 }
 
 async function createSystemNotification(db = prisma, idEmisor, payload = {}) {
-  return createNotificationRecord(db, { ...payload, id_usuario: idEmisor, tipo: "sistema" });
+  return createNotificationRecord(db, { ...payload, id_emisor: idEmisor, id_receptor: null, tipo: "sistema" });
 }
 
 async function notifyAdminUsers(db = prisma, idEmisor, payload = {}) {
