@@ -5,6 +5,7 @@ const {
   createSystemNotification,
   notifyAdminUsers
 } = require("../services/notificationService");
+const { emitNotificationCreated } = require("../realtime");
 const { getUserIdFromToken } = require("../middleware/auth");
 
 function parseNotificationId(value) {
@@ -324,6 +325,22 @@ async function createBroadcastNotification(req, res) {
       return res.status(500).json({ message: "Error creando notificacion" });
     }
 
+    emitNotificationCreated(serializeNotification({
+      id_notificacion: created.id_notificacion,
+      id_emisor: created.id_emisor,
+      id_receptor: created.id_receptor,
+      id_actividad: created.id_actividad,
+      tipo: created.tipo,
+      titulo: created.titulo,
+      descripcion: created.descripcion,
+      fecha_lectura: created.fecha_lectura,
+      fecha_envio: created.fecha_envio,
+      id_usuario: created.id_emisor,
+      usuario: created.id_emisor ? { id_usuario: created.id_emisor } : null,
+      receptor: created.id_receptor ? { id_usuario: created.id_receptor } : null,
+      actividad: created.id_actividad ? { id_actividad: created.id_actividad } : null
+    }), { broadcast: true });
+
     const mapped = {
       id_notificacion: created.id_notificacion,
       id_emisor: created.id_emisor,
@@ -383,6 +400,21 @@ async function createDirectNotification(req, res) {
     if (!created) {
       return res.status(500).json({ message: "Error creando notificacion" });
     }
+
+    emitNotificationCreated(serializeNotification({
+      id_notificacion: created.id_notificacion,
+      id_emisor: created.id_emisor,
+      id_receptor: created.id_receptor,
+      id_actividad: created.id_actividad,
+      tipo: created.tipo,
+      titulo: created.titulo,
+      descripcion: created.descripcion,
+      fecha_lectura: created.fecha_lectura,
+      fecha_envio: created.fecha_envio,
+      usuario: created.id_emisor ? { id_usuario: created.id_emisor } : null,
+      receptor: created.id_receptor ? { id_usuario: created.id_receptor } : null,
+      actividad: created.id_actividad ? { id_actividad: created.id_actividad } : null
+    }), { targetUserIds: [targetId] });
 
     const mapped = {
       id_notificacion: created.id_notificacion,

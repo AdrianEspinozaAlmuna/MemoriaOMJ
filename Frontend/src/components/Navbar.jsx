@@ -1,9 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Bell, BellRing, CheckCheck, ChevronRight, LoaderCircle, UserRound } from "lucide-react";
+import { Bell, BellRing, ChevronRight, LoaderCircle, LogOut, UserRound } from "lucide-react";
 import { Link, NavLink } from "react-router-dom";
 import { useLocation, useNavigate } from "react-router-dom";
-import api from "../services/api";
-import { getMyNotifications } from "../services/notificationsService";
+import { io } from "socket.io-client";
+import api, { API_BASE_URL } from "../services/api";
+import { getMyNotifications, normalizeNotification } from "../services/notificationsService";
+
+const SOCKET_BASE_URL = (import.meta.env.VITE_SOCKET_URL || API_BASE_URL).replace(/\/api\/?$/, "");
+const NOTIFICATION_BADGE_TTL_MS = 15 * 60 * 1000;
 
 function decodeToken(token) {
   if (!token) return null;
@@ -27,9 +31,12 @@ export default function Navbar() {
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 	const [profileUser, setProfileUser] = useState(null);
 	const [notificationItems, setNotificationItems] = useState([]);
+	const [recentNotificationIds, setRecentNotificationIds] = useState([]);
 	const [notificationsLoading, setNotificationsLoading] = useState(false);
 	const [notificationsError, setNotificationsError] = useState("");
 	const navRef = useRef(null);
+	const isMountedRef = useRef(true);
+	const notificationTimersRef = useRef(new Map());
 
   const token = localStorage.getItem("token");
   const user = decodeToken(token);
@@ -38,12 +45,59 @@ export default function Navbar() {
   const rol = mergedUser?.rol || null;
 	const displayName = mergedUser?.nombre || "Usuario";
 	const fullName = mergedUser?.nombre ? `${mergedUser.nombre} ${mergedUser.apellido || ""}`.trim() : displayName;
-	const notificationPreview = notificationItems.slice(0, 5);
+	const notificationPreview = notificationItems.slice(0, 3);
+	const notificationBadgeCount = recentNotificationIds.length;
+
+	async function loadNotifications() {
+		try {
+			setNotificationsLoading(true);
+			const items = await getMyNotifications();
+			if (!isMountedRef.current) return;
+			setNotificationItems(items);
+			setNotificationsError("");
+		} catch (_error) {
+			if (!isMountedRef.current) return;
+			setNotificationsError("No se pudieron cargar tus notificaciones.");
+		} finally {
+			if (isMountedRef.current) {
+				setNotificationsLoading(false);
+			}
+		}
+	}
+
+	function clearRecentNotificationTimers() {
+		for (const timerId of notificationTimersRef.current.values()) {
+			window.clearTimeout(timerId);
+		}
+		notificationTimersRef.current.clear();
+		setRecentNotificationIds([]);
+	}
+
+	function registerRecentNotification(notificationId) {
+		if (!notificationId) return;
+
+		setRecentNotificationIds(previousIds => {
+			if (previousIds.includes(notificationId)) {
+				return previousIds;
+			}
+
+			const timerId = window.setTimeout(() => {
+				notificationTimersRef.current.delete(notificationId);
+				setRecentNotificationIds(currentIds => currentIds.filter(currentId => currentId !== notificationId));
+			}, NOTIFICATION_BADGE_TTL_MS);
+
+			notificationTimersRef.current.set(notificationId, timerId);
+			return [...previousIds, notificationId];
+		});
+	}
 
 	useEffect(() => {
+		isMountedRef.current = true;
+
 		if (!isAuthenticated) {
 			setProfileUser(null);
 			setNotificationItems([]);
+			clearRecentNotificationTimers();
 			setNotificationsError("");
 			return;
 		}
@@ -71,6 +125,7 @@ export default function Navbar() {
 		loadProfile();
 
 		return () => {
+			isMountedRef.current = false;
 			mounted = false;
 		};
 	}, [isAuthenticated, user?.apellido]);
@@ -82,31 +137,43 @@ export default function Navbar() {
 
 		let mounted = true;
 
-		async function loadNotifications() {
-			try {
-				setNotificationsLoading(true);
-				const items = await getMyNotifications();
-
-				if (!mounted) return;
-
-				setNotificationItems(items);
-				setNotificationsError("");
-			} catch (_error) {
-				if (!mounted) return;
-				setNotificationsError("No se pudieron cargar tus notificaciones.");
-			} finally {
-				if (mounted) {
-					setNotificationsLoading(false);
-				}
-			}
-		}
-
 		loadNotifications();
 
 		return () => {
 			mounted = false;
 		};
 	}, [isAuthenticated]);
+
+	useEffect(() => {
+		if (!isAuthenticated) {
+			return undefined;
+		}
+
+		const socket = io(SOCKET_BASE_URL, {
+			auth: {
+				token: token ? `Bearer ${token}` : undefined
+			},
+			transports: ["websocket"]
+		});
+
+		function handleNotificationEvent(payload) {
+			const notification = normalizeNotification(payload);
+			if (!notification.id) {
+				return;
+			}
+
+			setNotificationItems(previousItems => [notification, ...previousItems.filter(item => item.id !== notification.id)].slice(0, 20));
+			registerRecentNotification(notification.id);
+		}
+
+		socket.on("notification:new", handleNotificationEvent);
+
+		return () => {
+			socket.off("notification:new", handleNotificationEvent);
+			socket.disconnect();
+			clearRecentNotificationTimers();
+		};
+	}, [isAuthenticated, token]);
 
 	useEffect(() => {
 		function handleDocumentClick(event) {
@@ -153,6 +220,7 @@ export default function Navbar() {
 		setMenuOpen(false);
 		setNotificationsOpen(false);
 		setMobileMenuOpen(false);
+		clearRecentNotificationTimers();
 		navigate("/login");
 	}
 
@@ -162,6 +230,44 @@ export default function Navbar() {
 
 	function getNotificationTypeLabel(item) {
 		return item?.themeLabel || item?.source || "Notificación";
+	}
+
+	function getNotificationDisplayTitle(item) {
+		if (item?.type === "sistema") {
+			return "Notificación de sistema";
+		}
+		// Para actividades
+		const title = item?.title || "";
+		if (title.toLowerCase().includes("rechaz")) {
+			return "Rechazo propuesta actividad";
+		}
+		if (title.toLowerCase().includes("aprobad")) {
+			return "Aprobación de propuesta actividad";
+		}
+		return title;
+	}
+
+	function getNotificationDisplayDetail(item) {
+		if (item?.type === "sistema") {
+			return item?.title || "";
+		}
+		// Para actividades, extraer el nombre de la actividad del título
+		const title = item?.title || "";
+		const colonIndex = title.indexOf(":");
+		if (colonIndex !== -1) {
+			return title.substring(colonIndex + 1).trim();
+		}
+		return item?.detail || "";
+	}
+
+	function getNotificationToneClass(item) {
+		return "bg-white";
+	}
+
+	function getNotificationSourceClass(item) {
+		return item?.type === "actividad"
+			? "bg-[#e8f7ec] text-[var(--primary)]"
+			: "bg-[#ffe8e8] text-[#d43c3c]";
 	}
 
 	async function openNotificationItem(item) {
@@ -278,13 +384,18 @@ export default function Navbar() {
 								aria-expanded={notificationsOpen}
 							>
 								<Bell aria-hidden="true" focusable="false" className="h-4 w-4 text-[#3e5b4c]" strokeWidth={1.8} />
+								{notificationBadgeCount > 0 && (
+									<span className="absolute -right-1 -top-1 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#e03a3a] px-1 text-[0.66rem] font-bold leading-none text-white shadow-[0_8px_16px_-10px_rgba(224,58,58,0.8)]">
+										{notificationBadgeCount > 9 ? "9+" : notificationBadgeCount}
+									</span>
+								)}
 							</button>
 
 								{notificationsOpen && (
-								<div className="absolute right-0 top-[calc(100%+0.4rem)] z-[21] w-[min(380px,82vw)] overflow-hidden rounded-[14px] border border-[#d7e4dc] bg-[color:var(--nav-bg,white)] shadow-[0_18px_32px_-24px_rgba(11,38,24,0.38)] max-[860px]:top-[calc(100%+0.5rem)] max-[860px]:w-[min(320px,calc(100vw-1.4rem))] max-[640px]:w-[min(300px,calc(100vw-1rem))]" role="dialog" aria-label="Notificaciones">
-									<div className="border-b border-[#e1ebe4] bg-[linear-gradient(180deg,#f8fbf9,rgba(248,251,249,0.9))] px-4 py-3">
+								<div className="absolute right-0 top-[calc(100%+0.4rem)] z-[21] w-[min(400px,82vw)] overflow-hidden rounded-[14px] border border-[#d7e4dc] bg-[color:var(--nav-bg,white)] shadow-[0_18px_32px_-24px_rgba(11,38,24,0.38)] max-[860px]:top-[calc(100%+0.5rem)] max-[860px]:w-[min(320px,calc(100vw-1.4rem))] max-[640px]:w-[min(300px,calc(100vw-1rem))]" role="dialog" aria-label="Notificaciones">
+									<div className="border-b border-[#e1ebe4] bg-[var(--gray-soft)] px-4 py-3">
 										<p className="m-0 text-[0.78rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Centro de alertas</p>
-										<p className="mt-1 m-0 text-[0.92rem] font-semibold text-[#244235]">Notificaciones recientes</p>
+										<p className="mt-1 m-0 text-[0.92rem] font-semibold text-[#244235]">Últimas 3 notificaciones</p>
 									</div>
 									<div className="grid gap-0 bg-white">
 										{notificationsError ? (
@@ -295,21 +406,31 @@ export default function Navbar() {
 											<div className="px-4 py-5 text-center text-[0.86rem] text-[#60716a]">No tienes notificaciones pendientes.</div>
 										) : (
 											notificationPreview.map(item => (
-												<button key={item.id} type="button" className="grid w-full grid-cols-[auto_1fr_auto] items-start gap-3 border-b border-[#e7eee9] px-4 py-3 text-left last:border-b-0 hover:bg-[#f6faf7]" onClick={() => openNotificationItem(item)}>
-													<span className="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#eef7f1] text-[var(--primary)]">
+												<button
+													key={item.id}
+													type="button"
+													className={`grid w-full grid-cols-[auto_1fr_auto] items-start gap-3 border-b border-[#e7eee9] px-4 py-3 text-left last:border-b-0 hover:bg-[#f6faf7] ${getNotificationToneClass(item)}`}
+													onClick={() => openNotificationItem(item)}
+												>
+													<div className="relative mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-[10px] bg-white text-[var(--primary)] shadow-[0_6px_14px_-12px_rgba(16,24,40,0.35)]">
 														<BellRing aria-hidden="true" focusable="false" className="h-4 w-4" strokeWidth={1.9} />
-													</span>
-													<div className="min-w-0">
-														<strong className="block text-[0.9rem] leading-tight text-[#214234]">{item.title}</strong>
-														<small className="mt-1 block text-[0.8rem] leading-relaxed text-[#60716a]">{item.detail}</small>
-														<small className="mt-1 block text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">{getNotificationTypeLabel(item)}</small>
+														{recentNotificationIds.includes(item.id) && (
+															<span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-[#15b76d]" title="Notificación reciente" />
+														)}
 													</div>
-													<span className="inline-flex shrink-0 rounded-md bg-[#eef8f1] px-2 py-1 text-[0.72rem] font-semibold text-[#5f7a6a]">{item.date}</span>
+													<div className="min-w-0 space-y-1">
+														<div className="flex flex-wrap items-center gap-2">
+															<strong className="block text-[0.92rem] font-semibold leading-tight text-[#1f3328]">{getNotificationDisplayTitle(item)}</strong>
+															<span className={`inline-flex rounded-sm px-2 py-1 text-[0.66rem] font-bold uppercase tracking-[0.08em] ${getNotificationSourceClass(item)}`}>{item.source}</span>
+														</div>
+														<div className="block truncate  text-[0.9rem] leading-tight text-[var(--text)]">Actividad: "{getNotificationDisplayDetail(item)}"</div>
+													</div>
+													<span className="inline-flex shrink-0 rounded-sm bg-[var(--gray)] px-2 py-1 text-[0.72rem] font-semibold text-[#5f7a6a]">{item.date}</span>
 												</button>
-										))
+											))
 									)}
 								</div>
-								<div className="border-t border-[#e7eee9] bg-[#fbfcfb] px-4 py-3">
+								<div className="border-t border-[#e7eee9] bg-[#fbfcfb] px-4 py-3 text-center">
 									<button type="button" className="inline-flex items-center gap-2 text-[0.84rem] font-semibold text-[var(--primary)] hover:text-[var(--primary-strong)]" onClick={() => {
 										setNotificationsOpen(false);
 										navigate("/user/notificaciones");
@@ -324,34 +445,23 @@ export default function Navbar() {
 					)}
 
 					{isAuthenticated && (
-						<div className="relative">
-							<button
-								type="button"
-								className="inline-flex h-[2.5rem] items-center gap-2 rounded-sm bg-[color:var(--bg)] px-2.5 text-[0.89rem] font-semibold leading-none text-[#2e4c3d] transition-colors duration-200 hover:bg-[var(--primary-hover)] focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(5,166,61,0.15)] max-[860px]:min-w-[2.15rem] max-[860px]:justify-center max-[860px]:px-0"
-								onClick={() => {
-									setMenuOpen(previous => !previous);
-									setNotificationsOpen(false);
-								}}
-								aria-expanded={menuOpen}
-								aria-haspopup="menu"
-							>
+						<div className="flex items-center gap-2 max-[1120px]:gap-1.5">
+							<div className="hidden min-[861px]:flex items-center gap-2 rounded-sm bg-[color:var(--bg)] px-2.5 py-2 text-[0.89rem] font-semibold leading-none text-[#2e4c3d]">
 								<UserRound aria-hidden="true" focusable="false" className="h-5 w-5 text-[#2e4c3d]" strokeWidth={1.5} />
-								<span className="max-w-[12rem] min-w-0 overflow-hidden max-[860px]:hidden">
+								<span className="max-w-[12rem] min-w-0 overflow-hidden">
 									<span className="block truncate">{fullName}</span>
 									{mergedUser?.mail && <span className="block truncate text-[0.72rem] font-normal text-[#60716a]">{mergedUser.mail}</span>}
 								</span>
+							</div>
+							<button
+								type="button"
+								className="inline-flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-sm border border-[#f2c8c8] bg-white text-[#d43c3c] transition-colors duration-200 hover:bg-[#fff1f1] hover:text-[#b92f2f] focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(212,60,60,0.14)]"
+								onClick={handleLogout}
+								aria-label="Cerrar sesion"
+								title="Cerrar sesion"
+							>
+								<LogOut aria-hidden="true" focusable="false" className="h-4 w-4" strokeWidth={1.9} />
 							</button>
-
-							{menuOpen && (
-								<div className="absolute right-0 top-[calc(100%+0.42rem)] z-[35] min-w-[10.5rem] rounded-[10px] border border-[#dce3ea] bg-[color:var(--nav-bg,white)] p-1.5 shadow-[0_12px_26px_-20px_rgba(18,32,25,0.42)] max-[860px]:top-[calc(100%+0.5rem)] max-[860px]:w-[min(320px,calc(100vw-1.4rem))] max-[640px]:w-[min(300px,calc(100vw-1rem))]" role="menu">
-									<div className="grid gap-1">
-										<button type="button" className="inline-flex w-full items-center gap-2 rounded-sm border border-[var(--reject-hover)] bg-white px-2.5 py-2 text-left text-[0.84rem] font-semibold text-[var(--reject-hover)] hover:bg-[#ffefed] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f1b9b0]/60" role="menuitem" onClick={handleLogout}>
-											<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b2f2f" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-											Cerrar sesion
-										</button>
-									</div>
-								</div>
-							)}
 						</div>
 					)}
 

@@ -1,6 +1,6 @@
 const { prisma } = require("../prisma/client");
 const { getUserIdFromToken } = require("../middleware/auth");
-const { emitActivityMessage } = require("../realtime");
+const { emitActivityMessage, emitNotificationCreated } = require("../realtime");
 const {
   notifyAdminUsers,
   notifyActivityOwner,
@@ -16,6 +16,14 @@ function parseActivityId(value) {
 function parseUserId(value) {
   const parsed = Number(value);
   return Number.isInteger(parsed) ? parsed : null;
+}
+
+function emitNotificationBatch(notifications = []) {
+  for (const notification of notifications) {
+    const targetUserId = Number(notification?.id_receptor ?? notification?.id_usuario);
+    const options = Number.isInteger(targetUserId) && targetUserId > 0 ? { targetUserIds: [targetUserId] } : { broadcast: true };
+    emitNotificationCreated(notification, options);
+  }
 }
 
 async function syncActivityStatuses(db = prisma) {
@@ -453,17 +461,19 @@ async function createActivity(req, res) {
         }
       });
 
-      await notifyAdminUsers(tx, idEncargado, {
+      const adminNotifications = await notifyAdminUsers(tx, idEncargado, {
         titulo: "Nueva propuesta de actividad",
         descripcion: `Se creó la actividad ${activityTitle} para revisión.`,
         tipo: "actividad",
         id_actividad: newActivity.id_actividad
       });
 
-      return newActivity;
+      return { newActivity, adminNotifications };
     });
 
-    return res.status(201).json({ ok: true, activity: serializeActivity(created, idEncargado) });
+    emitNotificationBatch(created.adminNotifications);
+
+    return res.status(201).json({ ok: true, activity: serializeActivity(created.newActivity, idEncargado) });
   } catch (error) {
     return res.status(500).json({ message: "Error creando actividad", detail: error.message });
   }
@@ -535,11 +545,13 @@ async function enrollInActivity(req, res) {
       }
     });
 
-    await notifyActivityOwner(prisma, idUsuario, idActividad, {
+    const ownerNotifications = await notifyActivityOwner(prisma, idUsuario, idActividad, {
       titulo: "Nueva inscripción en tu actividad",
       descripcion: "Un usuario se inscribió en tu actividad.",
       tipo: "actividad"
     });
+
+    emitNotificationBatch(ownerNotifications);
 
     return res.status(201).json({ ok: true, enrolled: true });
   } catch (error) {
@@ -597,11 +609,13 @@ async function cancelEnrollment(req, res) {
       }
     });
 
-    await notifyActivityOwner(prisma, idUsuario, idActividad, {
+    const ownerNotifications = await notifyActivityOwner(prisma, idUsuario, idActividad, {
       titulo: "Un participante abandonó la actividad",
       descripcion: "Un participante canceló su inscripción.",
       tipo: "actividad"
     });
+
+    emitNotificationBatch(ownerNotifications);
 
     return res.json({ ok: true, enrolled: false });
   } catch (error) {
@@ -667,12 +681,14 @@ async function markMyAttendance(req, res) {
       }
     });
 
-    await notifyUsersByIds(prisma, idUsuario, [idUsuario], {
+    const selfNotifications = await notifyUsersByIds(prisma, idUsuario, [idUsuario], {
       titulo: "Asistencia registrada",
       descripcion: "Tu asistencia fue registrada correctamente.",
       tipo: "actividad",
       id_actividad: idActividad
     });
+
+    emitNotificationBatch(selfNotifications);
 
     return res.json({ ok: true, message: "Asistencia registrada correctamente" });
   } catch (error) {
@@ -745,12 +761,14 @@ async function markParticipantAttendance(req, res) {
       }
     });
 
-    await notifyUsersByIds(prisma, idUsuario, [idUsuarioObjetivo], {
+    const targetNotifications = await notifyUsersByIds(prisma, idUsuario, [idUsuarioObjetivo], {
       titulo: "Asistencia registrada por un encargado",
       descripcion: "Tu asistencia fue registrada en la actividad.",
       tipo: "actividad",
       id_actividad: idActividad
     });
+
+    emitNotificationBatch(targetNotifications);
 
     return res.json({ ok: true, message: "Asistencia registrada correctamente" });
   } catch (error) {
@@ -816,12 +834,14 @@ async function removeParticipant(req, res) {
       }
     });
 
-    await notifyUsersByIds(prisma, idUsuario, [idUsuarioObjetivo], {
+    const removedNotifications = await notifyUsersByIds(prisma, idUsuario, [idUsuarioObjetivo], {
       titulo: "Has sido removido de una actividad",
       descripcion: "Un administrador o encargado te eliminó de la actividad.",
       tipo: "actividad",
       id_actividad: idActividad
     });
+
+    emitNotificationBatch(removedNotifications);
 
     return res.json({ ok: true, message: "Participante expulsado correctamente" });
   } catch (error) {
@@ -956,21 +976,37 @@ async function reviewActivity(req, res) {
       }
     });
 
-    if (action === "approve") {
-      await notifyActivityOwner(prisma, idUsuario, idActividad, {
-        titulo: "Tu actividad fue aprobada",
-        descripcion: "La actividad ya quedó habilitada para publicarse.",
-        tipo: "actividad"
-      });
-    } else {
-      const reason = String(req.body?.descripcion ?? req.body?.reason ?? "").trim();
-      const activityTitle = existing?.titulo || updated?.titulo || `#${idActividad}`;
-      await notifyActivityOwner(prisma, idUsuario, idActividad, {
-        titulo: `Rechazo de actividad ${activityTitle}`,
-        descripcion: reason || "La actividad no fue aprobada por administración.",
-        tipo: "actividad"
-      });
-    }
+    const activityTitle = existing?.titulo || updated?.titulo || `#${idActividad}`;
+    const reason = String(req.body?.descripcion ?? req.body?.reason ?? "").trim();
+
+    const ownerNotification = action === "approve"
+      ? {
+          titulo: `Actividad aprobada: ${activityTitle}`,
+          descripcion: "La actividad quedó habilitada para publicarse.",
+          tipo: "actividad"
+        }
+      : {
+          titulo: `Actividad rechazada: ${activityTitle}`,
+          descripcion: reason || "La actividad no fue aprobada por administración.",
+          tipo: "actividad"
+        };
+
+    const adminNotification = action === "approve"
+      ? {
+          titulo: `Aprobación de actividad: ${activityTitle}`,
+          descripcion: "La actividad fue aprobada por administración.",
+          tipo: "actividad"
+        }
+      : {
+          titulo: `Rechazo de actividad: ${activityTitle}`,
+          descripcion: reason || "La actividad no fue aprobada por administración.",
+          tipo: "actividad"
+        };
+
+    const ownerNotifications = await notifyActivityOwner(prisma, idUsuario, idActividad, ownerNotification);
+    const adminNotifications = await notifyAdminUsers(prisma, idUsuario, adminNotification);
+
+    emitNotificationBatch([...ownerNotifications, ...adminNotifications]);
 
     if (action === "approve") {
       await syncActivityStatuses();

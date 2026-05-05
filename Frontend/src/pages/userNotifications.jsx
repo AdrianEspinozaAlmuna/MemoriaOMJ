@@ -4,7 +4,6 @@ import { getMyNotifications } from "../services/notificationsService";
 
 const filters = [
   { key: "all", label: "Todas" },
-  { key: "unread", label: "No leidas" },
   { key: "review", label: "Aprobación / rechazo" },
   { key: "activity-change", label: "Cambios de actividad" },
   { key: "general", label: "Generales" }
@@ -26,7 +25,6 @@ export default function UserNotifications() {
 
   const visibleNotifications = useMemo(() => {
     if (filter === "all") return notifications;
-    if (filter === "unread") return notifications.filter(item => !item.read);
     return notifications.filter(item => item.themeKey === filter);
   }, [filter, notifications]);
 

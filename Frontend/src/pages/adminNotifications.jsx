@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { BellRing, LoaderCircle, Megaphone, RefreshCw, Send, ShieldAlert } from "lucide-react";
+import { BellRing, LoaderCircle, Megaphone, RefreshCw, Send } from "lucide-react";
 import Modal from "../components/Modal";
-import { createBroadcastNotification, getAdminNotifications, markAllNotificationsAsRead } from "../services/notificationsService";
+import { createBroadcastNotification, getAdminNotifications } from "../services/notificationsService";
 
 const filters = [
 	{ key: "all", label: "Todas" },
@@ -11,17 +11,15 @@ const filters = [
 ];
 
 function pillClass(themeKey, read) {
-	const base = read ? "bg-[#eef3ef] text-[#5d7165]" : "bg-[#eef8f1] text-[#2e5a45]";
-
 	if (themeKey === "review") {
-		return read ? "bg-[#f3eff8] text-[#6f5a86]" : "bg-[#efe7fb] text-[#5c3f8e]";
+		return "bg-[#efe7fb] text-[#5c3f8e]";
 	}
 
 	if (themeKey === "activity-change") {
-		return read ? "bg-[#eff4fb] text-[#5a6d8a]" : "bg-[#e8f0ff] text-[#294b86]";
+		return "bg-[#e8f0ff] text-[#294b86]";
 	}
 
-	return base;
+	return "bg-[#eef8f1] text-[#2e5a45]";
 }
 
 export default function AdminNotifications() {
@@ -43,8 +41,6 @@ export default function AdminNotifications() {
 
 		return notifications.filter(item => item.themeKey === filter);
 	}, [filter, notifications]);
-
-	const unreadCount = useMemo(() => notifications.filter(item => !item.read).length, [notifications]);
 
 	async function loadNotifications() {
 		try {
@@ -98,18 +94,6 @@ export default function AdminNotifications() {
 		}
 	}
 
-	async function handleMarkAllRead() {
-		try {
-			setRefreshing(true);
-			await markAllNotificationsAsRead();
-			await loadNotifications();
-		} catch (markError) {
-			setActionError(markError?.response?.data?.message || "No se pudieron marcar como leidas.");
-		} finally {
-			setRefreshing(false);
-		}
-	}
-
 	async function publishNotification() {
 		if (!title.trim()) {
 			setError("Ingresa un titulo para la notificacion.");
@@ -146,10 +130,6 @@ export default function AdminNotifications() {
 				</div>
 
 				<div className="flex flex-wrap items-center gap-2">
-					 {/*<button type="button" className="inline-flex items-center gap-2 rounded-sm border border-[#cfded5] bg-white px-3.5 py-2 text-[0.9rem] font-semibold text-[var(--text)] hover:bg-[#f6faf7]" onClick={handleMarkAllRead} disabled={refreshing || unreadCount === 0}>
-						<ShieldAlert className="h-4 w-4" strokeWidth={1.9} />
-						Marcar todas leidas
-					</button>*/}
 					<button type="button" className="inline-flex items-center gap-2 rounded-sm border border-[#cfded5] bg-white px-3.5 py-2 text-[0.9rem] font-semibold text-[var(--text)] hover:bg-[#f6faf7]" onClick={handleRefresh} disabled={refreshing}>
 						{refreshing ? <LoaderCircle className="h-4 w-4 animate-spin" strokeWidth={1.9} /> : <RefreshCw className="h-4 w-4" strokeWidth={1.9} />}
 						Actualizar
@@ -159,21 +139,7 @@ export default function AdminNotifications() {
 						Publicar aviso
 					</button>
 				</div>
-			</header> 
-			{/*<section className="grid gap-4 sm:grid-cols-3">
-				<article className="rounded-xl border border-[#d8e6dd] bg-white p-4 shadow-sm">
-					<p className="m-0 text-[0.8rem] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">Total</p>
-					<p className="mt-2 text-[1.8rem] font-bold text-[var(--text)]">{notifications.length}</p>
-				</article>
-				<article className="rounded-xl border border-[#d8e6dd] bg-white p-4 shadow-sm">
-					<p className="m-0 text-[0.8rem] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">No leidas</p>
-					<p className="mt-2 text-[1.8rem] font-bold text-[var(--text)]">{unreadCount}</p>
-				</article>
-				<article className="rounded-xl border border-[#d8e6dd] bg-white p-4 shadow-sm">
-					<p className="m-0 text-[0.8rem] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">Generales publicadas</p>
-					<p className="mt-2 text-[1.8rem] font-bold text-[var(--text)]">{notifications.filter(item => item.tipo === "sistema").length}</p>
-				</article>
-			</section>*/}
+			</header>
 
 			<section className="rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-6 shadow-sm">
 				<div className="mb-4 flex items-center justify-between gap-3 max-[760px]:flex-col max-[760px]:items-start">
@@ -213,7 +179,7 @@ export default function AdminNotifications() {
 				) : (
 					<div className="grid gap-3.5">
 						{filteredNotifications.map(item => (
-							<article key={item.id} className={`grid gap-4 rounded-[14px] border px-4 py-4 shadow-[0_8px_18px_-20px_rgba(16,24,40,0.28)] lg:grid-cols-[auto_1fr_auto] lg:items-start ${item.read ? "border-[#d8e6dd] bg-white" : "border-[color:rgba(5,166,61,0.25)] bg-[#fafffb]"}`}>
+							<article key={item.id} className="grid gap-4 rounded-[14px] border border-[#d8e6dd] bg-white px-4 py-4 shadow-[0_8px_18px_-20px_rgba(16,24,40,0.28)] lg:grid-cols-[auto_1fr_auto] lg:items-start">
 								<span className="inline-flex h-11 w-11 items-center justify-center rounded-[12px] bg-[var(--primary)] text-white shadow-[0_10px_22px_-18px_rgba(5,166,61,0.45)]">
 									<BellRing className="h-4 w-4" strokeWidth={1.9} />
 								</span>
@@ -221,8 +187,7 @@ export default function AdminNotifications() {
 								<div className="min-w-0 space-y-2">
 									<div className="flex flex-wrap items-center gap-2">
 										<p className="m-0 text-[0.78rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">{item.themeLabel}</p>
-										<span className={`inline-flex rounded-md px-2 py-1 text-[0.74rem] font-semibold ${pillClass(item.themeKey, item.read)}`}>{item.source}</span>
-										{!item.read && <span className="inline-flex rounded-md bg-[#fff2e8] px-2 py-1 text-[0.74rem] font-semibold text-[#9a5a1a]">Nueva</span>}
+										<span className={`inline-flex rounded-md px-2 py-1 text-[0.74rem] font-semibold ${pillClass(item.themeKey)}`}>{item.source}</span>
 									</div>
 									<h3 className="m-0 text-[1rem] font-semibold leading-tight text-[var(--text)]">{item.title}</h3>
 									<p className="m-0 text-[0.9rem] leading-relaxed text-[var(--text-muted)]">{item.detail}</p>
@@ -231,9 +196,6 @@ export default function AdminNotifications() {
 
 								<div className="flex flex-col items-end gap-2 self-start max-[760px]:items-start lg:pt-1">
 									<span className="inline-flex rounded-md bg-[#eef8f1] px-2 py-1 text-[0.75rem] font-semibold text-[#2e5a45]">{item.date}</span>
-									<span className={`inline-flex rounded-md px-2 py-1 text-[0.72rem] font-semibold ${item.read ? "bg-[#eef3ef] text-[#5f7168]" : "bg-[#e8f7ec] text-[#2e5a45]"}`}>
-										{item.read ? "Leida" : "Pendiente"}
-									</span>
 									{item.themeKey === "general" && (
 										<span className="inline-flex items-center gap-1 rounded-md bg-[#edf1ff] px-2 py-1 text-[0.72rem] font-semibold text-[#39559a]">
 											<Megaphone className="h-3.5 w-3.5" strokeWidth={1.9} />

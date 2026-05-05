@@ -11,6 +11,10 @@ function getRoomName(activityId) {
   return `activity:${activityId}`;
 }
 
+function getUserRoomName(userId) {
+  return `user:${userId}`;
+}
+
 function extractToken(socket) {
   const authToken = socket.handshake?.auth?.token;
   if (authToken) return String(authToken).replace(/^Bearer\s+/i, "");
@@ -74,6 +78,11 @@ function initRealtimeServer(httpServer) {
   });
 
   io.on("connection", socket => {
+    const userId = getUserIdFromToken(socket.data.user);
+    if (userId) {
+      socket.join(getUserRoomName(userId));
+    }
+
     socket.on("activity:join", async (payload = {}, ack) => {
       try {
         const activityId = Number(payload?.activityId ?? payload?.id_actividad);
@@ -105,7 +114,25 @@ function emitActivityMessage(activityId, message) {
   ioInstance.to(getRoomName(activityId)).emit("activity:message:new", message);
 }
 
+function emitNotificationCreated(notification, options = {}) {
+  if (!ioInstance || !notification) return;
+
+  const targetUserIds = Array.isArray(options.targetUserIds)
+    ? options.targetUserIds.map(value => Number(value)).filter(value => Number.isInteger(value) && value > 0)
+    : [];
+
+  if (options.broadcast || targetUserIds.length === 0) {
+    ioInstance.emit("notification:new", notification);
+    return;
+  }
+
+  for (const targetUserId of targetUserIds) {
+    ioInstance.to(getUserRoomName(targetUserId)).emit("notification:new", notification);
+  }
+}
+
 module.exports = {
   initRealtimeServer,
-  emitActivityMessage
+  emitActivityMessage,
+  emitNotificationCreated
 };
