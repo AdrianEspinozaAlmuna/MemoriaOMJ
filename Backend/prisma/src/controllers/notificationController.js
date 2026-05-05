@@ -50,6 +50,7 @@ async function serializeNotificationWithRelations(notification) {
 }
 
 function serializeNotification(notification) {
+  const read = Boolean(notification?.leida ?? notification?.read ?? false);
   return {
     id: notification.id_notificacion,
     id_notificacion: notification.id_notificacion,
@@ -63,10 +64,10 @@ function serializeNotification(notification) {
     titulo: notification.titulo,
     description: notification.descripcion,
     descripcion: notification.descripcion,
-    read: notification.leida,
-    leida: notification.leida,
-    readAt: notification.fecha_lectura,
-    fecha_lectura: notification.fecha_lectura,
+    read,
+    leida: read,
+    readAt: notification.fecha_lectura ?? notification.readAt ?? null,
+    fecha_lectura: notification.fecha_lectura ?? notification.readAt ?? null,
     sentAt: notification.fecha_envio,
     fecha_envio: notification.fecha_envio,
     sender: null,
@@ -100,9 +101,7 @@ async function listMyNotifications(req, res) {
   }
 
   try {
-    const whereClause = unreadOnly
-      ? `WHERE (n.id_receptor = ${idUsuario} OR n.id_receptor IS NULL) AND n.leida = false`
-      : `WHERE (n.id_receptor = ${idUsuario} OR n.id_receptor IS NULL)`;
+    const whereClause = `WHERE (n.id_receptor = ${idUsuario} OR n.id_receptor IS NULL)`;
 
     const rows = await prisma.$queryRawUnsafe(`
       SELECT n.*,
@@ -126,7 +125,6 @@ async function listMyNotifications(req, res) {
       tipo: r.tipo,
       titulo: r.titulo,
       descripcion: r.descripcion,
-      leida: r.leida,
       fecha_lectura: r.fecha_lectura,
       fecha_envio: r.fecha_envio,
       usuario: r.emisor_id ? { id_usuario: r.emisor_id, nombre: r.emisor_nombre, apellido: r.emisor_apellido, mail: r.emisor_mail, rol: r.emisor_rol } : null,
@@ -136,6 +134,7 @@ async function listMyNotifications(req, res) {
 
     return res.json({ notifications: mapped.map(serializeNotification) });
   } catch (error) {
+    console.error("[notifications] listMyNotifications failed:", error);
     return res.status(500).json({ message: "Error obteniendo notificaciones", detail: error.message });
   }
 }
@@ -155,7 +154,6 @@ async function listAdminNotifications(req, res) {
   try {
     // Consulta cruda para admin: filtra por tipo, actividad o receptor si se piden.
     const conditions = [];
-    if (unreadOnly) conditions.push("n.leida = false");
     if (tipo && ["sistema", "actividad"].includes(tipo)) conditions.push(`n.tipo = '${tipo}'`);
     if (Number.isInteger(idActividad)) conditions.push(`n.id_actividad = ${idActividad}`);
     if (Number.isInteger(idReceptorFiltro)) conditions.push(`n.id_receptor = ${idReceptorFiltro}`);
@@ -185,7 +183,6 @@ async function listAdminNotifications(req, res) {
       tipo: r.tipo,
       titulo: r.titulo,
       descripcion: r.descripcion,
-      leida: r.leida,
       fecha_lectura: r.fecha_lectura,
       fecha_envio: r.fecha_envio,
       usuario: r.emisor_id ? { id_usuario: r.emisor_id, nombre: r.emisor_nombre, apellido: r.emisor_apellido, mail: r.emisor_mail, rol: r.emisor_rol } : null,
@@ -195,6 +192,7 @@ async function listAdminNotifications(req, res) {
 
     return res.json({ notifications: mapped.map(serializeNotification) });
   } catch (error) {
+    console.error("[notifications] listAdminNotifications failed:", error);
     return res.status(500).json({ message: "Error obteniendo notificaciones admin", detail: error.message });
   }
 }
@@ -207,12 +205,9 @@ async function countUnreadNotifications(req, res) {
   }
 
   try {
-    const row = await prisma.$queryRawUnsafe(
-      `SELECT COUNT(*)::int as cnt FROM notificaciones n WHERE n.leida = false AND (n.id_receptor = ${idUsuario} OR n.id_receptor IS NULL)`
-    );
-    const unreadCount = Array.isArray(row) ? Number(row[0]?.cnt ?? 0) : Number(row?.cnt ?? 0);
-    return res.json({ unreadCount });
+    return res.json({ unreadCount: 0 });
   } catch (error) {
+    console.error("[notifications] countUnreadNotifications failed:", error);
     return res.status(500).json({ message: "Error obteniendo contador de notificaciones", detail: error.message });
   }
 }
@@ -246,9 +241,7 @@ async function markNotificationAsRead(req, res) {
       return res.status(404).json({ message: "Notificacion no encontrada" });
     }
 
-    await prisma.$executeRaw`
-      UPDATE notificaciones SET leida = true, fecha_lectura = COALESCE(fecha_lectura, NOW()) WHERE id_notificacion = ${idNotificacion}
-    `;
+    // La tabla ya no persiste estado de lectura; mantenemos la ruta compatible sin mutar datos.
 
     // read back the updated row
     const updatedRows = await prisma.$queryRawUnsafe(
@@ -271,7 +264,6 @@ async function markNotificationAsRead(req, res) {
       tipo: updated.tipo,
       titulo: updated.titulo,
       descripcion: updated.descripcion,
-      leida: updated.leida,
       fecha_lectura: updated.fecha_lectura,
       fecha_envio: updated.fecha_envio,
       usuario: updated.emisor_id ? { id_usuario: updated.emisor_id, nombre: updated.emisor_nombre, apellido: updated.emisor_apellido, mail: updated.emisor_mail, rol: updated.emisor_rol } : null,
@@ -281,6 +273,7 @@ async function markNotificationAsRead(req, res) {
 
     return res.json({ ok: true, notification: serializeNotification(mapped) });
   } catch (error) {
+    console.error("[notifications] markNotificationAsRead failed:", error);
     return res.status(500).json({ message: "Error marcando notificacion como leida", detail: error.message });
   }
 }
@@ -293,13 +286,9 @@ async function markAllNotificationsAsRead(req, res) {
   }
 
   try {
-    const result = await prisma.$executeRaw`
-      UPDATE notificaciones SET leida = true, fecha_lectura = NOW() WHERE leida = false AND (id_receptor = ${idUsuario} OR id_receptor IS NULL)
-    `;
-    // $executeRaw devuelve número de filas afectadas en algunos drivers; si no, devolvemos 0 por seguridad
-    const updatedCount = typeof result === 'number' ? result : 0;
-    return res.json({ ok: true, updatedCount });
+    return res.json({ ok: true, updatedCount: 0 });
   } catch (error) {
+    console.error("[notifications] markAllNotificationsAsRead failed:", error);
     return res.status(500).json({ message: "Error marcando notificaciones como leidas", detail: error.message });
   }
 }
@@ -343,7 +332,6 @@ async function createBroadcastNotification(req, res) {
       tipo: created.tipo,
       titulo: created.titulo,
       descripcion: created.descripcion,
-      leida: created.leida,
       fecha_lectura: created.fecha_lectura,
       fecha_envio: created.fecha_envio,
       id_usuario: created.id_emisor,
@@ -354,6 +342,7 @@ async function createBroadcastNotification(req, res) {
 
     return res.status(201).json({ ok: true, updatedCount: 1, notification: serializeNotification(mapped) });
   } catch (error) {
+    console.error("[notifications] createBroadcastNotification failed:", error);
     return res.status(500).json({ message: "Error creando notificacion", detail: error.message });
   }
 }
@@ -403,7 +392,6 @@ async function createDirectNotification(req, res) {
       tipo: created.tipo,
       titulo: created.titulo,
       descripcion: created.descripcion,
-      leida: created.leida,
       fecha_lectura: created.fecha_lectura,
       fecha_envio: created.fecha_envio,
       usuario: created.id_emisor ? { id_usuario: created.id_emisor } : null,
@@ -413,6 +401,7 @@ async function createDirectNotification(req, res) {
 
     return res.status(201).json({ ok: true, notification: serializeNotification(mapped) });
   } catch (error) {
+    console.error("[notifications] createDirectNotification failed:", error);
     return res.status(500).json({ message: "Error creando notificacion", detail: error.message });
   }
 }

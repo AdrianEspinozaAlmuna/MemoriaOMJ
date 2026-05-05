@@ -15,6 +15,26 @@ function normalizeUserId(payload = {}) {
   return Number.isInteger(userId) && userId > 0 ? userId : null;
 }
 
+function sqlLiteral(value) {
+  if (value === null || value === undefined) {
+    return "NULL";
+  }
+
+  if (value instanceof Date) {
+    return `'${value.toISOString().replace(/'/g, "''")}'`;
+  }
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+
+  if (typeof value === "boolean") {
+    return value ? "TRUE" : "FALSE";
+  }
+
+  return `'${String(value).replace(/'/g, "''")}'`;
+}
+
 async function createNotificationRecord(db = prisma, payload = {}) {
   // receptor (destinatario) — puede venir como id_usuario o id_receptor
   const idReceptor = payload.id_receptor == null ? normalizeUserId(payload) : Number(payload.id_receptor);
@@ -44,18 +64,18 @@ async function createNotificationRecord(db = prisma, payload = {}) {
   // campos clave en los últimos 2 minutos, no crearla de nuevo.
   try {
     const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
-    const dupQuery = await db.$queryRaw`
+    const dupSql = `
       SELECT 1 FROM notificaciones n
-      WHERE n.titulo = ${titulo}
-        AND (n.descripcion IS NOT DISTINCT FROM ${descripcion})
-        AND (n.id_actividad IS NOT DISTINCT FROM ${Number.isInteger(idActividadRaw) ? idActividadRaw : null})
-        AND n.fecha_envio >= ${twoMinutesAgo}
+      WHERE n.titulo = ${sqlLiteral(titulo)}
+        AND (n.descripcion IS NOT DISTINCT FROM ${sqlLiteral(descripcion)})
+        AND (n.id_actividad IS NOT DISTINCT FROM ${sqlLiteral(Number.isInteger(idActividadRaw) ? idActividadRaw : null)})
+        AND n.fecha_envio >= ${sqlLiteral(twoMinutesAgo)}
         AND (
-          (${idReceptorRaw} IS NOT NULL AND n.id_receptor = ${idReceptorRaw})
-          OR (${idReceptorRaw} IS NULL AND n.id_receptor IS NULL)
+          (${idReceptorRaw !== null ? `n.id_receptor = ${sqlLiteral(idReceptorRaw)}` : "n.id_receptor IS NULL"})
         )
       LIMIT 1
     `;
+    const dupQuery = await db.$queryRawUnsafe(dupSql);
 
     if (Array.isArray(dupQuery) && dupQuery.length > 0) {
       return null;
@@ -66,13 +86,20 @@ async function createNotificationRecord(db = prisma, payload = {}) {
 
   // Inserción cruda usando las columnas reales: id_emisor, id_receptor
   try {
-    const inserted = await db.$queryRaw`
-      INSERT INTO notificaciones (id_emisor, id_receptor, id_actividad, tipo, titulo, descripcion, leida)
-      VALUES (${idEmisorRaw}, ${idReceptorRaw}, ${Number.isInteger(idActividadRaw) ? idActividadRaw : null}, ${tipo}, ${titulo}, ${descripcion}, ${payload.leida == null ? false : Boolean(payload.leida)})
+    const insertSql = `
+      INSERT INTO notificaciones (id_emisor, id_receptor, id_actividad, tipo, titulo, descripcion)
+      VALUES (
+        ${sqlLiteral(idEmisorRaw)},
+        ${sqlLiteral(idReceptorRaw)},
+        ${sqlLiteral(Number.isInteger(idActividadRaw) ? idActividadRaw : null)},
+        ${sqlLiteral(tipo)},
+        ${sqlLiteral(titulo)},
+        ${sqlLiteral(descripcion)}
+      )
       RETURNING *
     `;
+    const inserted = await db.$queryRawUnsafe(insertSql);
 
-    // $queryRaw returns an array for SELECT-like queries; for INSERT RETURNING may be array too
     const row = Array.isArray(inserted) ? inserted[0] : inserted;
     return row || null;
   } catch (err) {
@@ -84,8 +111,7 @@ async function createNotificationRecord(db = prisma, payload = {}) {
           id_actividad: Number.isInteger(idActividadRaw) ? idActividadRaw : null,
           tipo,
           titulo,
-          descripcion,
-          ...(payload.leida == null ? {} : { leida: Boolean(payload.leida) })
+          descripcion
         }
       });
     } catch (err2) {
