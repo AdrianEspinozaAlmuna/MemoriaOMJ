@@ -1,7 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { BellRing, LoaderCircle, Megaphone, RefreshCw, Send } from "lucide-react";
+import { io } from "socket.io-client";
 import Modal from "../components/Modal";
 import { createBroadcastNotification, getAdminNotifications } from "../services/notificationsService";
+import { API_BASE_URL } from "../services/api";
+
+const SOCKET_BASE_URL = (import.meta.env.VITE_SOCKET_URL || API_BASE_URL).replace(/\/api\/?$/, "");
 
 const filters = [
 	{ key: "all", label: "Todas" },
@@ -94,6 +98,29 @@ export default function AdminNotifications() {
 		};
 	}, []);
 
+		useEffect(() => {
+			const token = localStorage.getItem("token");
+			if (!token) return undefined;
+
+			const socket = io(SOCKET_BASE_URL, {
+				auth: { token: `Bearer ${token}` },
+				transports: ["websocket"]
+			});
+
+			function handleNotificationEvent() {
+				loadNotifications().catch(() => {
+					// Mantener la última vista estable si falla el refresh en vivo.
+				});
+			}
+
+			socket.on("notification:new", handleNotificationEvent);
+
+			return () => {
+				socket.off("notification:new", handleNotificationEvent);
+				socket.disconnect();
+			};
+		}, []);
+
 	function openModal() {
 		setError("");
 		setTitle("");
@@ -134,6 +161,8 @@ export default function AdminNotifications() {
 				tipo: "sistema"
 			});
 			await loadNotifications();
+			// Cerrar modal tras publicación exitosa
+			closeModal();
 		} catch (submitError) {
 			setError(submitError?.response?.data?.message || "No se pudo publicar la notificacion.");
 		} finally {

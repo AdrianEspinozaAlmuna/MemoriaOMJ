@@ -142,7 +142,7 @@ async function createSystemNotification(db = prisma, idEmisor, payload = {}) {
 }
 
 async function notifyAdminUsers(db = prisma, idEmisor, payload = {}) {
-  const admins = await db.usuario.findMany({
+  const admin = await db.usuario.findFirst({
     where: {
       rol: "admin",
       estado: true
@@ -151,17 +151,18 @@ async function notifyAdminUsers(db = prisma, idEmisor, payload = {}) {
     select: { id_usuario: true }
   });
 
-  // Use a single shared admin recipient so the notification is stored once
-  // and then broadcast to all admins in realtime.
-  const sharedAdminId = admins[0]?.id_usuario ?? null;
-  const recipientIds = sharedAdminId ? [sharedAdminId] : [];
+  if (!admin?.id_usuario) {
+    return [];
+  }
 
-  return createNotificationsForUsers(
-    db,
-    idEmisor,
-    recipientIds,
-    { ...payload, tipo: payload.tipo || "actividad" }
-  );
+  const created = await createNotificationRecord(db, {
+    ...payload,
+    id_emisor: idEmisor,
+    id_receptor: admin.id_usuario,
+    tipo: payload.tipo || "actividad"
+  });
+
+  return created ? [created] : [];
 }
 
 async function notifyUsersByIds(db = prisma, idEmisor, userIds = [], payload = {}) {

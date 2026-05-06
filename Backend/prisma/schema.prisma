@@ -124,6 +124,7 @@ enum estado_actividad {
   programada
   en_curso
   finalizada
+  rechazada
   cancelada
 }
 

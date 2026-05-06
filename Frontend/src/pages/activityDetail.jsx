@@ -75,6 +75,7 @@ const ratingsData = {
 function getStatusBadge(status) {
 	if (status === "finalizada") return { label: "Finalizada", className: "bg-[#e7f5ec] text-[#177945]" };
 	if (status === "en_curso") return { label: "En curso", className: "bg-[#e9f3ff] text-[#1d4f91]" };
+	if (status === "rechazada") return { label: "Rechazada", className: "bg-[#fff1ed] text-[#8a3b2a]" };
 	if (status === "cancelada") return { label: "Cancelada", className: "bg-[#fff1ed] text-[#8a3b2a]" };
 	if (status === "pendiente") return { label: "Pendiente", className: "bg-[#fff3de] text-[#a86612]" };
 	return { label: "Programada", className: "bg-[#ecf7f0] text-[#1f6e45]" };
@@ -257,7 +258,7 @@ export default function ActivityDetail() {
 		: 0;
 	const isFinished = activity?.status === "finalizada";
 	const isInProgress = activity?.status === "en_curso";
-	const isCanceled = activity?.status === "cancelada";
+	const isCanceled = activity?.status === "cancelada" || activity?.status === "rechazada";
 	const isActivityManager = currentUserId !== null && Number(activity?.id_encargado) === currentUserId;
 	const canManageActivity = role === "admin" || isActivityManager;
 	const currentParticipant = useMemo(() => participants.find(item => Number(item.id) === Number(currentUserId)) || null, [participants, currentUserId]);

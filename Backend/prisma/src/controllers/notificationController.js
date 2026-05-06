@@ -153,12 +153,34 @@ async function listAdminNotifications(req, res) {
   }
 
   try {
+    const sharedAdmin = await prisma.usuario.findFirst({
+      where: { rol: "admin", estado: true },
+      orderBy: { id_usuario: "asc" },
+      select: { id_usuario: true }
+    });
+
+    if (!sharedAdmin?.id_usuario) {
+      return res.json({ notifications: [] });
+    }
+
+    if (Number.isInteger(idReceptorFiltro) && idReceptorFiltro !== sharedAdmin.id_usuario) {
+      return res.json({ notifications: [] });
+    }
+
     // Consulta cruda para admin: filtra por tipo, actividad o receptor si se piden.
     const conditions = [];
     if (tipo && ["sistema", "actividad"].includes(tipo)) conditions.push(`n.tipo = '${tipo}'`);
     if (Number.isInteger(idActividad)) conditions.push(`n.id_actividad = ${idActividad}`);
-    if (Number.isInteger(idReceptorFiltro)) conditions.push(`n.id_receptor = ${idReceptorFiltro}`);
     if (Number.isInteger(idEmisorFiltro)) conditions.push(`n.id_emisor = ${idEmisorFiltro}`);
+    conditions.push(`(n.id_receptor = ${sharedAdmin.id_usuario} OR n.id_receptor IS NULL)`);
+    conditions.push(`NOT (
+      n.tipo = 'actividad' AND (
+        n.titulo ILIKE 'Aprobación de actividad:%' OR
+        n.titulo ILIKE 'Rechazo de actividad:%' OR
+        n.titulo ILIKE 'Aprobación de propuesta actividad%' OR
+        n.titulo ILIKE 'Rechazo propuesta actividad%'
+      )
+    )`);
     const whereSql = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
     const sql = `

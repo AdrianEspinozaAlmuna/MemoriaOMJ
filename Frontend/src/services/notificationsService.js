@@ -118,7 +118,22 @@ function normalizeNotification(notification = {}) {
 
 function normalizeList(payload) {
   const items = Array.isArray(payload) ? payload : Array.isArray(payload?.notifications) ? payload.notifications : [];
-  return items.map(normalizeNotification);
+  const seen = new Set();
+  const normalized = [];
+
+  for (const item of items.map(normalizeNotification)) {
+    const timeKey = item?.sentAt ? new Date(item.sentAt).toISOString().slice(0, 19) : "no-time";
+    const duplicateKey = [item?.receiverId ?? item?.id_receptor ?? "", item?.activityId ?? item?.id_actividad ?? "", item?.type ?? "", item?.title ?? "", item?.descripcion ?? "", timeKey].join("|");
+
+    if (seen.has(duplicateKey)) {
+      continue;
+    }
+
+    seen.add(duplicateKey);
+    normalized.push(item);
+  }
+
+  return normalized;
 }
 
 export async function getMyNotifications(params = {}) {

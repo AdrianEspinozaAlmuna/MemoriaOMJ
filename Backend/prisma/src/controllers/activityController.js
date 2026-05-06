@@ -98,6 +98,7 @@ function mapEstadoToUi(estado, membershipRole) {
   if (membershipRole === "participante") return "inscrito";
   if (estado === "pendiente") return "pendiente";
   if (estado === "cancelada") return "cancelada";
+  if (estado === "rechazada") return "rechazada";
   return "disponible";
 }
 
@@ -954,64 +955,80 @@ async function reviewActivity(req, res) {
       return res.status(404).json({ message: "Actividad no encontrada" });
     }
 
-    const updated = await prisma.actividad.update({
-      where: { id_actividad: idActividad },
-      data:
-        action === "approve"
-          ? {
-              aprobado: true,
-              estado: existing.estado === "pendiente" ? "programada" : existing.estado
-            }
-          : {
-              aprobado: false,
-              estado: "cancelada"
-            },
-      include: {
-        usuario: { select: { id_usuario: true, nombre: true, apellido: true } },
-        _count: {
-          select: {
-            actividad_participantes: {
-              where: { rol: "participante" }
+    let updated;
+    try {
+      updated = await prisma.actividad.update({
+        where: { id_actividad: idActividad },
+        data:
+          action === "approve"
+            ? {
+                aprobado: true,
+                estado: existing.estado === "pendiente" ? "programada" : existing.estado
+              }
+            : {
+                aprobado: false,
+                estado: "rechazada"
+              },
+        include: {
+          usuario: { select: { id_usuario: true, nombre: true, apellido: true } },
+          _count: {
+            select: {
+              actividad_participantes: {
+                where: { rol: "participante" }
+              }
             }
           }
         }
+      });
+    } catch (err) {
+      // Si la base de datos no contiene el valor enum 'rechazada', degradamos a 'cancelada'
+      const msg = String(err?.message || "");
+      if (
+        action === "reject" &&
+        /invalid input value|unknown.*enum|enum.*estado_actividad|invalid.*enum/i.test(msg)
+      ) {
+        updated = await prisma.actividad.update({
+          where: { id_actividad: idActividad },
+          data: {
+            aprobado: false,
+            estado: "cancelada"
+          },
+          include: {
+            usuario: { select: { id_usuario: true, nombre: true, apellido: true } },
+            _count: {
+              select: {
+                actividad_participantes: {
+                  where: { rol: "participante" }
+                }
+              }
+            }
+          }
+        });
+      } else {
+        throw err;
       }
-    });
+    }
 
     const activityTitle = existing?.titulo || updated?.titulo || `#${idActividad}`;
     const reason = String(req.body?.descripcion ?? req.body?.reason ?? "").trim();
 
     const ownerNotification = action === "approve"
       ? {
-          titulo: `Actividad aprobada: ${activityTitle}`,
+          titulo: `Aprobación de propuesta actividad`,
           descripcion: "La actividad quedó habilitada para publicarse.",
-          tipo: "actividad"
+          tipo: "actividad",
+          id_actividad: idActividad
         }
       : {
-          titulo: `Actividad rechazada: ${activityTitle}`,
+          titulo: `Rechazo propuesta actividad`,
           descripcion: reason || "La actividad no fue aprobada por administración.",
-          tipo: "actividad"
-        };
-
-    const adminNotification = action === "approve"
-      ? {
-          titulo: `Aprobación de actividad: ${activityTitle}`,
-          descripcion: "La actividad fue aprobada por administración.",
-          tipo: "actividad"
-        }
-      : {
-          titulo: `Rechazo de actividad: ${activityTitle}`,
-          descripcion: reason || "La actividad no fue aprobada por administración.",
-          tipo: "actividad"
+          tipo: "actividad",
+          id_actividad: idActividad
         };
 
     const ownerNotifications = await notifyActivityOwner(prisma, idUsuario, idActividad, ownerNotification);
-    const adminNotifications = await notifyAdminUsers(prisma, idUsuario, adminNotification);
 
     emitNotificationBatch(ownerNotifications);
-    if (adminNotifications?.[0]) {
-      emitNotificationCreated(adminNotifications[0], { broadcastAdmins: true });
-    }
 
     if (action === "approve") {
       await syncActivityStatuses();

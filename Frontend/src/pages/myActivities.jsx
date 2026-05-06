@@ -89,6 +89,7 @@ const STATUS_FILTERS = [
   { value: "programada", label: "Programada", icon: CheckCircle2, className: "border-[#bfe4cd] bg-[#e7f5ec] text-[#177945]" },
   { value: "en_curso", label: "En curso", icon: PlayCircle, className: "border-[#bfd9f5] bg-[#e9f3ff] text-[#1d4f91]" },
   { value: "finalizada", label: "Finalizada", icon: CheckCircle2, className: "border-[#d5dae1] bg-[#f1f3f5] text-[#475467]" },
+  { value: "rechazada", label: "Rechazada", icon: XCircle, className: "border-[#f1c8be] bg-[#fff1ed] text-[#8a3b2a]" },
   { value: "cancelada", label: "Cancelada", icon: XCircle, className: "border-[#f1c8be] bg-[#fff1ed] text-[#8a3b2a]" }
 ];
 
@@ -97,6 +98,7 @@ function getStateIcon(state) {
   if (state === "programada") return CheckCircle2;
   if (state === "en_curso") return PlayCircle;
   if (state === "finalizada") return CheckCircle2;
+  if (state === "rechazada") return XCircle;
   if (state === "cancelada") return XCircle;
   return CalendarDays;
 }
@@ -111,6 +113,7 @@ function getStateLabel(state) {
   if (state === "finalizada") return "Finalizada";
   if (state === "programada") return "Programada";
   if (state === "pendiente") return "Pendiente";
+  if (state === "rechazada") return "Rechazada";
   if (state === "cancelada") return "Cancelada";
   return "Sin estado";
 }
@@ -120,6 +123,7 @@ function getStatePillClass(state) {
   if (state === "programada") return "border-[#bfe4cd] bg-[#e7f5ec] text-[#177945]";
   if (state === "en_curso") return "border-[#bfd9f5] bg-[#e9f3ff] text-[#1d4f91]";
   if (state === "finalizada") return "border-[#d5dae1] bg-[#f1f3f5] text-[#475467]";
+  if (state === "rechazada") return "border-[#f1c8be] bg-[#fff1ed] text-[#8a3b2a]";
   if (state === "cancelada") return "border-[#f1c8be] bg-[#fff1ed] text-[#8a3b2a]";
   return "border-[#d8e6dd] bg-white text-[#496053]";
 }

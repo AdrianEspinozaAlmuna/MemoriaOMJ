@@ -129,13 +129,13 @@ function emitNotificationCreated(notification, options = {}) {
     ? options.targetUserIds.map(value => Number(value)).filter(value => Number.isInteger(value) && value > 0)
     : [];
 
-  if (options.broadcast || targetUserIds.length === 0) {
-    ioInstance.emit("notification:new", notification);
+  if (options.broadcastAdmins) {
+    ioInstance.to(getAdminRoomName()).emit("notification:new", notification);
     return;
   }
 
-  if (options.broadcastAdmins) {
-    ioInstance.to(getAdminRoomName()).emit("notification:new", notification);
+  if (options.broadcast || targetUserIds.length === 0) {
+    ioInstance.emit("notification:new", notification);
     return;
   }
 

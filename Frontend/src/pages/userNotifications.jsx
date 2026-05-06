@@ -1,6 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { BellRing, LoaderCircle, RefreshCw } from "lucide-react";
+import { io } from "socket.io-client";
 import { getMyNotifications } from "../services/notificationsService";
+import { API_BASE_URL } from "../services/api";
+
+const SOCKET_BASE_URL = (import.meta.env.VITE_SOCKET_URL || API_BASE_URL).replace(/\/api\/?$/, "");
 
 const filters = [
   { key: "all", label: "Todas" },
@@ -77,6 +81,29 @@ export default function UserNotifications() {
 
     return () => {
       mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return undefined;
+
+    const socket = io(SOCKET_BASE_URL, {
+      auth: { token: `Bearer ${token}` },
+      transports: ["websocket"]
+    });
+
+    function handleNotificationEvent() {
+      loadNotifications().catch(() => {
+        // La vista conserva el último estado si el refresh en vivo falla.
+      });
+    }
+
+    socket.on("notification:new", handleNotificationEvent);
+
+    return () => {
+      socket.off("notification:new", handleNotificationEvent);
+      socket.disconnect();
     };
   }, []);
 

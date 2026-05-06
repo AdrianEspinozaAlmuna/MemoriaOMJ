@@ -103,6 +103,7 @@ function getActivityStatus(activity) {
   if (state === "programada") return "Programada";
   if (state === "finalizada") return "Finalizada";
   if (state === "pendiente") return "Pendiente";
+  if (state === "rechazada") return "Rechazada";
   if (state === "cancelada") return "Cancelada";
   if (activity.state) return String(activity.state);
   if (activity.status === "inscrito") return "Inscrito";
@@ -117,6 +118,7 @@ function getActivityStatusClass(activity) {
   if (status === "programada") return "border-[#bfe4cd] bg-[#e7f5ec] text-[#177945]";
   if (status === "en_curso") return "border-[#bfd9f5] bg-[#e9f3ff] text-[#1d4f91]";
   if (status === "finalizada") return "border-[#d5dae1] bg-[#f1f3f5] text-[#475467]";
+  if (status === "rechazada") return "border-[#f1c8be] bg-[#fff1ed] text-[#8a3b2a]";
   if (status === "cancelada") return "border-[#f1c8be] bg-[#fff1ed] text-[#8a3b2a]";
   if (status === "inscrito") return "border-[#9ec9ea] bg-[#e8f5ff] text-[#1f5f8b]";
   if (status === "disponible") return "border-[#bfe4cd] bg-[#e7f5ec] text-[#177945]";

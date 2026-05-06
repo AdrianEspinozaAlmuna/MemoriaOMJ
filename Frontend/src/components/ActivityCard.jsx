@@ -67,7 +67,8 @@ function getStatus(activity) {
   if (activity.state === "programada") return "Programada";
   if (activity.state === "finalizada") return "Finalizada";
   if (activity.state === "pendiente") return "Pendiente";
-  if (activity.state === "cancelada") return "Cancelada";
+    if (activity.state === "rechazada") return "Rechazada";
+    if (activity.state === "cancelada") return "Cancelada";
   if (activity.state) return String(activity.state);
   if (activity.status === "inscrito") return "Inscrito";
   if (activity.status === "disponible") return "Disponible";
@@ -80,7 +81,8 @@ function getStatusIcon(activity) {
   if (status === "programada") return CheckCircle2;
   if (status === "en_curso") return PlayCircle;
   if (status === "finalizada") return CheckCircle2;
-  if (status === "cancelada") return XCircle;
+    if (status === "rechazada") return XCircle;
+    if (status === "cancelada") return XCircle;
   if (status === "pendiente") return Clock3;
   if (status === "inscrito") return CheckCircle2;
 
@@ -106,7 +108,11 @@ function getStatusClasses(activity) {
     return "bg-[#f1f3f5] text-[#475467]";
   }
 
-  if (status === "cancelada") {
+    if (status === "rechazada") {
+      return "bg-[#fff1ed] text-[#8a3b2a]";
+    }
+
+    if (status === "cancelada") {
     return "bg-[#fff1ed] text-[#8a3b2a]";
   }
 
