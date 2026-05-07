@@ -102,17 +102,14 @@ async function listMyNotifications(req, res) {
   }
 
   try {
-    const whereClause = `WHERE (n.id_receptor = ${idUsuario} OR n.id_receptor IS NULL)`;
+    const whereClause = unreadOnly ? `WHERE n.id_usuario = ${idUsuario} AND n.leida = false` : `WHERE n.id_usuario = ${idUsuario}`;
 
     const rows = await prisma.$queryRawUnsafe(`
       SELECT n.*,
-        n.id_emisor AS id_usuario,
-        su.id_usuario AS emisor_id, su.nombre AS emisor_nombre, su.apellido AS emisor_apellido, su.mail AS emisor_mail, su.rol AS emisor_rol,
-        ru.id_usuario AS receptor_id, ru.nombre AS receptor_nombre, ru.apellido AS receptor_apellido, ru.mail AS receptor_mail, ru.rol AS receptor_rol,
+        u.id_usuario, u.nombre, u.apellido, u.mail, u.rol,
         a.id_actividad AS actividad_id, a.titulo AS actividad_titulo, a.fecha AS actividad_fecha
       FROM notificaciones n
-      LEFT JOIN usuario su ON su.id_usuario = n.id_emisor
-      LEFT JOIN usuario ru ON ru.id_usuario = n.id_receptor
+      LEFT JOIN usuario u ON u.id_usuario = n.id_usuario
       LEFT JOIN actividad a ON a.id_actividad = n.id_actividad
       ${whereClause}
       ORDER BY n.fecha_envio DESC, n.id_notificacion DESC
@@ -120,16 +117,15 @@ async function listMyNotifications(req, res) {
 
     const mapped = rows.map(r => ({
       id_notificacion: r.id_notificacion,
-      id_emisor: r.id_emisor,
-      id_receptor: r.id_receptor,
+      id_usuario: r.id_usuario,
       id_actividad: r.id_actividad,
       tipo: r.tipo,
       titulo: r.titulo,
       descripcion: r.descripcion,
+      leida: r.leida,
       fecha_lectura: r.fecha_lectura,
       fecha_envio: r.fecha_envio,
-      usuario: r.emisor_id ? { id_usuario: r.emisor_id, nombre: r.emisor_nombre, apellido: r.emisor_apellido, mail: r.emisor_mail, rol: r.emisor_rol } : null,
-      receptor: r.receptor_id ? { id_usuario: r.receptor_id, nombre: r.receptor_nombre, apellido: r.receptor_apellido, mail: r.receptor_mail, rol: r.receptor_rol } : null,
+      usuario: r.id_usuario ? { id_usuario: r.id_usuario, nombre: r.nombre, apellido: r.apellido, mail: r.mail, rol: r.rol } : null,
       actividad: r.actividad_id ? { id_actividad: r.actividad_id, titulo: r.actividad_titulo, fecha: r.actividad_fecha } : null
     }));
 
@@ -145,75 +141,47 @@ async function listAdminNotifications(req, res) {
   const unreadOnly = req.query.unreadOnly === "1" || req.query.unreadOnly === "true";
   const tipo = req.query.tipo;
   const idActividad = req.query.id_actividad ? Number(req.query.id_actividad) : null;
-  const idReceptorFiltro = req.query.id_receptor ? Number(req.query.id_receptor) : null;
-  const idEmisorFiltro = req.query.id_emisor ? Number(req.query.id_emisor) : null;
 
   if (!idUsuario) {
     return res.status(403).json({ message: "No se pudo identificar el usuario autenticado" });
   }
 
   try {
-    const sharedAdmin = await prisma.usuario.findFirst({
-      where: { rol: "admin", estado: true },
-      orderBy: { id_usuario: "asc" },
-      select: { id_usuario: true }
+    const where = {};
+    if (unreadOnly) {
+      where.leida = false;
+    }
+    if (tipo && ["sistema", "actividad"].includes(tipo)) {
+      where.tipo = tipo;
+    }
+    if (Number.isInteger(idActividad)) {
+      where.id_actividad = idActividad;
+    }
+
+    const notifications = await prisma.notificaciones.findMany({
+      where,
+      include: {
+        usuario: {
+          select: {
+            id_usuario: true,
+            nombre: true,
+            apellido: true,
+            mail: true,
+            rol: true
+          }
+        },
+        actividad: {
+          select: {
+            id_actividad: true,
+            titulo: true,
+            fecha: true
+          }
+        }
+      },
+      orderBy: [{ fecha_envio: "desc" }, { id_notificacion: "desc" }]
     });
 
-    if (!sharedAdmin?.id_usuario) {
-      return res.json({ notifications: [] });
-    }
-
-    if (Number.isInteger(idReceptorFiltro) && idReceptorFiltro !== sharedAdmin.id_usuario) {
-      return res.json({ notifications: [] });
-    }
-
-    // Consulta cruda para admin: filtra por tipo, actividad o receptor si se piden.
-    const conditions = [];
-    if (tipo && ["sistema", "actividad"].includes(tipo)) conditions.push(`n.tipo = '${tipo}'`);
-    if (Number.isInteger(idActividad)) conditions.push(`n.id_actividad = ${idActividad}`);
-    if (Number.isInteger(idEmisorFiltro)) conditions.push(`n.id_emisor = ${idEmisorFiltro}`);
-    conditions.push(`(n.id_receptor = ${sharedAdmin.id_usuario} OR n.id_receptor IS NULL)`);
-    conditions.push(`NOT (
-      n.tipo = 'actividad' AND (
-        n.titulo ILIKE 'Aprobación de actividad:%' OR
-        n.titulo ILIKE 'Rechazo de actividad:%' OR
-        n.titulo ILIKE 'Aprobación de propuesta actividad%' OR
-        n.titulo ILIKE 'Rechazo propuesta actividad%'
-      )
-    )`);
-    const whereSql = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
-
-    const sql = `
-      SELECT n.*, 
-        n.id_emisor AS id_usuario,
-        su.id_usuario AS emisor_id, su.nombre AS emisor_nombre, su.apellido AS emisor_apellido, su.mail AS emisor_mail, su.rol AS emisor_rol,
-        ru.id_usuario AS receptor_id, ru.nombre AS receptor_nombre, ru.apellido AS receptor_apellido, ru.mail AS receptor_mail, ru.rol AS receptor_rol,
-        a.id_actividad AS actividad_id, a.titulo AS actividad_titulo, a.fecha AS actividad_fecha
-      FROM notificaciones n
-      LEFT JOIN usuario su ON su.id_usuario = n.id_emisor
-      LEFT JOIN usuario ru ON ru.id_usuario = n.id_receptor
-      LEFT JOIN actividad a ON a.id_actividad = n.id_actividad
-      ${whereSql}
-      ORDER BY n.fecha_envio DESC, n.id_notificacion DESC
-    `;
-
-    const rows = await prisma.$queryRawUnsafe(sql);
-    const mapped = rows.map(r => ({
-      id_notificacion: r.id_notificacion,
-      id_emisor: r.id_emisor,
-      id_receptor: r.id_receptor,
-      id_actividad: r.id_actividad,
-      tipo: r.tipo,
-      titulo: r.titulo,
-      descripcion: r.descripcion,
-      fecha_lectura: r.fecha_lectura,
-      fecha_envio: r.fecha_envio,
-      usuario: r.emisor_id ? { id_usuario: r.emisor_id, nombre: r.emisor_nombre, apellido: r.emisor_apellido, mail: r.emisor_mail, rol: r.emisor_rol } : null,
-      receptor: r.receptor_id ? { id_usuario: r.receptor_id, nombre: r.receptor_nombre, apellido: r.receptor_apellido, mail: r.receptor_mail, rol: r.receptor_rol } : null,
-      actividad: r.actividad_id ? { id_actividad: r.actividad_id, titulo: r.actividad_titulo, fecha: r.actividad_fecha } : null
-    }));
-
-    return res.json({ notifications: mapped.map(serializeNotification) });
+    return res.json({ notifications: notifications.map(serializeNotification) });
   } catch (error) {
     console.error("[notifications] listAdminNotifications failed:", error);
     return res.status(500).json({ message: "Error obteniendo notificaciones admin", detail: error.message });
@@ -228,7 +196,14 @@ async function countUnreadNotifications(req, res) {
   }
 
   try {
-    return res.json({ unreadCount: 0 });
+    const unreadCount = await prisma.notificaciones.count({
+      where: {
+        id_usuario: idUsuario,
+        leida: false
+      }
+    });
+
+    return res.json({ unreadCount });
   } catch (error) {
     console.error("[notifications] countUnreadNotifications failed:", error);
     return res.status(500).json({ message: "Error obteniendo contador de notificaciones", detail: error.message });
@@ -248,53 +223,47 @@ async function markNotificationAsRead(req, res) {
   }
 
   try {
-    const found = await prisma.$queryRawUnsafe(
-      `SELECT n.*, su.id_usuario AS emisor_id, su.nombre AS emisor_nombre, su.apellido AS emisor_apellido, su.mail AS emisor_mail, su.rol AS emisor_rol,
-             ru.id_usuario AS receptor_id, ru.nombre AS receptor_nombre, ru.apellido AS receptor_apellido, ru.mail AS receptor_mail, ru.rol AS receptor_rol,
-             a.id_actividad AS actividad_id, a.titulo AS actividad_titulo, a.fecha AS actividad_fecha
-      FROM notificaciones n
-      LEFT JOIN usuario su ON su.id_usuario = n.id_emisor
-      LEFT JOIN usuario ru ON ru.id_usuario = n.id_receptor
-      LEFT JOIN actividad a ON a.id_actividad = n.id_actividad
-      WHERE n.id_notificacion = ${idNotificacion} AND (n.id_receptor = ${idUsuario} OR n.id_receptor IS NULL)
-      LIMIT 1`
-    );
-    const existing = Array.isArray(found) ? found[0] : found;
-    if (!existing) {
+    // Verify ownership
+    const found = await prisma.notificaciones.findUnique({
+      where: { id_notificacion: idNotificacion }
+    });
+
+    if (!found) {
       return res.status(404).json({ message: "Notificacion no encontrada" });
     }
 
-    // La tabla ya no persiste estado de lectura; mantenemos la ruta compatible sin mutar datos.
+    if (found.id_usuario !== idUsuario) {
+      return res.status(403).json({ message: "No tienes permiso para ver esta notificacion" });
+    }
 
-    // read back the updated row
-    const updatedRows = await prisma.$queryRawUnsafe(
-      `SELECT n.*, su.id_usuario AS emisor_id, su.nombre AS emisor_nombre, su.apellido AS emisor_apellido, su.mail AS emisor_mail, su.rol AS emisor_rol,
-             ru.id_usuario AS receptor_id, ru.nombre AS receptor_nombre, ru.apellido AS receptor_apellido, ru.mail AS receptor_mail, ru.rol AS receptor_rol,
-             a.id_actividad AS actividad_id, a.titulo AS actividad_titulo, a.fecha AS actividad_fecha
-      FROM notificaciones n
-      LEFT JOIN usuario su ON su.id_usuario = n.id_emisor
-      LEFT JOIN usuario ru ON ru.id_usuario = n.id_receptor
-      LEFT JOIN actividad a ON a.id_actividad = n.id_actividad
-      WHERE n.id_notificacion = ${idNotificacion}
-      LIMIT 1`
-    );
-    const updated = Array.isArray(updatedRows) ? updatedRows[0] : updatedRows;
-    const mapped = {
-      id_notificacion: updated.id_notificacion,
-      id_emisor: updated.id_emisor,
-      id_receptor: updated.id_receptor,
-      id_actividad: updated.id_actividad,
-      tipo: updated.tipo,
-      titulo: updated.titulo,
-      descripcion: updated.descripcion,
-      fecha_lectura: updated.fecha_lectura,
-      fecha_envio: updated.fecha_envio,
-      usuario: updated.emisor_id ? { id_usuario: updated.emisor_id, nombre: updated.emisor_nombre, apellido: updated.emisor_apellido, mail: updated.emisor_mail, rol: updated.emisor_rol } : null,
-      receptor: updated.receptor_id ? { id_usuario: updated.receptor_id, nombre: updated.receptor_nombre, apellido: updated.receptor_apellido, mail: updated.receptor_mail, rol: updated.receptor_rol } : null,
-      actividad: updated.actividad_id ? { id_actividad: updated.actividad_id, titulo: updated.actividad_titulo, fecha: updated.actividad_fecha } : null
-    };
+    // Mark as read
+    const updated = await prisma.notificaciones.update({
+      where: { id_notificacion: idNotificacion },
+      data: {
+        leida: true,
+        fecha_lectura: new Date()
+      },
+      include: {
+        usuario: {
+          select: {
+            id_usuario: true,
+            nombre: true,
+            apellido: true,
+            mail: true,
+            rol: true
+          }
+        },
+        actividad: {
+          select: {
+            id_actividad: true,
+            titulo: true,
+            fecha: true
+          }
+        }
+      }
+    });
 
-    return res.json({ ok: true, notification: serializeNotification(mapped) });
+    return res.json({ ok: true, notification: serializeNotification(updated) });
   } catch (error) {
     console.error("[notifications] markNotificationAsRead failed:", error);
     return res.status(500).json({ message: "Error marcando notificacion como leida", detail: error.message });
@@ -309,7 +278,18 @@ async function markAllNotificationsAsRead(req, res) {
   }
 
   try {
-    return res.json({ ok: true, updatedCount: 0 });
+    const result = await prisma.notificaciones.updateMany({
+      where: {
+        id_usuario: idUsuario,
+        leida: false
+      },
+      data: {
+        leida: true,
+        fecha_lectura: new Date()
+      }
+    });
+
+    return res.json({ ok: true, updatedCount: result.count });
   } catch (error) {
     console.error("[notifications] markAllNotificationsAsRead failed:", error);
     return res.status(500).json({ message: "Error marcando notificaciones como leidas", detail: error.message });

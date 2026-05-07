@@ -343,7 +343,8 @@ async function createActivity(req, res) {
     hora_termino,
     max_participantes,
     capacity,
-    chat_bidireccional = true
+    chat_bidireccional = true,
+    grupos_seleccionados = []
   } = req.body || {};
   const id_sala = req.body?.id_sala ?? null;
 
@@ -468,6 +469,56 @@ async function createActivity(req, res) {
         tipo: "actividad",
         id_actividad: newActivity.id_actividad
       });
+
+      // Procesar grupos seleccionados
+      if (Array.isArray(grupos_seleccionados) && grupos_seleccionados.length > 0) {
+        // Validar que los grupos existen y pertenecen al usuario
+        const gruposValidos = await tx.grupo.findMany({
+          where: {
+            id_grupo: { in: grupos_seleccionados },
+            OR: [
+              { id_lider: idEncargado },
+              { participantes_grupo: { some: { id_usuario: idEncargado } } }
+            ]
+          },
+          include: {
+            participantes_grupo: { select: { id_usuario: true } }
+          }
+        });
+
+        // Crear relaciones actividad_grupo
+        for (const grupo of gruposValidos) {
+          await tx.actividad_grupo.create({
+            data: {
+              id_actividad: newActivity.id_actividad,
+              id_grupo: grupo.id_grupo
+            }
+          });
+
+          // Agregar miembros del grupo como participantes
+          const miembrosGrupo = [grupo.id_lider, ...grupo.participantes_grupo.map(p => p.id_usuario)];
+          for (const idMiembro of miembrosGrupo) {
+            const yaEsta = await tx.actividad_participantes.findUnique({
+              where: {
+                id_actividad_id_usuario: {
+                  id_actividad: newActivity.id_actividad,
+                  id_usuario: idMiembro
+                }
+              }
+            });
+
+            if (!yaEsta && idMiembro !== idEncargado) {
+              await tx.actividad_participantes.create({
+                data: {
+                  id_actividad: newActivity.id_actividad,
+                  id_usuario: idMiembro,
+                  rol: "participante"
+                }
+              });
+            }
+          }
+        }
+      }
 
       return { newActivity, adminNotifications };
     });

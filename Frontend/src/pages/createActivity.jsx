@@ -13,7 +13,8 @@ const initialForm = {
   hora_inicio: "",
   hora_termino: "",
   max_participantes: 20,
-  chat_bidireccional: true
+  chat_bidireccional: true,
+  grupos_seleccionados: []
 };
 
 function formatConflictRange(conflict) {
@@ -27,10 +28,24 @@ export default function CreateActivity() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState({ type: "", title: "", message: "", hint: "" });
   const [roomOptions, setRoomOptions] = useState([]);
+  const [gruposDisponibles, setGruposDisponibles] = useState([]);
 
   function handleChange(event) {
     const { name, value, type, checked } = event.target;
-    setForm(previous => ({ ...previous, [name]: type === "checkbox" ? checked : value }));
+   
+
+  function handleGroupToggle(idGrupo) {
+    setForm(previous => {
+      const gruposActuales = previous.grupos_seleccionados || [];
+      const yaEsta = gruposActuales.includes(idGrupo);
+      return {
+        ...previous,
+        grupos_seleccionados: yaEsta
+          ? gruposActuales.filter(g => g !== idGrupo)
+          : [...gruposActuales, idGrupo]
+      };
+    });
+  } setForm(previous => ({ ...previous, [name]: type === "checkbox" ? checked : value }));
   }
 
   async function handleSubmit(event) {
@@ -145,6 +160,7 @@ export default function CreateActivity() {
 
   useEffect(() => {
     let mounted = true;
+    
     async function loadRooms() {
       try {
         const res = await api.get("/salas");
@@ -169,7 +185,19 @@ export default function CreateActivity() {
       setForm(previous => ({ ...previous, room: "1" }));
     }
 
+    async function loadGrupos() {
+      try {
+        const res = await api.get("/api/groups");
+        if (!mounted) return;
+        setGruposDisponibles(res.data.grupos || []);
+      } catch (e) {
+        console.error("Error cargando grupos:", e);
+        setGruposDisponibles([]);
+      }
+    }
+
     loadRooms();
+    loadGrupos();
     return () => { mounted = false; };
   }, []);
 
@@ -319,6 +347,36 @@ export default function CreateActivity() {
               </label>
             </div>
           </div>
+
+          {gruposDisponibles.length > 0 && (
+            <div className="grid gap-3 border-t border-[#d8e6dd] pt-5">
+              <div>
+                <p className="m-0 text-[0.88rem] font-semibold text-[var(--text)]">Agregar grupos a la actividad (opcional)</p>
+                <p className="m-0 mt-1 text-[0.82rem] text-[var(--text-muted)]">Selecciona los grupos cuyos miembros se invitarán automáticamente</p>
+              </div>
+              <div className="space-y-2">
+                {gruposDisponibles.map(grupo => (
+                  <label
+                    key={grupo.id_grupo}
+                    className="flex items-start gap-3 rounded-sm border border-[#d8e6dd] bg-white px-3.5 py-2.5 hover:cursor-pointer hover:bg-[#f5f9f7]"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={form.grupos_seleccionados.includes(grupo.id_grupo)}
+                      onChange={() => handleGroupToggle(grupo.id_grupo)}
+                      className="mt-1 h-4 w-4 rounded border-[#c4d5cb] accent-[var(--primary)] text-[var(--primary)] focus:ring-[var(--primary)] hover:cursor-pointer"
+                    />
+                    <div className="flex-1">
+                      <p className="m-0 text-[0.9rem] font-semibold text-[var(--text)]">{grupo.nombre}</p>
+                      <p className="m-0 text-[0.82rem] text-[var(--text-muted)]">
+                        {grupo.cantidad_miembros} miembro{grupo.cantidad_miembros !== 1 ? "s" : ""}
+                      </p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
 
           {feedback.message && (
             <div

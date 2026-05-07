@@ -7,6 +7,7 @@ const activityRoutes = require("./routes/activityRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const salasRoutes = require("./routes/salasRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
+const groupRoutes = require("./routes/groupRoutes");
 const { prisma } = require("./prisma/client");
 const { initRealtimeServer } = require("./realtime");
 
@@ -19,6 +20,7 @@ app.use("/api/activities", activityRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/salas", salasRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/groups", groupRoutes);
 
 app.get("/api/health", async (req, res) => {
   // prueba simple de conexión a la BD

@@ -364,6 +364,13 @@ export default function Navbar() {
 								Mis actividades
 							</NavLink>
 							<NavLink
+								to="/user/grupos"
+								onClick={handleNavItemClick}
+								className={navLinkClass}
+							>
+								Mis Grupos
+							</NavLink>
+							<NavLink
 								to="/user/asistencia"
 								onClick={handleNavItemClick}
 								className={navLinkClass}

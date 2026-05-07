@@ -24,6 +24,7 @@ model actividad {
   sala                    salas?                    @relation(fields: [id_sala], references: [id_sala], onDelete: SetNull, onUpdate: NoAction)
   actividad_mensaje       actividad_mensaje[]
   actividad_participantes actividad_participantes[]
+  actividad_grupos        actividad_grupo[]
   notificaciones          notificaciones[]
 
   @@index([fecha], map: "idx_actividad_fecha")
@@ -59,6 +60,7 @@ model grupo {
   descripcion         String?
   usuario             usuario               @relation(fields: [id_lider], references: [id_usuario], onUpdate: NoAction)
   participantes_grupo participantes_grupo[]
+  actividades         actividad_grupo[]
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -88,6 +90,15 @@ model participantes_grupo {
   usuario    usuario   @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade, onUpdate: NoAction)
 
   @@id([id_grupo, id_usuario])
+}
+
+model actividad_grupo {
+  id_actividad Int
+  id_grupo     Int
+  actividad    actividad @relation(fields: [id_actividad], references: [id_actividad], onDelete: Cascade, onUpdate: NoAction)
+  grupo        grupo     @relation(fields: [id_grupo], references: [id_grupo], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([id_actividad, id_grupo])
 }
 
 model salas {
