@@ -11,7 +11,7 @@ function uniqueIntegerIds(values = []) {
 }
 
 function normalizeUserId(payload = {}) {
-  const userId = Number(payload.id_usuario ?? payload.id_receptor ?? payload.receiverId ?? payload.userId);
+  const userId = Number(payload.id_receptor ?? payload.receiverId ?? payload.userId ?? payload.id_usuario);
   return Number.isInteger(userId) && userId > 0 ? userId : null;
 }
 
@@ -44,7 +44,6 @@ async function createNotificationRecord(db = prisma, payload = {}) {
   const idEmisor = payload.id_emisor == null ? null : Number(payload.id_emisor);
   const idEmisorValid = Number.isInteger(Number(idEmisor)) && idEmisor > 0 ? idEmisor : null;
 
-  // receptor is required for per-user notifications; for system (broadcast) receptor can be null
   if (!idReceptorValid && !idEmisorValid) {
     return null;
   }
@@ -84,17 +83,17 @@ async function createNotificationRecord(db = prisma, payload = {}) {
     // si falla la comprobación de duplicados, continuamos
   }
 
-  // Inserción cruda usando las columnas reales: id_emisor, id_receptor
   try {
     const insertSql = `
-      INSERT INTO notificaciones (id_emisor, id_receptor, id_actividad, tipo, titulo, descripcion)
+      INSERT INTO notificaciones (id_emisor, id_receptor, id_actividad, tipo, titulo, descripcion, leida)
       VALUES (
         ${sqlLiteral(idEmisorRaw)},
         ${sqlLiteral(idReceptorRaw)},
         ${sqlLiteral(Number.isInteger(idActividadRaw) ? idActividadRaw : null)},
         ${sqlLiteral(tipo)},
         ${sqlLiteral(titulo)},
-        ${sqlLiteral(descripcion)}
+        ${sqlLiteral(descripcion)},
+        FALSE
       )
       RETURNING *
     `;
@@ -107,11 +106,13 @@ async function createNotificationRecord(db = prisma, payload = {}) {
     try {
       return await db.notificaciones.create({
         data: {
-          id_usuario: idReceptorRaw || idEmisorRaw,
+          id_emisor: idEmisorRaw,
+          id_receptor: idReceptorRaw,
           id_actividad: Number.isInteger(idActividadRaw) ? idActividadRaw : null,
           tipo,
           titulo,
-          descripcion
+          descripcion,
+          leida: false
         }
       });
     } catch (err2) {

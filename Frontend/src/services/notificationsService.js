@@ -86,8 +86,6 @@ function normalizeNotification(notification = {}) {
     date: formatRelativeTime(sentAt),
     sentAt,
     fecha_envio: sentAt,
-    readAt: notification.fecha_lectura ?? notification.readAt ?? null,
-    fecha_lectura: notification.fecha_lectura ?? notification.readAt ?? null,
     sender: sender
       ? {
           id: sender.id_usuario ?? sender.id ?? null,

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Plus, Search, User, Users, Trash2, PencilLine, X } from "lucide-react";
+import { MoreHorizontal, Plus, Search, User, Users, Trash2, X } from "lucide-react";
 import api from "../services/api";
 import LoadingState from "../components/LoadingState";
 import Modal from "../components/Modal";
@@ -170,7 +170,7 @@ function UserGroups() {
     }
   }
 
-  if (loading) return <LoadingState title="Cargando grupos..." />;
+  // Mostrar el estado de carga dentro del layout en lugar de retornar temprano
 
   const groupBeingEdited = editingGroupId ? grupos.find(grupo => grupo.id_grupo === editingGroupId) : null;
   const filteredAvailableUsers = availableUsers.filter(usuario => {
@@ -184,20 +184,28 @@ function UserGroups() {
 
   return (
     <section className="max-w-7xl mx-auto px-4 py-6 space-y-8">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Panel de usuario</p>
-          <h1 className="mt-2 mb-0 text-[clamp(1.8rem,2.5vw,2.3rem)] font-bold text-[var(--text)]">Mis Grupos</h1>
-          <p className="mt-2 text-[1rem] text-[var(--text-muted)]">Crea y administra tus grupos de usuarios</p>
-        </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-4 py-2.5 text-[0.95rem] font-semibold text-white transition-all duration-200 hover:bg-[var(--primary-strong)] hover:shadow-sm"
-        >
-          <Plus className="h-5 w-5" />
-          Nuevo Grupo
-        </button>
+      <header>
+        <p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Panel de usuario</p>
+        <h1 className="mt-2 mb-0 text-[clamp(1.8rem,2.5vw,2.3rem)] font-bold text-[var(--text)]">Mis Grupos</h1>
+        <p className="mt-2 text-[1rem] text-[var(--text-muted)]">Crea y administra tus grupos de usuarios</p>
       </header>
+
+      <section className="rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-5 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Nuevo grupo</p>
+            <h2 className="mt-1 mb-0 text-[1.1rem] font-semibold text-[var(--text)]">Crea y administra tu equipo</h2>
+            <p className="mt-1 mb-0 text-[0.94rem] text-[var(--text-muted)]">Organiza participantes para invitarlos rápidamente a tus actividades.</p>
+          </div>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-sm bg-[var(--primary)] px-4 py-2.5 text-[0.9rem] font-semibold !text-white transition-all duration-200 hover:bg-[var(--primary-strong)] hover:shadow-sm"
+          >
+            <Plus className="h-5 w-5" />
+            Nuevo Grupo
+          </button>
+        </div>
+      </section>
 
       {error && (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-800 shadow-sm">
@@ -208,7 +216,11 @@ function UserGroups() {
         </div>
       )}
 
-      {grupos.length === 0 ? (
+      {loading ? (
+        <div className="rounded-2xl border border-[var(--panel-border)] bg-[var(--panel-bg)] p-12 text-center shadow-sm">
+          <LoadingState title="Cargando grupos..." />
+        </div>
+      ) : grupos.length === 0 ? (
         <div className="rounded-2xl border border-[var(--panel-border)] bg-[var(--panel-bg)] p-12 text-center shadow-sm">
           <Users className="mx-auto h-12 w-12 text-[var(--text-muted)]" />
           <h3 className="mt-4 text-lg font-semibold text-[var(--text)]">No tienes grupos aún</h3>
@@ -222,8 +234,20 @@ function UserGroups() {
           </button>
         </div>
       ) : (
-        <div className="space-y-4">
-          {grupos.map(grupo => {
+        <div className="rounded-sm border border-[#d9e2e5] bg-white p-4 shadow-sm sm:p-5">
+          <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[#e5eaee] pb-4">
+            <div>
+              <h2 className="m-0 text-[1.05rem] font-semibold text-[var(--text)]">Tus grupos</h2>
+              <p className="m-0 mt-1 text-sm text-[var(--text-muted)]">Revisa, abre y administra tus grupos desde esta vista.</p>
+            </div>
+            <span className="rounded-full bg-[#f3f5f7] px-3 py-1 text-xs font-semibold text-[var(--text-muted)]">
+              {grupos.length} grupo{grupos.length !== 1 ? "s" : ""}
+            </span>
+          </div>
+
+          <div className="mt-4 rounded-sm bg-[var(--surface)] p-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              {grupos.map(grupo => {
             const leaderName = grupo.lider
               ? `${grupo.lider.nombre || ""} ${grupo.lider.apellido || ""}`.trim() || grupo.lider.mail || "Líder"
               : "Líder";
@@ -231,110 +255,100 @@ function UserGroups() {
             const visibleMembers = grupo.participantes.slice(0, 4);
             const extraMembers = Math.max(0, grupo.participantes.length - visibleMembers.length);
 
-            return (
-              <article
-                key={grupo.id_grupo}
-                className="overflow-hidden rounded-2xl border border-[var(--panel-border)] bg-[var(--panel-bg)] shadow-sm transition-all duration-200 hover:border-[var(--primary)] hover:shadow-md"
-              >
-                <div className="flex flex-col gap-5 p-6 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-start gap-3">
-                      <div className="min-w-0 flex-1">
-                        <h3 className="text-xl font-semibold text-[var(--text)]">{grupo.nombre}</h3>
-                        {grupo.descripcion ? (
-                          <p className="mt-1 max-w-3xl text-[var(--text-muted)]">{grupo.descripcion}</p>
-                        ) : (
-                          <p className="mt-1 text-[var(--text-muted)] italic">Sin descripción</p>
-                        )}
+                return (
+                  <article
+                    key={grupo.id_grupo}
+                    onClick={() => openEditModal(grupo)}
+                    className="group cursor-pointer overflow-hidden rounded-sm border border-[#d9e2e5] bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--primary)] hover:shadow-md"
+                  >
+                    <div className="flex h-full flex-col gap-4 p-5">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <h2 className="truncate text-lg font-semibold text-[black]">{grupo.nombre}</h2>
+                          {grupo.descripcion ? (
+                            <p className="mt-1 line-clamp-2 text-sm text-[var(--text-muted)]">{grupo.descripcion}</p>
+                          ) : (
+                            <p className="mt-1 text-sm text-[var(--text-muted)] italic">Sin descripción</p>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEditModal(grupo);
+                          }}
+                          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#d9e2e5] bg-white text-[var(--text-muted)] transition-colors hover:border-[var(--primary)] hover:text-[var(--primary)]"
+                          aria-label="Abrir opciones del grupo"
+                          title="Abrir grupo"
+                        >
+                          <MoreHorizontal className="h-5 w-5" />
+                        </button>
                       </div>
-                      <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${grupo.rol_usuario === "lider" ? "bg-[#e7f5ec] text-[#177945]" : "bg-[#eef4ff] text-[#2b5db3]"}`}>
-                        {grupo.rol_usuario === "lider" ? "Eres líder" : "Eres miembro"}
-                      </span>
-                    </div>
 
-                    <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-[var(--text-muted)]">
-                      <span className="inline-flex items-center gap-1.5">
-                        <Users className="h-4 w-4" />
-                        {grupo.cantidad_miembros} miembro{grupo.cantidad_miembros !== 1 ? "s" : ""}
-                      </span>
-                      <span className="inline-flex items-center gap-1.5">
-                        <span className="font-semibold text-[var(--text)]">Líder:</span>
-                        <span>{leaderName}</span>
-                      </span>
-                    </div>
-
-                    <div className="mt-5 border-t border-[var(--panel-border)] pt-4">
-                      <div className="mb-2 flex items-center justify-between gap-2">
-                        <p className="m-0 text-sm font-semibold text-[var(--text-muted)]">Miembros</p>
-                        <span className="text-xs text-[var(--text-muted)]">{grupo.participantes.length} agregados</span>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-soft)] px-3 py-1 text-xs font-semibold text-[var(--primary)]">
-                          <span>{leaderName}</span>
-                          <span className="text-[0.7rem]">(Líder)</span>
+                      <div className="flex flex-wrap items-center gap-3 text-sm text-[var(--text-muted)]">
+                        <span className="inline-flex items-center gap-1.5">
+                          <Users className="h-4 w-4" />
+                          {grupo.cantidad_miembros} miembro{grupo.cantidad_miembros !== 1 ? "s" : ""}
                         </span>
-                        {visibleMembers.map(participante => (
-                          <span
-                            key={participante.id_usuario}
-                            className="inline-flex items-center rounded-full bg-white px-3 py-1 text-xs text-[var(--text)] ring-1 ring-[var(--panel-border)]"
-                          >
-                            {participante.nombre}
+                        <span className="inline-flex items-center gap-1.5">
+                          <span className="font-semibold text-[var(--text)]">Líder:</span>
+                          <span className="truncate">{leaderName}</span>
+                        </span>
+                      </div>
+
+                      <div className="rounded-xl border border-[#e5eaee] bg-[#f7f8fa] p-3">
+                        <div className="mb-2 flex items-center justify-between gap-2">
+                          <p className="m-0 text-sm font-semibold text-[var(--text-muted)]">Miembros</p>
+                          <span className="text-xs text-[var(--text-muted)]">{grupo.participantes.length} agregados</span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-semibold text-[var(--primary)] ring-1 ring-[var(--panel-border)]">
+                            <User className="h-4 w-4 text-[var(--primary)]" />
+                            <span className="truncate">{leaderName}</span>
+                            <span className="text-[0.7rem]">(Líder)</span>
                           </span>
-                        ))}
-                        {extraMembers > 0 && (
-                          <span className="inline-flex items-center rounded-full bg-[var(--surface-soft)] px-3 py-1 text-xs font-semibold text-[var(--text-muted)]">
-                            +{extraMembers} más
-                          </span>
-                        )}
+                          {visibleMembers.map(participante => (
+                            <span
+                              key={participante.id_usuario}
+                              className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs text-[var(--text)] ring-1 ring-[var(--panel-border)]"
+                            >
+                              <User className="h-4 w-4 text-[var(--text-muted)]" />
+                              <span className="truncate">{participante.nombre}</span>
+                            </span>
+                          ))}
+                          {extraMembers > 0 && (
+                            <span className="inline-flex items-center rounded-full bg-white px-3 py-1 text-xs font-semibold text-[var(--text-muted)] ring-1 ring-[var(--panel-border)]">
+                              +{extraMembers} más
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="mt-auto flex items-center justify-between gap-2 border-t border-[#eef1f4] pt-3">
+                        <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${grupo.rol_usuario === "lider" ? "bg-[#eef7ef] text-[#177945]" : "bg-[#eef4ff] text-[#2b5db3]"}`}>
+                          {grupo.rol_usuario === "lider" ? "Eres líder" : "Eres miembro"}
+                        </span>
+                        <span className="text-xs text-[var(--text-muted)]">Toca la tarjeta para editar</span>
                       </div>
                     </div>
-                  </div>
-
-                  <div className="flex shrink-0 items-center gap-2 lg:self-start">
-                    {grupo.rol_usuario === "lider" ? (
-                      <>
-                        <button
-                          onClick={() => openEditModal(grupo)}
-                          className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--panel-border)] bg-white px-3 py-2 text-sm font-semibold text-[var(--text)] transition-colors hover:bg-[var(--surface-soft)]"
-                          title="Editar grupo"
-                        >
-                          <PencilLine className="h-4 w-4" />
-                          <span>Editar</span>
-                        </button>
-                        <button
-                          onClick={() => handleDeleteGroup(grupo.id_grupo)}
-                          className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100"
-                          title="Eliminar grupo"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          <span>Eliminar</span>
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        onClick={() => handleLeaveGroup(grupo.id_grupo)}
-                        className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100"
-                        title="Salir del grupo"
-                      >
-                        <X className="h-4 w-4" />
-                        <span>Salir</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </article>
-            );
-          })}
+                  </article>
+                );
+              })}
+            </div>
+          </div>
         </div>
       )}
 
       <Modal
         isOpen={showCreateModal}
-        title="Crear Nuevo Grupo"
+        title="Crear grupo"
         onClose={() => {
           setShowCreateModal(false);
           setFormData({ nombre: "", descripcion: "" });
         }}
+        panelClassName="sm:max-w-[640px] sm:rounded-[12px] border-[#d8e6dd]"
+        contentClassName="px-5 pb-5 pt-4 sm:px-6 sm:pb-6"
+        footerClassName="border-t border-[#dce7df] bg-[#f8fbf9] px-5 py-4 sm:px-6"
         footer={
           <div className="flex w-full gap-3">
             <button
@@ -343,14 +357,14 @@ function UserGroups() {
                 setShowCreateModal(false);
                 setFormData({ nombre: "", descripcion: "" });
               }}
-              className="flex-1 rounded-lg border border-[var(--panel-border)] px-4 py-2 font-semibold text-[var(--text)] transition-colors hover:bg-[var(--surface-soft)]"
+              className="flex-1 rounded-sm border border-[#d2ded7] bg-white px-4 py-2.5 text-[0.9rem] font-semibold text-[var(--text)] transition-colors hover:bg-[#f5f9f7]"
             >
               Cancelar
             </button>
             <button
               type="submit"
               form="create-group-form"
-              className="flex-1 rounded-lg bg-[var(--primary)] px-4 py-2 font-semibold text-white transition-colors hover:bg-[var(--primary-strong)]"
+              className="flex-1 rounded-sm border border-[var(--primary)] bg-[var(--primary)] px-4 py-2.5 text-[0.9rem] font-semibold text-white transition-colors hover:bg-[var(--primary-strong)]"
             >
               Crear Grupo
             </button>
@@ -358,25 +372,25 @@ function UserGroups() {
         }
       >
         <form id="create-group-form" onSubmit={handleCreateGroup}>
-          <div className="space-y-4 p-1">
+          <div className="space-y-4">
             <div>
-              <label className="mb-2 block text-sm font-semibold text-[var(--text)]">Nombre del grupo *</label>
+              <label className="mb-2 block text-[0.84rem] font-semibold text-[var(--text)]">Nombre del grupo *</label>
               <input
                 type="text"
                 value={formData.nombre}
                 onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                 placeholder="Ej: Equipo de desarrollo"
-                className="w-full rounded-lg border border-[var(--panel-border)] bg-white px-3 py-2 text-[var(--text)] placeholder-[var(--text-muted)] focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-light)]"
+                className="w-full rounded-sm border border-[#d2ded7] bg-white px-3.5 py-2.5 text-[0.92rem] text-[var(--text)] placeholder-[var(--text-muted)] focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[#05a63d]/20"
               />
             </div>
             <div>
-              <label className="mb-2 block text-sm font-semibold text-[var(--text)]">Descripción (opcional)</label>
+              <label className="mb-2 block text-[0.84rem] font-semibold text-[var(--text)]">Descripción (opcional)</label>
               <textarea
                 value={formData.descripcion}
                 onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
                 placeholder="Describe el propósito del grupo"
                 rows="3"
-                className="w-full rounded-lg border border-[var(--panel-border)] bg-white px-3 py-2 text-[var(--text)] placeholder-[var(--text-muted)] focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-light)]"
+                className="w-full rounded-sm border border-[#d2ded7] bg-white px-3.5 py-2.5 text-[0.92rem] text-[var(--text)] placeholder-[var(--text-muted)] focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[#05a63d]/20"
               />
             </div>
           </div>
@@ -387,13 +401,45 @@ function UserGroups() {
         isOpen={showEditModal && !!groupBeingEdited}
         title={groupBeingEdited ? `Editar grupo: ${groupBeingEdited.nombre}` : "Editar grupo"}
         onClose={closeEditModal}
-        panelClassName="sm:max-w-[720px]"
+        panelClassName="sm:max-w-[720px] sm:rounded-[12px] border-[#d8e6dd]"
+        contentClassName="px-5 pb-5 pt-4 sm:px-6 sm:pb-6"
+        footerClassName="border-t border-[#dce7df] bg-[#f8fbf9] px-5 py-4 sm:px-6"
         footer={
-          <div className="flex w-full gap-3">
+          <div className="flex w-full items-center gap-3">
+            {groupBeingEdited?.rol_usuario === "lider" ? (
+              <button
+                type="button"
+                onClick={() => {
+                  if (!editingGroupId) return;
+                  if (!window.confirm("¿Estás seguro de eliminar este grupo?")) return;
+                  handleDeleteGroup(editingGroupId);
+                  closeEditModal();
+                }}
+                className="rounded-sm border border-[#efcdc7] bg-[#fff6f4] px-4 py-2.5 text-[0.9rem] font-semibold text-[#8b2f22] transition-colors hover:bg-[#fff0ed]"
+              >
+                Eliminar
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  if (!editingGroupId) return;
+                  if (!window.confirm("¿Estás seguro de salir de este grupo?")) return;
+                  handleLeaveGroup(editingGroupId);
+                  closeEditModal();
+                }}
+                className="rounded-sm border border-[#efcdc7] bg-[#fff6f4] px-4 py-2.5 text-[0.9rem] font-semibold text-[#8b2f22] transition-colors hover:bg-[#fff0ed]"
+              >
+                Salir
+              </button>
+            )}
+
+            <div className="flex-1" />
+
             <button
               type="button"
               onClick={closeEditModal}
-              className="flex-1 rounded-lg border border-[var(--panel-border)] px-4 py-2 font-semibold text-[var(--text)] transition-colors hover:bg-[var(--surface-soft)]"
+              className="rounded-sm border border-[#d2ded7] bg-white px-4 py-2.5 text-[0.9rem] font-semibold text-[var(--text)] transition-colors hover:bg-[#f5f9f7]"
             >
               Cancelar
             </button>
@@ -401,7 +447,7 @@ function UserGroups() {
               type="submit"
               form="edit-group-form"
               disabled={editSaving}
-              className="flex-1 rounded-lg bg-[var(--primary)] px-4 py-2 font-semibold text-white transition-colors hover:bg-[var(--primary-strong)] disabled:cursor-not-allowed disabled:opacity-70"
+              className="rounded-sm border border-[var(--primary)] bg-[var(--primary)] px-4 py-2.5 text-[0.9rem] font-semibold text-white transition-colors hover:bg-[var(--primary-strong)] disabled:cursor-not-allowed disabled:opacity-70"
             >
               {editSaving ? "Guardando..." : "Guardar cambios"}
             </button>
@@ -409,31 +455,31 @@ function UserGroups() {
         }
       >
         <form id="edit-group-form" onSubmit={handleSaveGroup}>
-          <div className="space-y-5 p-1">
+          <div className="space-y-5">
             {editError && (
-              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+              <div className="rounded-sm border border-[#efcdc7] bg-[#fff6f4] px-4 py-3 text-[0.86rem] font-medium text-[#8b2f22]">
                 {editError}
               </div>
             )}
 
             <div className="grid gap-4">
               <div>
-                <label className="mb-2 block text-sm font-semibold text-[var(--text)]">Nombre del grupo *</label>
+                <label className="mb-2 block text-[0.84rem] font-semibold text-[var(--text)]">Nombre del grupo *</label>
                 <input
                   type="text"
                   value={editForm.nombre}
                   onChange={(e) => setEditForm(previous => ({ ...previous, nombre: e.target.value }))}
-                  className="w-full rounded-lg border border-[var(--panel-border)] bg-white px-3 py-2 text-[var(--text)] placeholder-[var(--text-muted)] focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-light)]"
+                  className="w-full rounded-sm border border-[#d2ded7] bg-white px-3.5 py-2.5 text-[0.92rem] text-[var(--text)] placeholder-[var(--text-muted)] focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[#05a63d]/20"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-semibold text-[var(--text)]">Descripción</label>
+                <label className="mb-2 block text-[0.84rem] font-semibold text-[var(--text)]">Descripción</label>
                 <textarea
                   value={editForm.descripcion}
                   onChange={(e) => setEditForm(previous => ({ ...previous, descripcion: e.target.value }))}
                   rows="3"
-                  className="w-full rounded-lg border border-[var(--panel-border)] bg-white px-3 py-2 text-[var(--text)] placeholder-[var(--text-muted)] focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-light)]"
+                  className="w-full rounded-sm border border-[#d2ded7] bg-white px-3.5 py-2.5 text-[0.92rem] text-[var(--text)] placeholder-[var(--text-muted)] focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[#05a63d]/20"
                 />
               </div>
             </div>
@@ -523,9 +569,10 @@ function UserGroups() {
                     {groupBeingEdited.participantes.map(participante => (
                       <span
                         key={participante.id_usuario}
-                        className="inline-flex items-center rounded-full bg-white px-3 py-1 text-xs text-[var(--text)] ring-1 ring-[var(--panel-border)]"
+                        className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs text-[var(--text)] ring-1 ring-[var(--panel-border)]"
                       >
-                        {participante.nombre}
+                        <User className="h-4 w-4 text-[var(--text-muted)]" />
+                        <span className="truncate">{participante.nombre}</span>
                       </span>
                     ))}
                   </div>

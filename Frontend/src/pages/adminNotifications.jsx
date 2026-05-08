@@ -103,8 +103,9 @@ export default function AdminNotifications() {
 			if (!token) return undefined;
 
 			const socket = io(SOCKET_BASE_URL, {
-				auth: { token: `Bearer ${token}` },
-				transports: ["websocket"]
+				auth: { token },
+				transports: ["websocket", "polling"],
+				reconnection: true
 			});
 
 			function handleNotificationEvent() {
@@ -113,10 +114,16 @@ export default function AdminNotifications() {
 				});
 			}
 
+			function handleSocketError() {
+				setActionError(previous => previous || "No se pudo conectar al canal en tiempo real. Puedes actualizar manualmente.");
+			}
+
 			socket.on("notification:new", handleNotificationEvent);
+			socket.on("connect_error", handleSocketError);
 
 			return () => {
 				socket.off("notification:new", handleNotificationEvent);
+				socket.off("connect_error", handleSocketError);
 				socket.disconnect();
 			};
 		}, []);

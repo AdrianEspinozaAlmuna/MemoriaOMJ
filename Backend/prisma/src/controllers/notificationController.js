@@ -24,11 +24,19 @@ function parseTargetUserIds(value) {
 async function serializeNotificationWithRelations(notification) {
   if (!notification) return null;
 
-  // Load relations if not already loaded
   const loaded = await prisma.notificaciones.findUnique({
     where: { id_notificacion: notification.id_notificacion },
     include: {
-      usuario: {
+      emisor: {
+        select: {
+          id_usuario: true,
+          nombre: true,
+          apellido: true,
+          mail: true,
+          rol: true
+        }
+      },
+      receptor: {
         select: {
           id_usuario: true,
           nombre: true,
@@ -52,11 +60,15 @@ async function serializeNotificationWithRelations(notification) {
 
 function serializeNotification(notification) {
   const read = Boolean(notification?.leida ?? notification?.read ?? false);
+  const sender = notification?.emisor || notification?.sender || null;
+  const receiver = notification?.receptor || notification?.receiver || null;
   return {
     id: notification.id_notificacion,
     id_notificacion: notification.id_notificacion,
-    id_usuario: notification.id_usuario,
-    receiverId: notification.id_usuario,
+    id_emisor: notification.id_emisor ?? sender?.id_usuario ?? null,
+    id_receptor: notification.id_receptor ?? receiver?.id_usuario ?? null,
+    senderId: notification.id_emisor ?? sender?.id_usuario ?? null,
+    receiverId: notification.id_receptor ?? receiver?.id_usuario ?? null,
     activityId: notification.id_actividad,
     id_actividad: notification.id_actividad,
     type: notification.tipo,
@@ -67,18 +79,24 @@ function serializeNotification(notification) {
     descripcion: notification.descripcion,
     read,
     leida: read,
-    readAt: notification.fecha_lectura ?? notification.readAt ?? null,
-    fecha_lectura: notification.fecha_lectura ?? notification.readAt ?? null,
     sentAt: notification.fecha_envio,
     fecha_envio: notification.fecha_envio,
-    sender: null,
-    receiver: notification.usuario
+    sender: sender
       ? {
-          id: notification.usuario.id_usuario,
-          nombre: notification.usuario.nombre,
-          apellido: notification.usuario.apellido,
-          mail: notification.usuario.mail,
-          rol: notification.usuario.rol
+          id: sender.id_usuario ?? sender.id ?? null,
+          nombre: sender.nombre,
+          apellido: sender.apellido,
+          mail: sender.mail,
+          rol: sender.rol
+        }
+      : null,
+    receiver: receiver
+      ? {
+          id: receiver.id_usuario ?? receiver.id ?? null,
+          nombre: receiver.nombre,
+          apellido: receiver.apellido,
+          mail: receiver.mail,
+          rol: receiver.rol
         }
       : null,
     activity: notification.actividad
@@ -102,34 +120,42 @@ async function listMyNotifications(req, res) {
   }
 
   try {
-    const whereClause = unreadOnly ? `WHERE n.id_usuario = ${idUsuario} AND n.leida = false` : `WHERE n.id_usuario = ${idUsuario}`;
+    const notifications = await prisma.notificaciones.findMany({
+      where: {
+        ...(unreadOnly ? { leida: false } : {}),
+        OR: [{ id_receptor: idUsuario }, { id_receptor: null }]
+      },
+      include: {
+        emisor: {
+          select: {
+            id_usuario: true,
+            nombre: true,
+            apellido: true,
+            mail: true,
+            rol: true
+          }
+        },
+        receptor: {
+          select: {
+            id_usuario: true,
+            nombre: true,
+            apellido: true,
+            mail: true,
+            rol: true
+          }
+        },
+        actividad: {
+          select: {
+            id_actividad: true,
+            titulo: true,
+            fecha: true
+          }
+        }
+      },
+      orderBy: [{ fecha_envio: "desc" }, { id_notificacion: "desc" }]
+    });
 
-    const rows = await prisma.$queryRawUnsafe(`
-      SELECT n.*,
-        u.id_usuario, u.nombre, u.apellido, u.mail, u.rol,
-        a.id_actividad AS actividad_id, a.titulo AS actividad_titulo, a.fecha AS actividad_fecha
-      FROM notificaciones n
-      LEFT JOIN usuario u ON u.id_usuario = n.id_usuario
-      LEFT JOIN actividad a ON a.id_actividad = n.id_actividad
-      ${whereClause}
-      ORDER BY n.fecha_envio DESC, n.id_notificacion DESC
-    `);
-
-    const mapped = rows.map(r => ({
-      id_notificacion: r.id_notificacion,
-      id_usuario: r.id_usuario,
-      id_actividad: r.id_actividad,
-      tipo: r.tipo,
-      titulo: r.titulo,
-      descripcion: r.descripcion,
-      leida: r.leida,
-      fecha_lectura: r.fecha_lectura,
-      fecha_envio: r.fecha_envio,
-      usuario: r.id_usuario ? { id_usuario: r.id_usuario, nombre: r.nombre, apellido: r.apellido, mail: r.mail, rol: r.rol } : null,
-      actividad: r.actividad_id ? { id_actividad: r.actividad_id, titulo: r.actividad_titulo, fecha: r.actividad_fecha } : null
-    }));
-
-    return res.json({ notifications: mapped.map(serializeNotification) });
+    return res.json({ notifications: notifications.map(serializeNotification) });
   } catch (error) {
     console.error("[notifications] listMyNotifications failed:", error);
     return res.status(500).json({ message: "Error obteniendo notificaciones", detail: error.message });
@@ -161,7 +187,16 @@ async function listAdminNotifications(req, res) {
     const notifications = await prisma.notificaciones.findMany({
       where,
       include: {
-        usuario: {
+        emisor: {
+          select: {
+            id_usuario: true,
+            nombre: true,
+            apellido: true,
+            mail: true,
+            rol: true
+          }
+        },
+        receptor: {
           select: {
             id_usuario: true,
             nombre: true,
@@ -198,8 +233,8 @@ async function countUnreadNotifications(req, res) {
   try {
     const unreadCount = await prisma.notificaciones.count({
       where: {
-        id_usuario: idUsuario,
-        leida: false
+        leida: false,
+        OR: [{ id_receptor: idUsuario }, { id_receptor: null }]
       }
     });
 
@@ -232,7 +267,7 @@ async function markNotificationAsRead(req, res) {
       return res.status(404).json({ message: "Notificacion no encontrada" });
     }
 
-    if (found.id_usuario !== idUsuario) {
+    if (found.id_receptor !== null && found.id_receptor !== idUsuario) {
       return res.status(403).json({ message: "No tienes permiso para ver esta notificacion" });
     }
 
@@ -240,11 +275,19 @@ async function markNotificationAsRead(req, res) {
     const updated = await prisma.notificaciones.update({
       where: { id_notificacion: idNotificacion },
       data: {
-        leida: true,
-        fecha_lectura: new Date()
+        leida: true
       },
       include: {
-        usuario: {
+        emisor: {
+          select: {
+            id_usuario: true,
+            nombre: true,
+            apellido: true,
+            mail: true,
+            rol: true
+          }
+        },
+        receptor: {
           select: {
             id_usuario: true,
             nombre: true,
@@ -280,12 +323,11 @@ async function markAllNotificationsAsRead(req, res) {
   try {
     const result = await prisma.notificaciones.updateMany({
       where: {
-        id_usuario: idUsuario,
-        leida: false
+        leida: false,
+        OR: [{ id_receptor: idUsuario }, { id_receptor: null }]
       },
       data: {
-        leida: true,
-        fecha_lectura: new Date()
+        leida: true
       }
     });
 
@@ -327,39 +369,9 @@ async function createBroadcastNotification(req, res) {
       return res.status(500).json({ message: "Error creando notificacion" });
     }
 
-    emitNotificationCreated(serializeNotification({
-      id_notificacion: created.id_notificacion,
-      id_emisor: created.id_emisor,
-      id_receptor: created.id_receptor,
-      id_actividad: created.id_actividad,
-      tipo: created.tipo,
-      titulo: created.titulo,
-      descripcion: created.descripcion,
-      fecha_lectura: created.fecha_lectura,
-      fecha_envio: created.fecha_envio,
-      id_usuario: created.id_emisor,
-      usuario: created.id_emisor ? { id_usuario: created.id_emisor } : null,
-      receptor: created.id_receptor ? { id_usuario: created.id_receptor } : null,
-      actividad: created.id_actividad ? { id_actividad: created.id_actividad } : null
-    }), { broadcast: true });
+    emitNotificationCreated(serializeNotification(created), { broadcast: true });
 
-    const mapped = {
-      id_notificacion: created.id_notificacion,
-      id_emisor: created.id_emisor,
-      id_receptor: created.id_receptor,
-      id_actividad: created.id_actividad,
-      tipo: created.tipo,
-      titulo: created.titulo,
-      descripcion: created.descripcion,
-      fecha_lectura: created.fecha_lectura,
-      fecha_envio: created.fecha_envio,
-      id_usuario: created.id_emisor,
-      usuario: created.id_emisor ? { id_usuario: created.id_emisor } : null,
-      receptor: created.id_receptor ? { id_usuario: created.id_receptor } : null,
-      actividad: created.id_actividad ? { id_actividad: created.id_actividad } : null
-    };
-
-    return res.status(201).json({ ok: true, updatedCount: 1, notification: serializeNotification(mapped) });
+    return res.status(201).json({ ok: true, updatedCount: 1, notification: serializeNotification(created) });
   } catch (error) {
     console.error("[notifications] createBroadcastNotification failed:", error);
     return res.status(500).json({ message: "Error creando notificacion", detail: error.message });
@@ -403,37 +415,9 @@ async function createDirectNotification(req, res) {
       return res.status(500).json({ message: "Error creando notificacion" });
     }
 
-    emitNotificationCreated(serializeNotification({
-      id_notificacion: created.id_notificacion,
-      id_emisor: created.id_emisor,
-      id_receptor: created.id_receptor,
-      id_actividad: created.id_actividad,
-      tipo: created.tipo,
-      titulo: created.titulo,
-      descripcion: created.descripcion,
-      fecha_lectura: created.fecha_lectura,
-      fecha_envio: created.fecha_envio,
-      usuario: created.id_emisor ? { id_usuario: created.id_emisor } : null,
-      receptor: created.id_receptor ? { id_usuario: created.id_receptor } : null,
-      actividad: created.id_actividad ? { id_actividad: created.id_actividad } : null
-    }), { targetUserIds: [targetId] });
+    emitNotificationCreated(serializeNotification(created), { targetUserIds: [targetId] });
 
-    const mapped = {
-      id_notificacion: created.id_notificacion,
-      id_emisor: created.id_emisor,
-      id_receptor: created.id_receptor,
-      id_actividad: created.id_actividad,
-      tipo: created.tipo,
-      titulo: created.titulo,
-      descripcion: created.descripcion,
-      fecha_lectura: created.fecha_lectura,
-      fecha_envio: created.fecha_envio,
-      usuario: created.id_emisor ? { id_usuario: created.id_emisor } : null,
-      receptor: created.id_receptor ? { id_usuario: created.id_receptor } : null,
-      actividad: created.id_actividad ? { id_actividad: created.id_actividad } : null
-    };
-
-    return res.status(201).json({ ok: true, notification: serializeNotification(mapped) });
+    return res.status(201).json({ ok: true, notification: serializeNotification(created) });
   } catch (error) {
     console.error("[notifications] createDirectNotification failed:", error);
     return res.status(500).json({ message: "Error creando notificacion", detail: error.message });

@@ -482,7 +482,7 @@ export default function Navbar() {
 							</div>
 							<button
 								type="button"
-								className="inline-flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-sm border border-[#f2c8c8] bg-white text-[#d43c3c] transition-colors duration-200 hover:bg-[#fff1f1] hover:text-[#b92f2f] focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(212,60,60,0.14)]"
+								className="inline-flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-sm  text-[#d43c3c] transition-colors duration-200 hover:bg-[#fff1f1] hover:text-[#b92f2f] focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(212,60,60,0.14)]"
 								onClick={handleLogout}
 								aria-label="Cerrar sesion"
 								title="Cerrar sesion"

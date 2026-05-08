@@ -256,6 +256,22 @@ async function getActivityById(req, res) {
             }
           }
         },
+        actividad_grupos: {
+          include: {
+            grupo: {
+              include: {
+                usuario: { select: { id_usuario: true, nombre: true, apellido: true } },
+                participantes_grupo: {
+                  include: {
+                    usuario: {
+                      select: { id_usuario: true, nombre: true, apellido: true }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
         actividad_mensaje: {
           orderBy: { id_mensaje: "asc" },
           include: {
@@ -277,15 +293,48 @@ async function getActivityById(req, res) {
     }
 
     const base = serializeActivity(activity, currentUserId);
-    const participants = activity.actividad_participantes
+    const participantsById = new Map();
+
+    activity.actividad_participantes
       .filter(item => item.rol === "participante")
-      .map(item => ({
-        id: item.usuario.id_usuario,
-        name: `${item.usuario.nombre} ${item.usuario.apellido || ""}`.trim(),
-        status: item.asistio ? "Asistencia registrada" : "Confirmado",
-        asistio: item.asistio,
-        valoracion: item.valoracion
-      }));
+      .forEach(item => {
+        participantsById.set(item.usuario.id_usuario, {
+          id: item.usuario.id_usuario,
+          name: `${item.usuario.nombre} ${item.usuario.apellido || ""}`.trim(),
+          status: item.asistio ? "Asistencia registrada" : "Confirmado",
+          asistio: item.asistio,
+          valoracion: item.valoracion
+        });
+      });
+
+    activity.actividad_grupos.forEach(entry => {
+      const grupo = entry.grupo;
+      if (!grupo) return;
+
+      const miembrosGrupo = [
+        { usuario: grupo.usuario },
+        ...grupo.participantes_grupo.map(item => ({ usuario: item.usuario }))
+      ];
+
+      for (const member of miembrosGrupo) {
+        const usuario = member.usuario;
+        if (!usuario || participantsById.has(usuario.id_usuario)) {
+          continue;
+        }
+
+        participantsById.set(usuario.id_usuario, {
+          id: usuario.id_usuario,
+          name: `${usuario.nombre} ${usuario.apellido || ""}`.trim(),
+          status: "Confirmado",
+          asistio: false,
+          valoracion: null
+        });
+      }
+    });
+
+    const participants = [...participantsById.values()];
+    base.enrolled = participants.length;
+    base.inscritos = participants.length;
 
     const ratingValues = participants
       .map(item => Number(item.valoracion))
@@ -354,6 +403,9 @@ async function createActivity(req, res) {
   const startTime = timeStringToDate(hora_inicio);
   const endTime = timeStringToDate(hora_termino);
   const maxParticipants = Number(max_participantes ?? capacity ?? 0);
+  const selectedGroupIds = Array.isArray(grupos_seleccionados)
+    ? [...new Set(grupos_seleccionados.map(value => Number(value)).filter(value => Number.isInteger(value) && value > 0))]
+    : [];
   let salaId = null;
 
   if (!id_sala) {
@@ -463,19 +515,12 @@ async function createActivity(req, res) {
         }
       });
 
-      const adminNotifications = await notifyAdminUsers(tx, idEncargado, {
-        titulo: "Nueva propuesta de actividad",
-        descripcion: `Se creó la actividad ${activityTitle} para revisión.`,
-        tipo: "actividad",
-        id_actividad: newActivity.id_actividad
-      });
-
       // Procesar grupos seleccionados
-      if (Array.isArray(grupos_seleccionados) && grupos_seleccionados.length > 0) {
+      if (selectedGroupIds.length > 0) {
         // Validar que los grupos existen y pertenecen al usuario
         const gruposValidos = await tx.grupo.findMany({
           where: {
-            id_grupo: { in: grupos_seleccionados },
+            id_grupo: { in: selectedGroupIds },
             OR: [
               { id_lider: idEncargado },
               { participantes_grupo: { some: { id_usuario: idEncargado } } }
@@ -520,11 +565,22 @@ async function createActivity(req, res) {
         }
       }
 
-      return { newActivity, adminNotifications };
+      return { newActivity };
     });
 
-    if (created.adminNotifications?.[0]) {
-      emitNotificationCreated(created.adminNotifications[0], { broadcastAdmins: true });
+    try {
+      const adminNotifications = await notifyAdminUsers(prisma, idEncargado, {
+        titulo: "Nueva propuesta de actividad",
+        descripcion: `Se creó la actividad ${activityTitle} para revisión.`,
+        tipo: "actividad",
+        id_actividad: created.newActivity.id_actividad
+      });
+
+      if (adminNotifications?.[0]) {
+        emitNotificationCreated(adminNotifications[0], { broadcastAdmins: true });
+      }
+    } catch (notificationError) {
+      console.error("[activities] admin notification failed:", notificationError);
     }
 
     return res.status(201).json({ ok: true, activity: serializeActivity(created.newActivity, idEncargado) });

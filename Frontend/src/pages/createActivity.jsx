@@ -32,7 +32,11 @@ export default function CreateActivity() {
 
   function handleChange(event) {
     const { name, value, type, checked } = event.target;
-   
+    setForm(previous => ({
+      ...previous,
+      [name]: type === "checkbox" ? checked : value
+    }));
+  }
 
   function handleGroupToggle(idGrupo) {
     setForm(previous => {
@@ -45,7 +49,6 @@ export default function CreateActivity() {
           : [...gruposActuales, idGrupo]
       };
     });
-  } setForm(previous => ({ ...previous, [name]: type === "checkbox" ? checked : value }));
   }
 
   async function handleSubmit(event) {
@@ -117,6 +120,7 @@ export default function CreateActivity() {
         hora_termino: form.hora_termino,
         max_participantes: maxParticipants,
         chat_bidireccional: form.chat_bidireccional,
+        grupos_seleccionados: form.grupos_seleccionados,
         aprobado: false,
         estado: "pendiente"
       });
@@ -187,7 +191,7 @@ export default function CreateActivity() {
 
     async function loadGrupos() {
       try {
-        const res = await api.get("/api/groups");
+        const res = await api.get("/groups");
         if (!mounted) return;
         setGruposDisponibles(res.data.grupos || []);
       } catch (e) {

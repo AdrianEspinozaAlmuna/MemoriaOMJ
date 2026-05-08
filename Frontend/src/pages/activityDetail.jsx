@@ -166,13 +166,22 @@ export default function ActivityDetail() {
 
 		const socket = io(SOCKET_BASE_URL, {
 			transports: ["websocket", "polling"],
+			reconnection: true,
 			auth: { token }
 		});
 
 		socketRef.current = socket;
 
 		socket.on("connect", () => {
-			socket.emit("activity:join", { activityId: Number(activityId) });
+			socket.emit("activity:join", { activityId: Number(activityId) }, ack => {
+				if (!ack?.ok) {
+					setChatError(ack?.message || "No se pudo unir al canal de chat en tiempo real.");
+				}
+			});
+		});
+
+		socket.on("connect_error", () => {
+			setChatError("Conexión en tiempo real inestable. El chat seguirá disponible con actualización por API.");
 		});
 
 		socket.on("activity:message:new", incomingMessage => {
@@ -187,6 +196,7 @@ export default function ActivityDetail() {
 		});
 
 		return () => {
+			socket.off("connect_error");
 			socket.disconnect();
 			socketRef.current = null;
 		};
@@ -591,39 +601,39 @@ export default function ActivityDetail() {
 							<div className="mt-6 border-t border-[#e0e9e2] pt-5">
 								<h3 className="m-0 text-[0.95rem] font-semibold text-[var(--text)]">Detalles de la actividad</h3>
 								<div className="mt-4 grid gap-3 sm:grid-cols-2">
-									<div className="rounded-lg border border-[#e2ebe4] bg-white px-3.5 py-3">
+									<div className="rounded-sm border border-[#e2ebe4] bg-white px-3.5 py-3">
 										<p className="m-0 text-[0.8rem] text-[var(--text-muted)]">Fecha</p>
 										<p className="mt-1 inline-flex items-center gap-2 text-[0.9rem] font-semibold text-[var(--text)]">
 											<CalendarDays className="h-4 w-4 text-[var(--primary)]" strokeWidth={1.8} />
 											{formatDate(activity.date)}
 										</p>
 									</div>
-									<div className="rounded-lg border border-[#e2ebe4] bg-white px-3.5 py-3">
+									<div className="rounded-sm border border-[#e2ebe4] bg-white px-3.5 py-3">
 										<p className="m-0 text-[0.8rem] text-[var(--text-muted)]">Hora inicio - término</p>
 										<p className="mt-1 inline-flex items-center gap-2 text-[0.9rem] font-semibold text-[var(--text)]">
 											<Clock3 className="h-4 w-4 text-[var(--primary)]" strokeWidth={1.8} />
 											{activity.hora_inicio} - {activity.hora_termino}
 										</p>
 									</div>
-									<div className="rounded-lg border border-[#e2ebe4] bg-white px-3.5 py-3">
+									<div className="rounded-sm border border-[#e2ebe4] bg-white px-3.5 py-3">
 										<p className="m-0 text-[0.8rem] text-[var(--text-muted)]">Sala / lugar</p>
 										<p className="mt-1 inline-flex items-center gap-2 text-[0.9rem] font-semibold text-[var(--text)]">
 											<MapPin className="h-4 w-4 text-[var(--primary)]" strokeWidth={1.8} />
 											{activity.place}
 										</p>
 									</div>
-									<div className="rounded-lg border border-[#e2ebe4] bg-white px-3.5 py-3">
+									<div className="rounded-sm border border-[#e2ebe4] bg-white px-3.5 py-3">
 										<p className="m-0 text-[0.8rem] text-[var(--text-muted)]">Encargado</p>
 										<p className="mt-1 inline-flex items-center gap-2 text-[0.9rem] font-semibold text-[var(--text)]">
 											<User className="h-4 w-4 text-[var(--primary)]" strokeWidth={1.8} />
 											{activity.manager} (ID {activity.id_encargado})
 										</p>
 									</div>
-									<div className="rounded-lg border border-[#e2ebe4] bg-white px-3.5 py-3">
+									<div className="rounded-sm border border-[#e2ebe4] bg-white px-3.5 py-3">
 										<p className="m-0 text-[0.8rem] text-[var(--text-muted)]">Estado</p>
 										<p className="mt-1 text-[0.9rem] font-semibold text-[var(--text)]">{statusBadge.label}</p>
 									</div>
-									<div className="rounded-lg border border-[#e2ebe4] bg-white px-3.5 py-3">
+									<div className="rounded-sm border border-[#e2ebe4] bg-white px-3.5 py-3">
 										<p className="m-0 text-[0.8rem] text-[var(--text-muted)]">Aprobación</p>
 										<p className="mt-1 inline-flex items-center gap-2 text-[0.9rem] font-semibold text-[var(--text)]">
 											<BadgeCheck className="h-4 w-4 text-[var(--primary)]" strokeWidth={1.8} />

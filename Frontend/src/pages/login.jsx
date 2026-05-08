@@ -99,7 +99,7 @@ export default function Login() {
 						autoComplete="current-password"
 					/>
 
-					{error && <p className="m-0 rounded-lg border border-[#f2cbc4] bg-[#fff0ee] px-3 py-2 text-[0.84rem] font-semibold text-[#8f3526]">{error}</p>}
+					{error && <p className="m-0 rounded-sm px-3 py-2 text-[0.84rem] font-semibold text-[#8f3526]">{error}</p>}
 
 					<button type="submit" className="btn btn-primary btn-full mt-2 rounded-[10px] py-3 text-[0.92rem] tracking-[0.01em]" disabled={loading}>
 						{loading ? "Entrando..." : "Entrar"}
