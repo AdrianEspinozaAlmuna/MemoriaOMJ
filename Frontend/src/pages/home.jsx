@@ -1,45 +1,532 @@
-import React, { useEffect, useState } from "react";
-import { Activity, Bell, CalendarDays, Download, Heart, Music2, Sparkles, Users } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import ActivityCard from "../components/ActivityCard";
 
-function Icon({ name, className = "h-5 w-5" }) {
-  if (name === "calendar") {
-    return <CalendarDays className={className} aria-hidden="true" focusable="false" strokeWidth={1.8} />;
-  }
+// ─── ICONS (outline, 1.6 stroke — matches dashboard) ──────────────────────
+const Icon = ({ d, size = 20, stroke = 1.6, fill = 'none', className = '' }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} fill={fill} stroke="currentColor"
+       strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" className={className}>
+    {typeof d === 'string' ? <path d={d} /> : d}
+  </svg>
+);
 
-  if (name === "bell") {
-    return <Bell className={className} aria-hidden="true" focusable="false" strokeWidth={1.8} />;
-  }
+const I = {
+  calendar: <><rect x="3.5" y="5" width="17" height="15" rx="1.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/></>,
+  users:    <><circle cx="9" cy="9" r="3.2"/><path d="M3 19c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><circle cx="17" cy="8" r="2.5"/><path d="M15 19c0-2.3 1.5-4 4-4"/></>,
+  chat:     <><path d="M4 6.5C4 5.7 4.7 5 5.5 5h13c.8 0 1.5.7 1.5 1.5v9c0 .8-.7 1.5-1.5 1.5H10l-4 3v-3H5.5C4.7 17 4 16.3 4 15.5z"/><path d="M8 10h8M8 13h5"/></>,
+  star:     <><path d="m12 3.5 2.7 5.5 6 .9-4.4 4.2 1 6L12 17.3 6.6 20.1l1-6L3.3 9.9l6-.9z"/></>,
+  bell:     <><path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2H4.5z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></>,
+  layout:   <><rect x="3.5" y="3.5" width="17" height="17" rx="1.5"/><path d="M3.5 9.5h17M9.5 9.5v11"/></>,
+  check:    'M5 12.5l4 4 10-10',
+  x:        'M6 6l12 12M18 6L6 18',
+  arrow:    'M5 12h14M13 6l6 6-6 6',
+  arrowL:   'M19 12H5M11 6l-6 6 6 6',
+  bolt:     <><path d="M13 3 4 14h7l-1 7 9-11h-7z"/></>,
+  shield:   <><path d="M12 3.5 4 6v6c0 4.5 3.5 7.5 8 9 4.5-1.5 8-4.5 8-9V6z"/></>,
+  spark:    <><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.5 5.5l2.8 2.8M15.7 15.7l2.8 2.8M5.5 18.5l2.8-2.8M15.7 8.3l2.8-2.8"/></>,
+  pin:      <><path d="M12 21s7-7.3 7-12a7 7 0 1 0-14 0c0 4.7 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></>,
+  clock:    <><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3 2"/></>,
+  trend:    <><path d="M3 17l6-6 4 4 8-9"/><path d="M14 6h7v7"/></>,
+  download: <><path d="M12 4v11M6 11l6 6 6-6M5 20h14"/></>,
+  grid:     <><rect x="3.5" y="3.5" width="7" height="7" rx="1"/><rect x="13.5" y="3.5" width="7" height="7" rx="1"/><rect x="3.5" y="13.5" width="7" height="7" rx="1"/><rect x="13.5" y="13.5" width="7" height="7" rx="1"/></>,
+  filter:   <><path d="M4 5h16M7 12h10M10 19h4"/></>,
+  search:   <><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4-4"/></>,
+  send:     <><path d="M21 3 3 11l7 3 3 7z"/><path d="M21 3 10 14"/></>,
+  globe:    <><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.5 4 5.5 4 8.5s-1.5 6-4 8.5c-2.5-2.5-4-5.5-4-8.5s1.5-6 4-8.5z"/></>,
+  phone:    <><rect x="6.5" y="2.5" width="11" height="19" rx="2"/><path d="M11 18.5h2"/></>,
+  award:    <><circle cx="12" cy="9" r="5.5"/><path d="M8 13l-2 8 6-3 6 3-2-8"/></>,
+  lock:     <><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></>,
+  refresh:  <><path d="M4 12a8 8 0 0 1 14-5l2 2"/><path d="M20 12a8 8 0 0 1-14 5l-2-2"/><path d="M20 4v5h-5M4 20v-5h5"/></>,
+  flag:     <><path d="M5 21V4M5 4h12l-2 4 2 4H5"/></>,
+};
 
-  if (name === "users") {
-    return <Users className={className} aria-hidden="true" focusable="false" strokeWidth={1.8} />;
-  }
+// ─── BRAND MARK (shield + leaf) ────────────────────────────────────────────
+const BrandMark = ({ size = 32 }) => (
+  <svg viewBox="0 0 40 40" width={size} height={size} aria-label="Plataforma Juvenil Curicó">
+    <path d="M20 3 L34 7 V19 C34 28 28 34 20 37 C12 34 6 28 6 19 V7 Z"
+          fill="var(--pjc-primary)" />
+    <path d="M14 22 C14 16 19 12 26 12 C26 19 22 24 14 24 Z M14 24 C14 24 16 21 19 19"
+          fill="none" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
 
-  if (name === "music") {
-    return <Music2 className={className} aria-hidden="true" focusable="false" strokeWidth={1.8} />;
-  }
+// ─── SECTION SHELL ─────────────────────────────────────────────────────────
+const Eyebrow = ({ children }) => (
+  <div className="text-[11px] font-semibold tracking-[0.18em] uppercase text-[var(--pjc-primary)]">
+    {children}
+  </div>
+);
 
-  if (name === "heart") {
-    return <Heart className={className} aria-hidden="true" focusable="false" strokeWidth={1.8} />;
-  }
 
-  if (name === "download") {
-    return <Download className={className} aria-hidden="true" focusable="false" strokeWidth={1.8} />;
-  }
+// ──────────────────────────────────────────────────────────────────────────
+// HERO
+// ──────────────────────────────────────────────────────────────────────────
+const Hero = ({ onInstallClick }) => {
+  const stats = [
+    { v: '+1.200', l: 'jóvenes activos' },
+    { v: '+340', l: 'actividades / año' },
+    { v: '15', l: 'organizaciones' },
+    { v: '92%', l: 'tasa de asistencia' },
+  ];
+  return (
+    <section className="relative bg-white overflow-hidden">
+      {/* subtle dotted backdrop */}
+      <div aria-hidden className="absolute inset-0 opacity-[0.4] pointer-events-none"
+           style={{ backgroundImage: 'radial-gradient(circle, #d4d4d8 1px, transparent 1px)', backgroundSize: '22px 22px', maskImage: 'linear-gradient(to bottom, black 30%, transparent 90%)' }} />
+      <div className="relative max-w-[1200px] mx-auto px-4 sm:px-6 pt-14 pb-20 lg:pt-20 lg:pb-28">
+        <div className="grid lg:grid-cols-12 gap-10 lg:gap-14 items-start">
+          {/* copy */}
+          <div className="lg:col-span-7">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-[var(--pjc-primary-50)] border border-[var(--pjc-primary-200)] rounded-full text-[12px] font-medium text-[var(--pjc-primary-800)]">
+              <span className="relative flex w-1.5 h-1.5">
+                <span className="absolute inline-flex w-full h-full rounded-full bg-[var(--pjc-primary)] opacity-60 animate-ping"/>
+                <span className="relative inline-flex w-1.5 h-1.5 rounded-full bg-[var(--pjc-primary)]"/>
+              </span>
+              Oficina Municipal de la Juventud · Curicó
+            </div>
+            <h1 className="mt-5 text-[44px] sm:text-[56px] lg:text-[68px] leading-[1.02] tracking-[-0.025em] font-semibold text-[var(--pjc-ink)]">
+              Donde lo que pasa<br/>en la ciudad<br/>
+              <span className="relative inline-block">
+                <span className="relative z-10 text-[var(--pjc-primary)]">te incluye a ti.</span>
+                <span aria-hidden className="absolute left-0 right-0 bottom-1.5 h-3 bg-[var(--pjc-primary-100)] -z-0"/>
+              </span>
+            </h1>
+            <p className="mt-6 text-[17px] sm:text-[18px] leading-relaxed text-[var(--pjc-muted)] max-w-[560px]">
+              Inscríbete en talleres, deporte, cultura y voluntariado. Crea tus propias actividades, súmate a grupos y conecta con la red juvenil de la municipalidad — todo desde tu celular.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link to="/register" className="inline-flex items-center gap-2 px-5 py-3 bg-[var(--pjc-primary)] text-white rounded-sm font-medium hover:bg-[var(--pjc-primary-700)] transition shadow-[0_1px_0_rgba(0,0,0,0.06)]">
+                Crear mi cuenta gratis
+                <Icon d={I.arrow} size={18}/>
+              </Link>
+              <button 
+                onClick={onInstallClick}
+                className="inline-flex items-center gap-2 px-5 py-3 bg-white border border-zinc-200 text-[var(--pjc-ink)] rounded-sm font-medium hover:border-zinc-300 hover:bg-zinc-50 transition">
+                <Icon d={I.download} size={18}/> Instalar como app
+              </button>
+            </div>
+            <div className="mt-7 flex items-center gap-4 text-[13px] text-[var(--pjc-muted)]">
+              <div className="flex -space-x-2">
+                {['#dcfce7','#bbf7d0','#86efac','#4ade80'].map((c,i)=>(
+                  <div key={i} className="w-7 h-7 rounded-full border-2 border-white" style={{background:c}}/>
+                ))}
+              </div>
+              <span>Más de 1.200 jóvenes ya participan cada semana</span>
+            </div>
+          </div>
 
-  if (name === "sparkles") {
-    return <Sparkles className={className} aria-hidden="true" focusable="false" strokeWidth={1.8} />;
-  }
+          {/* visual: floating activity card */}
+          <div className="lg:col-span-5 relative">
+            <HeroVisual />
+          </div>
+        </div>
 
-  return <Activity className={className} aria-hidden="true" focusable="false" strokeWidth={1.8} />;
-}
+        {/* stats strip */}
+        <div className="mt-16 lg:mt-24 grid grid-cols-2 lg:grid-cols-4 border border-zinc-200 rounded-sm bg-white">
+          {stats.map((s, i) => (
+            <div key={i} className={`p-5 sm:p-6 ${i < 3 ? 'lg:border-r' : ''} ${i < 2 ? 'border-b lg:border-b-0' : ''} ${i % 2 === 0 ? 'border-r lg:border-r' : ''} border-zinc-200`}>
+              <div className="text-[28px] sm:text-[34px] font-semibold tracking-tight text-[var(--pjc-ink)]">{s.v}</div>
+              <div className="mt-1 text-[13px] text-[var(--pjc-muted)]">{s.l}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
 
+const HeroVisual = () => (
+  <div className="relative h-[520px] lg:h-[560px]">
+    {/* phone mock */}
+    <div className="absolute right-0 top-0 w-[300px] h-[560px] rounded-[36px] bg-[var(--pjc-ink)] p-2 shadow-[0_30px_60px_-20px_rgba(31,51,40,0.35)]">
+      <div className="w-full h-full bg-[#f3f4f6] rounded-[28px] overflow-hidden relative">
+        <div className="h-9 flex items-center justify-between px-5 text-[10px] font-semibold text-[var(--pjc-ink)]">
+          <span>9:41</span>
+          <span className="flex gap-1 items-center">
+            <span className="w-1 h-1 rounded-full bg-[var(--pjc-ink)]"/>
+            <span className="w-1 h-1 rounded-full bg-[var(--pjc-ink)]"/>
+            <span className="w-1 h-1 rounded-full bg-[var(--pjc-ink)]"/>
+          </span>
+        </div>
+        <div className="px-4">
+          <div className="text-[10px] tracking-[0.18em] font-semibold text-[var(--pjc-primary)]">HOY · 8 MAYO</div>
+          <div className="text-[20px] font-semibold tracking-tight text-[var(--pjc-ink)] mt-0.5">Tus actividades</div>
+        </div>
+        <div className="px-4 mt-3 space-y-2">
+          {[
+            { t:'Taller de muralismo', l:'Casa de la Cultura', h:'17:00', s:'Inscrito', sc:'green' },
+            { t:'Liga de fútbol joven', l:'Estadio La Granja', h:'19:30', s:'En curso', sc:'blue' },
+            { t:'Voluntariado río Guaiquillo', l:'Parque Aguas Negras', h:'Sáb 10:00', s:'Cupos', sc:'amber' },
+          ].map((a,i)=>(
+            <div key={i} className="bg-white rounded-sm border border-zinc-200 p-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="text-[13px] font-semibold text-[var(--pjc-ink)] leading-tight">{a.t}</div>
+                <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded-full whitespace-nowrap ${
+                  a.sc==='green' ? 'bg-[var(--pjc-primary-50)] text-[var(--pjc-primary-800)] border border-[var(--pjc-primary-200)]' :
+                  a.sc==='blue'  ? 'bg-blue-50 text-blue-700 border border-blue-200' :
+                                   'bg-amber-50 text-amber-700 border border-amber-200'
+                }`}>{a.s}</span>
+              </div>
+              <div className="mt-1.5 flex items-center gap-2.5 text-[10.5px] text-[var(--pjc-muted)]">
+                <span className="flex items-center gap-1"><Icon d={I.clock} size={11}/>{a.h}</span>
+                <span className="flex items-center gap-1"><Icon d={I.pin} size={11}/>{a.l}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+        {/* floating notification */}
+        <div className="absolute left-3 right-3 bottom-20 bg-[var(--pjc-ink)] text-white rounded-sm p-3 shadow-lg flex items-start gap-2.5">
+          <div className="mt-0.5"><Icon d={I.bell} size={14} className="text-[var(--pjc-primary-300)]"/></div>
+          <div className="flex-1">
+            <div className="text-[11px] font-semibold">Actividad confirmada</div>
+            <div className="text-[10px] text-zinc-300 mt-0.5">Tu inscripción a "Taller de muralismo" fue aceptada.</div>
+          </div>
+        </div>
+        {/* tab bar */}
+        <div className="absolute left-0 right-0 bottom-0 h-14 bg-white border-t border-zinc-200 flex items-center justify-around">
+          {[I.layout, I.calendar, I.users, I.bell].map((d,i)=>(
+            <div key={i} className={i===1 ? 'text-[var(--pjc-primary)]' : 'text-zinc-400'}>
+              <Icon d={d} size={20} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    {/* floating stat card */}
+    <div className="hidden sm:block absolute left-0 top-12 w-[230px] bg-white rounded-sm border border-zinc-200 p-4 shadow-[0_12px_30px_-12px_rgba(31,51,40,0.2)]">
+      <div className="flex items-center justify-between">
+        <div className="text-[11px] tracking-[0.16em] font-semibold uppercase text-[var(--pjc-muted)]">Mis asistencias</div>
+        <Icon d={I.trend} size={14} className="text-[var(--pjc-primary)]"/>
+      </div>
+      <div className="mt-2 flex items-end gap-2">
+        <div className="text-[36px] font-semibold tracking-tight text-[var(--pjc-ink)] leading-none">94<span className="text-[20px] text-[var(--pjc-primary)]">%</span></div>
+        <div className="pb-1.5 text-[11px] text-[var(--pjc-muted)]">este mes</div>
+      </div>
+      {/* mini bar chart */}
+      <div className="mt-3 flex items-end gap-1 h-12">
+        {[40,55,38,72,58,80,94].map((h,i)=>(
+          <div key={i} className="flex-1 rounded-sm" style={{
+            height: `${h}%`,
+            background: i === 6 ? 'var(--pjc-primary)' : 'var(--pjc-primary-100)'
+          }}/>
+        ))}
+      </div>
+    </div>
+
+    {/* floating group card */}
+    <div className="hidden sm:flex absolute left-6 bottom-6 w-[260px] bg-white rounded-sm border border-zinc-200 p-3.5 items-center gap-3 shadow-[0_12px_30px_-12px_rgba(31,51,40,0.2)]">
+      <div className="w-10 h-10 rounded-sm bg-[var(--pjc-primary)] flex items-center justify-center text-white">
+        <Icon d={I.users} size={18}/>
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-[13px] font-semibold text-[var(--pjc-ink)] truncate">Colectivo Maule Joven</div>
+        <div className="text-[11px] text-[var(--pjc-muted)]">3 mensajes nuevos · 18 miembros</div>
+      </div>
+      <div className="w-2 h-2 rounded-full bg-[var(--pjc-primary)]"/>
+    </div>
+  </div>
+);
+
+// ──────────────────────────────────────────────────────────────────────────
+// FEATURES
+// ──────────────────────────────────────────────────────────────────────────
+const Features = () => {
+  const items = [
+    {
+      icon: I.calendar,
+      tag: 'Actividades',
+      title: 'Inscripción sin choques de horario',
+      body: 'Filtra por categoría, sala, día u organización. El sistema te avisa antes si una actividad se cruza con otra que ya tomaste.',
+      bullets: ['Calendario mensual y por sala', 'Cupos en tiempo real', 'Validación automática de horarios'],
+    },
+    {
+      icon: I.users,
+      tag: 'Grupos',
+      title: 'Grupos colaborativos para tus colectivos',
+      body: 'Tu junta de vecinos, club deportivo o agrupación cultural en un solo lugar. Coordinen, inviten y publiquen actividades juntos.',
+      bullets: ['Roles de coordinador y miembro', 'Actividades grupales', 'Aprobación municipal en línea'],
+    },
+    {
+      icon: I.chat,
+      tag: 'Chat',
+      title: 'Conversación directa con la OMJ',
+      body: 'Resuelve dudas sobre tu inscripción, propone una actividad o pide apoyo logístico desde un chat bidireccional, sin salir de la app.',
+      bullets: ['Hilos por actividad', 'Confirmaciones leídas', 'Notificaciones contextuales'],
+    },
+    {
+      icon: I.star,
+      tag: 'Asistencia & Ratings',
+      title: 'Reconocimiento por participación',
+      body: 'Acumula asistencias verificadas, califica actividades y desbloquea reconocimientos visibles en tu perfil cívico juvenil.',
+      bullets: ['Check-in con código', 'Ranking mensual', 'Calificaciones de 1 a 5 estrellas'],
+    },
+  ];
+  return (
+    <section id="caracteristicas" className="py-24 lg:py-32 bg-[var(--pjc-bg)]">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6">
+        <div className="grid lg:grid-cols-12 gap-8 mb-14">
+          <div className="lg:col-span-5">
+            <Eyebrow>Lo que hace la plataforma</Eyebrow>
+            <h2 className="mt-3 text-[36px] sm:text-[44px] leading-[1.05] tracking-[-0.02em] font-semibold text-[var(--pjc-ink)]">
+              Todo lo que necesitas para participar, en un solo lugar.
+            </h2>
+          </div>
+          <div className="lg:col-span-6 lg:col-start-7 self-end">
+            <p className="text-[16px] leading-relaxed text-[var(--pjc-muted)]">
+              Diseñada con jóvenes de Curicó y validada con la OMJ. Cuatro herramientas que reemplazan formularios, grupos de WhatsApp y planillas para gestionar la vida juvenil de la comuna.
+            </p>
+          </div>
+        </div>
+        <div className="grid md:grid-cols-2 gap-4">
+          {items.map((it, i) => (
+            <article key={i} className="group bg-white border border-zinc-200 rounded-sm p-7 lg:p-8 hover:border-[var(--pjc-primary-300)] hover:shadow-[0_8px_28px_-12px_rgba(5,166,61,0.18)] transition">
+              <div className="flex items-start justify-between">
+                <div className="w-11 h-11 rounded-sm bg-[var(--pjc-primary-50)] text-[var(--pjc-primary)] border border-[var(--pjc-primary-200)] flex items-center justify-center">
+                  <Icon d={it.icon} size={20}/>
+                </div>
+                <span className="text-[11px] tracking-[0.18em] font-semibold uppercase text-[var(--pjc-primary)]">{it.tag}</span>
+              </div>
+              <h3 className="mt-6 text-[22px] font-semibold tracking-tight text-[var(--pjc-ink)] leading-snug">{it.title}</h3>
+              <p className="mt-2.5 text-[15px] leading-relaxed text-[var(--pjc-muted)]">{it.body}</p>
+              <ul className="mt-5 pt-5 border-t border-zinc-100 space-y-2.5">
+                {it.bullets.map((b, j) => (
+                  <li key={j} className="flex items-center gap-2.5 text-[13.5px] text-[var(--pjc-ink)]">
+                    <span className="w-4 h-4 rounded-full bg-[var(--pjc-primary)] flex items-center justify-center text-white">
+                      <Icon d={I.check} size={10} stroke={2.5}/>
+                    </span>
+                    {b}
+                  </li>
+                ))}
+              </ul>
+            </article>
+          ))}
+        </div>
+
+        {/* secondary feature row */}
+        <div className="mt-4 grid md:grid-cols-2 gap-4">
+          <div className="bg-[var(--pjc-ink)] text-white rounded-sm p-7 lg:p-8 flex items-center gap-5">
+            <div className="w-12 h-12 rounded-sm bg-[var(--pjc-primary)] flex items-center justify-center shrink-0">
+              <Icon d={I.bell} size={20}/>
+            </div>
+            <div>
+              <div className="text-[11px] tracking-[0.18em] font-semibold uppercase text-[var(--pjc-primary-300)]">Notificaciones contextuales</div>
+              <div className="mt-1 text-[16px] leading-snug text-zinc-100">Recordatorios 24 h antes, cambios de sala, aprobaciones y ranking semanal — solo lo que te importa.</div>
+            </div>
+          </div>
+          <div className="bg-white border border-zinc-200 rounded-sm p-7 lg:p-8 flex items-center gap-5">
+            <div className="w-12 h-12 rounded-sm bg-[var(--pjc-primary-50)] border border-[var(--pjc-primary-200)] text-[var(--pjc-primary)] flex items-center justify-center shrink-0">
+              <Icon d={I.layout} size={20}/>
+            </div>
+            <div>
+              <div className="text-[11px] tracking-[0.18em] font-semibold uppercase text-[var(--pjc-primary)]">Dashboard personal</div>
+              <div className="mt-1 text-[16px] leading-snug text-[var(--pjc-ink)]">Tu historial de participación, tasa de asistencia y reconocimientos siempre a la vista.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+// ──────────────────────────────────────────────────────────────────────────
+// HOW IT WORKS — TIMELINE
+// ──────────────────────────────────────────────────────────────────────────
+const HowItWorks = () => {
+  const steps = [
+    { n:'01', t:'Crea tu cuenta',   d:'Regístrate con tu RUT o correo. Verificamos que vivas o estudies en Curicó.', i: I.shield },
+    { n:'02', t:'Explora el calendario', d:'Filtra por categoría, fecha o sala. Ve cupos disponibles en tiempo real.', i: I.calendar },
+    { n:'03', t:'Inscríbete o propone', d:'Reserva tu cupo en un toque, o propone una actividad propia para aprobación.', i: I.spark },
+    { n:'04', t:'Asiste y conecta',  d:'Confirma asistencia con el código del coordinador. Conversa en grupos.', i: I.users },
+    { n:'05', t:'Acumula y crece',   d:'Califica, gana reconocimientos y revisa tu historial cívico juvenil.', i: I.award },
+  ];
+
+  return (
+    <section id="como-funciona" className="py-24 lg:py-32 bg-white">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6">
+        <div className="max-w-2xl">
+          <Eyebrow>Cómo funciona</Eyebrow>
+          <h2 className="mt-3 text-[36px] sm:text-[44px] leading-[1.05] tracking-[-0.02em] font-semibold text-[var(--pjc-ink)]">
+            De crear cuenta a participar, en menos de 5 minutos.
+          </h2>
+        </div>
+
+        <ol className="mt-14 relative">
+          {/* center line on desktop */}
+          <div aria-hidden className="hidden lg:block absolute left-[7.5%] right-[7.5%] top-[42px] h-px bg-zinc-200"/>
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-4">
+            {steps.map((s, i) => (
+              <li key={i} className="relative">
+                <div className="flex lg:flex-col items-start lg:items-center gap-4 lg:gap-0">
+                  <div className="relative shrink-0">
+                    <div className="w-[60px] h-[60px] rounded-sm bg-white border-2 border-[var(--pjc-primary)] flex items-center justify-center text-[var(--pjc-primary)] relative z-10">
+                      <Icon d={s.i} size={22}/>
+                    </div>
+                    <span className="absolute -top-2 -right-2 z-20 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-[var(--pjc-ink)] text-white tracking-widest">{s.n}</span>
+                  </div>
+                  <div className="lg:mt-5 lg:text-center lg:px-2">
+                    <h4 className="text-[16px] font-semibold text-[var(--pjc-ink)] tracking-tight">{s.t}</h4>
+                    <p className="mt-1.5 text-[13.5px] leading-relaxed text-[var(--pjc-muted)]">{s.d}</p>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </div>
+        </ol>
+      </div>
+    </section>
+  );
+};
+
+// ──────────────────────────────────────────────────────────────────────────
+// FINAL CTA
+// ──────────────────────────────────────────────────────────────────────────
+const FinalCTA = () => (
+  <section id="registro" className="relative py-24 lg:py-32 bg-[var(--pjc-ink)] text-white overflow-hidden">
+    <div aria-hidden className="absolute inset-0 opacity-[0.06]"
+         style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '22px 22px' }} />
+    {/* big leaf accent */}
+    <div aria-hidden className="absolute -right-20 -top-20 opacity-10">
+      <BrandMark size={420}/>
+    </div>
+
+    <div className="relative max-w-[1200px] mx-auto px-4 sm:px-6">
+      <div className="grid lg:grid-cols-12 gap-10 items-center">
+        <div className="lg:col-span-7">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-[var(--pjc-primary)]/15 border border-[var(--pjc-primary)]/30 rounded-full text-[12px] font-medium text-[var(--pjc-primary-300)]">
+            <Icon d={I.flag} size={12}/> Plataforma oficial OMJ Curicó
+          </div>
+          <h2 className="mt-5 text-[40px] sm:text-[52px] lg:text-[60px] leading-[1.05] tracking-[-0.025em] font-semibold">
+            Tu próxima<br/>actividad ya está<br/>
+            <span className="text-[var(--pjc-primary-300)]">esperando.</span>
+          </h2>
+          <p className="mt-6 text-[17px] text-zinc-300 max-w-[520px]">
+            Crea tu cuenta gratuita en menos de un minuto. Si tu organización quiere publicar actividades, también puedes solicitar acceso aquí.
+          </p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link to="/register" className="inline-flex items-center gap-2 px-5 py-3 bg-[var(--pjc-primary)] text-white rounded-sm font-medium hover:bg-[var(--pjc-primary-700)] transition">
+              Crear mi cuenta <Icon d={I.arrow} size={18}/>
+            </Link>
+            <a href="#org" className="inline-flex items-center gap-2 px-5 py-3 border border-white/25 text-white rounded-sm font-medium hover:bg-white/10 transition">
+              Soy organización
+            </a>
+          </div>
+          <ul className="mt-7 flex flex-wrap gap-x-6 gap-y-2 text-[13px] text-zinc-300">
+            {['Gratis para residentes', 'Sin tarjeta de crédito', 'PWA — sin descargas'].map(t=>(
+              <li key={t} className="flex items-center gap-1.5"><Icon d={I.check} size={14} stroke={2} className="text-[var(--pjc-primary-300)]"/>{t}</li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="lg:col-span-5">
+          <form onSubmit={e=>e.preventDefault()} className="bg-white text-[var(--pjc-ink)] rounded-sm p-6 shadow-[0_30px_70px_-20px_rgba(0,0,0,0.4)]">
+            <div className="text-[10.5px] tracking-[0.16em] uppercase font-semibold text-[var(--pjc-primary)]">Acceso rápido</div>
+            <div className="mt-1 text-[20px] font-semibold tracking-tight">Comencemos.</div>
+            <div className="mt-4 space-y-3">
+              <label className="block">
+                <span className="text-[12px] font-medium">Nombre completo</span>
+                <input type="text" defaultValue="" placeholder="Daniela Castro"
+                       className="mt-1 w-full px-3 py-2.5 border border-zinc-200 rounded-sm text-[14px] focus:outline-none focus:border-[var(--pjc-primary)]"/>
+              </label>
+              <label className="block">
+                <span className="text-[12px] font-medium">Correo electrónico</span>
+                <input type="email" placeholder="daniela@curico.cl"
+                       className="mt-1 w-full px-3 py-2.5 border border-zinc-200 rounded-sm text-[14px] focus:outline-none focus:border-[var(--pjc-primary)]"/>
+              </label>
+              <label className="block">
+                <span className="text-[12px] font-medium">Tu rol</span>
+                <select className="mt-1 w-full px-3 py-2.5 border border-zinc-200 rounded-sm text-[14px] bg-white focus:outline-none focus:border-[var(--pjc-primary)]">
+                  <option>Joven inscrito/a</option>
+                  <option>Líder de grupo / colectivo</option>
+                  <option>Funcionario/a OMJ</option>
+                </select>
+              </label>
+            </div>
+            <button type="submit" className="mt-5 w-full px-4 py-3 bg-[var(--pjc-primary)] text-white rounded-sm text-[14px] font-medium hover:bg-[var(--pjc-primary-700)] transition flex items-center justify-center gap-2">
+              Continuar <Icon d={I.arrow} size={16}/>
+            </button>
+            <div className="mt-3 text-[11px] text-[var(--pjc-muted)] text-center">
+              Al continuar aceptas los términos y la política de privacidad municipal.
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+);
+
+// ──────────────────────────────────────────────────────────────────────────
+// FOOTER
+// ──────────────────────────────────────────────────────────────────────────
+const Footer = () => (
+  <footer className="bg-white border-t border-zinc-200">
+    <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-14 lg:py-16">
+      <div className="grid grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-10">
+        <div className="col-span-2 lg:col-span-4">
+          <div className="flex items-center gap-2.5">
+            <BrandMark size={32}/>
+            <span className="font-semibold text-[15px] tracking-tight text-[var(--pjc-ink)]">
+              Plataforma Juvenil <span className="text-[var(--pjc-primary)]">Curicó</span>
+            </span>
+          </div>
+          <p className="mt-4 text-[13.5px] leading-relaxed text-[var(--pjc-muted)] max-w-[300px]">
+            Iniciativa de la Oficina Municipal de la Juventud, I. Municipalidad de Curicó. Construida con software libre y datos abiertos.
+          </p>
+          <div className="mt-5 flex items-center gap-2">
+            {[I.globe, I.send, I.phone].map((d, i) => (
+              <a key={i} href="#" className="w-9 h-9 rounded-sm border border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50 flex items-center justify-center text-[var(--pjc-muted)] hover:text-[var(--pjc-ink)]">
+                <Icon d={d} size={15}/>
+              </a>
+            ))}
+          </div>
+        </div>
+
+        {[
+          ['Plataforma',['Cómo funciona','Características','Calendario público','Estado del servicio']],
+          ['Organizaciones',['Crear cuenta de grupo','Solicitar aprobación','Buenas prácticas','Soporte técnico']],
+          ['Municipalidad',['OMJ Curicó','Transparencia','Política de datos','Contacto']],
+        ].map(([title, links], i) => (
+          <div key={i} className="lg:col-span-2 lg:col-start-auto">
+            <div className="text-[11px] tracking-[0.18em] uppercase font-semibold text-[var(--pjc-ink)]">{title}</div>
+            <ul className="mt-4 space-y-2.5">
+              {links.map(l=>(
+                <li key={l}><a href="#" className="text-[13.5px] text-[var(--pjc-muted)] hover:text-[var(--pjc-ink)]">{l}</a></li>
+              ))}
+            </ul>
+          </div>
+        ))}
+
+        <div className="col-span-2 lg:col-span-2">
+          <div className="text-[11px] tracking-[0.18em] uppercase font-semibold text-[var(--pjc-ink)]">Boletín</div>
+          <p className="mt-4 text-[12.5px] text-[var(--pjc-muted)]">Resumen mensual de actividades y becas para jóvenes de Curicó.</p>
+          <form onSubmit={e=>e.preventDefault()} className="mt-3 flex">
+            <input type="email" placeholder="tu@correo.cl" className="flex-1 min-w-0 px-3 py-2 border border-zinc-200 rounded-l-sm text-[12.5px] focus:outline-none focus:border-[var(--pjc-primary)]"/>
+            <button className="px-3 bg-[var(--pjc-primary)] text-white rounded-r-sm hover:bg-[var(--pjc-primary-700)]" aria-label="Suscribir"><Icon d={I.send} size={14}/></button>
+          </form>
+        </div>
+      </div>
+
+      <div className="mt-12 pt-6 border-t border-zinc-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-[12px] text-[var(--pjc-muted)]">
+        <div>© 2026 I. Municipalidad de Curicó · Oficina Municipal de la Juventud. Todos los derechos reservados.</div>
+        <div className="flex gap-5">
+          <a href="#" className="hover:text-[var(--pjc-ink)]">Términos</a>
+          <a href="#" className="hover:text-[var(--pjc-ink)]">Privacidad</a>
+          <a href="#" className="hover:text-[var(--pjc-ink)]">Accesibilidad</a>
+          <a href="#" className="hover:text-[var(--pjc-ink)]">v1.0.0</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+);
+
+// ──────────────────────────────────────────────────────────────────────────
+// APP
+// ──────────────────────────────────────────────────────────────────────────
 export default function Home() {
-  const [installPromptEvent, setInstallPromptEvent] = useState(null);
+  const [installPrompt, setInstallPrompt] = useState(null);
   const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
+    // Verificar si la app ya está instalada
     const isStandalone =
       window.matchMedia("(display-mode: standalone)").matches ||
       window.navigator.standalone === true;
@@ -48,14 +535,16 @@ export default function Home() {
       setIsInstalled(true);
     }
 
-    const handleBeforeInstallPrompt = event => {
-      event.preventDefault();
-      setInstallPromptEvent(event);
+    // Escuchar el evento beforeinstallprompt
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setInstallPrompt(e);
     };
 
+    // Escuchar cuando se instale
     const handleAppInstalled = () => {
       setIsInstalled(true);
-      setInstallPromptEvent(null);
+      setInstallPrompt(null);
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
@@ -68,293 +557,57 @@ export default function Home() {
   }, []);
 
   const handleInstallClick = async () => {
-    if (!installPromptEvent) return;
+    if (!installPrompt) {
+      alert("La instalación no está disponible en este navegador. Intenta desde un navegador compatible como Chrome o Edge.");
+      return;
+    }
 
-    installPromptEvent.prompt();
-    await installPromptEvent.userChoice;
-    setInstallPromptEvent(null);
+    installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    
+    if (outcome === "accepted") {
+      setInstallPrompt(null);
+      setIsInstalled(true);
+    }
   };
 
-  const features = [
-    {
-      title: "Inscripcion a actividades",
-      description:
-        "Postula en pocos pasos a talleres y eventos activos en tu comuna.",
-      icon: "check"
-    },
-    {
-      title: "Calendario interactivo",
-      description:
-        "Visualiza fechas, horarios y cupos para organizar tu semana.",
-      icon: "calendar"
-    },
-    {
-      title: "Notificaciones",
-      description:
-        "Recibe recordatorios y avisos importantes en tiempo real.",
-      icon: "bell"
-    },
-    {
-      title: "Gestion de asistencia",
-      description:
-        "Haz seguimiento de participacion y mantente al dia con tus talleres.",
-      icon: "users"
-    }
-  ];
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty('--pjc-primary', '#05a63d');
+    root.style.setProperty('--pjc-primary-50', '#dcfce7');
+    root.style.setProperty('--pjc-primary-100', '#bbf7d0');
+    root.style.setProperty('--pjc-primary-200', '#86efac');
+    root.style.setProperty('--pjc-primary-300', '#4ade80');
+    root.style.setProperty('--pjc-primary-700', '#15803d');
+    root.style.setProperty('--pjc-primary-800', '#166534');
+    root.style.setProperty('--pjc-ink', '#1f3328');
+    root.style.setProperty('--pjc-muted', '#64786d');
+    root.style.setProperty('--pjc-bg', '#f8faf9');
+  }, []);
 
-  const stats = [
-    { number: "500+", label: "Jovenes activos", icon: "users" },
-    { number: "50+", label: "Talleres al mes", icon: "music" },
-    { number: "95%", label: "Satisfaccion", icon: "heart" },
-    { number: "12", label: "Estilos disponibles", icon: "sparkles" }
-  ];
-
-  const highlightedActivities = [
-    {
-      title: "Taller de Bellydance",
-      category: "Baile",
-      date: "2026-04-03",
-      hora_inicio: "17:00",
-      hora_termino: "18:30",
-      time: "17:00 - 18:30",
-      place: "Manso de Velasco 744",
-      state: "Cupos abiertos",
-      capacity: 30,
-      enrolled: 12,
-      manager: "OMJ Curicó",
-      status: "programada",
-      image: "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=1080&q=80"
-    },
-    {
-      title: "Laboratorio de Musica Urbana",
-      category: "Musica",
-      date: "2026-04-08",
-      hora_inicio: "16:00",
-      hora_termino: "18:00",
-      time: "16:00 - 18:00",
-      place: "Centro Cultural Curico",
-      state: "Ultimos cupos",
-      capacity: 20,
-      enrolled: 18,
-      manager: "Academia Local",
-      status: "programada",
-      image: "https://images.unsplash.com/photo-1508700929628-666bc8bd84ea?auto=format&fit=crop&w=1080&q=80"
-    },
-    {
-      title: "Workshop de Emprendimiento Joven",
-      category: "Formacion",
-      date: "2026-04-11",
-      hora_inicio: "10:00",
-      hora_termino: "13:00",
-      time: "10:00 - 13:00",
-      place: "Espacio OMJ",
-      state: "Inscripcion activa",
-      capacity: 50,
-      enrolled: 35,
-      manager: "OMJ Curicó",
-      status: "programada",
-      image: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1080&q=80"
-    }
-  ];
+  // smooth scroll for in-page nav
+  useEffect(() => {
+    const onClick = (e) => {
+      const a = e.target.closest('a[href^="#"]');
+      if (!a) return;
+      const id = a.getAttribute('href').slice(1);
+      const el = id && document.getElementById(id);
+      if (el) {
+        e.preventDefault();
+        window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 70, behavior: 'smooth' });
+      }
+    };
+    document.addEventListener('click', onClick);
+    return () => document.removeEventListener('click', onClick);
+  }, []);
 
   return (
-    <div className="overflow-hidden">
-      <section className="relative overflow-hidden bg-[linear-gradient(140deg,#0f6f3c_0%,var(--primary-strong)_52%,var(--primary)_100%)]">
-        <div className="absolute right-4 top-16 h-72 w-72 rounded-full bg-[rgba(255,255,255,0.1)] blur-3xl" aria-hidden="true" />
-        <div className="absolute bottom-8 left-4 h-80 w-80 rounded-full bg-[rgba(205,235,218,0.16)] blur-3xl" aria-hidden="true" />
-
-        <div className="container relative z-10 grid items-center gap-12 py-14 lg:min-h-[88vh] lg:grid-cols-2">
-          <div className="animate-[revealUp_0.7s_ease_both]">
-            <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 backdrop-blur-sm">
-              <Icon name="sparkles" className="h-4 w-4 text-white" />
-              <span className="text-sm font-semibold text-white">OMJ Curico</span>
-            </div>
-
-            <h1 className="text-[clamp(2.3rem,5vw,4rem)] font-bold leading-[1.08] text-white">
-              Participa en actividades de <span className="text-white/90">baile</span> en tu comunidad
-            </h1>
-
-            <p className="mb-8 mt-5 max-w-[62ch] text-[1.06rem] text-white/90">
-              Explora talleres, eventos y experiencias juveniles en un solo lugar.
-              Registrate y comienza a bailar hoy.
-            </p>
-
-            <div className="mb-8 flex flex-wrap gap-3">
-              <Link
-                to="/register"
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-7 py-3.5 text-[0.98rem] font-semibold text-[var(--primary-strong)] transition-all duration-200 hover:-translate-y-[1px] hover:bg-white/90"
-              >
-                Crear cuenta gratis
-                <Icon name="activity" className="h-4 w-4" />
-              </Link>
-              <a
-                href="#actividades"
-                className="inline-flex items-center justify-center rounded-xl border border-white/35 bg-white/10 px-7 py-3.5 text-[0.98rem] font-semibold !text-white backdrop-blur-sm transition-colors duration-200 hover:bg-white/18 hover:!text-white"
-              >
-                Ver actividades
-              </a>
-            </div>
-
-            {!isInstalled && installPromptEvent && (
-              <div className="max-w-[620px] rounded-2xl border border-white/60 bg-white/95 p-5 shadow-[0_22px_36px_-24px_rgba(7,32,23,0.55)] backdrop-blur-md">
-                <div className="flex flex-wrap items-start gap-4">
-                  <div className="grid h-12 w-12 flex-none place-items-center rounded-xl bg-[linear-gradient(135deg,var(--primary),var(--primary-strong))] text-white">
-                    <Icon name="download" className="h-5 w-5" />
-                  </div>
-                  <div className="min-w-[220px] flex-1">
-                    <h3 className="text-[1rem] font-semibold text-[#1d3127]">Instala la app</h3>
-                    <p className="mt-1 text-[0.9rem] text-[#50695c]">Accede rapido a actividades y recibe notificaciones.</p>
-                    <button
-                      type="button"
-                      className="mt-3 hover:cursor-pointer rounded-lg border border-[var(--primary)] bg-[linear-gradient(135deg,var(--primary),var(--primary-strong))] px-4 py-2 text-[0.88rem] font-semibold text-white transition-all duration-200 hover:-translate-y-[1px] hover:border-[#067a37] hover:bg-[linear-gradient(135deg,#099c49,#067a37)]"
-                      onClick={handleInstallClick}
-                    >
-                      Instalar ahora
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {isInstalled && <p className="mt-3 max-w-[60ch] text-[0.9rem] text-white/85">La app ya esta instalada en este dispositivo.</p>}
-            {!isInstalled && !installPromptEvent && (
-              <p className="mt-3 max-w-[60ch] text-[0.9rem] text-white/85">
-                Si no aparece el boton de descarga, abre el menu del navegador y selecciona "Instalar aplicacion".
-              </p>
-            )}
-          </div>
-
-          <div className="animate-[revealUp_0.9s_ease_0.08s_both]">
-            <div className="relative overflow-hidden rounded-3xl border border-white/15 shadow-[0_26px_44px_-28px_rgba(8,23,16,0.68)]">
-              <img
-                src="https://images.unsplash.com/photo-1764072970306-fd628c08780f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzYWxzYSUyMGRhbmNlJTIwZ3JvdXB8ZW58MXx8fHwxNzc0NzQxMjYyfDA&ixlib=rb-4.1.0&q=80&w=1080"
-                alt="Jovenes bailando"
-                className="h-[460px] w-full object-cover"
-              />
-              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.08)_20%,rgba(0,0,0,0.58)_100%)]" />
-
-              <div className="absolute bottom-5 left-5 right-5 rounded-2xl border border-white/55 bg-white/92 px-4 py-4 backdrop-blur-md">
-                <div className="flex items-center gap-3">
-                  <div className="grid h-11 w-11 place-items-center rounded-xl bg-[linear-gradient(135deg,var(--primary),var(--primary-strong))] text-white">
-                    <Icon name="music" className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="text-[0.78rem] uppercase tracking-[0.04em] text-[#60786c]">Actividad destacada</p>
-                    <p className="text-[1rem] font-semibold text-[#1f3329]">Taller de Bellydance</p>
-                    <p className="text-[0.78rem] font-semibold text-[var(--primary-strong)]">Cupos abiertos</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-white py-14">
-        <div className="container grid grid-cols-2 gap-8 md:grid-cols-4">
-          {stats.map(stat => (
-            <article key={stat.label} className="text-center">
-              <div className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl bg-[rgba(10,143,74,0.1)] text-[var(--primary-strong)]">
-                <Icon name={stat.icon} className="h-7 w-7" />
-              </div>
-              <p className="text-4xl font-bold text-[var(--primary-strong)]">{stat.number}</p>
-              <p className="mt-1 text-[0.92rem] font-medium text-[#64786d]">{stat.label}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="bg-[var(--bg-neutral)] py-16" id="funcionalidades">
-        <div className="container">
-          <header className="mb-10 text-center">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-[rgba(10,143,74,0.12)] px-4 py-2">
-              <Icon name="sparkles" className="h-4 w-4 text-[var(--primary-strong)]" />
-              <span className="text-[0.82rem] font-semibold text-[var(--primary-strong)]">Funcionalidades</span>
-            </div>
-            <h2 className="text-[clamp(1.85rem,3vw,2.35rem)] font-bold text-[#1a2f25]">Todo lo necesario para gestionar tu participacion</h2>
-            <p className="mx-auto mt-3 max-w-2xl text-[1rem] text-[#64786d]">Una plataforma completa para que tu experiencia sea simple, clara y efectiva.</p>
-          </header>
-
-          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-            {features.map(feature => (
-              <article key={feature.title} className="group relative overflow-hidden rounded-3xl border border-[#d2dfd8] bg-white p-6 shadow-[0_18px_34px_-28px_rgba(10,35,25,0.4)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_22px_40px_-28px_rgba(10,35,25,0.48)]">
-                <div className="absolute right-0 top-0 h-16 w-16 rounded-bl-3xl bg-[rgba(10,143,74,0.08)]" aria-hidden="true" />
-                <div className="mb-5 inline-grid h-14 w-14 place-items-center rounded-2xl bg-[linear-gradient(135deg,var(--primary),var(--primary-strong))] text-white shadow-[0_12px_22px_-16px_rgba(6,78,41,0.52)]">
-                  <Icon name={feature.icon} className="h-7 w-7" />
-                </div>
-                <h3 className="text-[1.14rem] font-bold text-[#1c3127]">{feature.title}</h3>
-                <p className="mt-2.5 leading-relaxed text-[#61766a]">{feature.description}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-white py-16" id="actividades">
-        <div className="container">
-          <header className="mb-10 text-center">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-[rgba(10,143,74,0.12)] px-4 py-2">
-              <Icon name="music" className="h-4 w-4 text-[var(--primary-strong)]" />
-              <span className="text-[0.82rem] font-semibold text-[var(--primary-strong)]">Actividades destacadas</span>
-            </div>
-            <h2 className="text-[clamp(1.85rem,3vw,2.35rem)] font-bold text-[#1a2f25]">Conoce lo que viene esta semana</h2>
-            <p className="mx-auto mt-3 max-w-2xl text-[1rem] text-[#64786d]">Talleres para distintos niveles y estilos, en espacios de Curico.</p>
-          </header>
-
-          <div className="space-y-3.5">
-            {highlightedActivities.map(activity => (
-              <ActivityCard key={activity.title} activity={activity} actionLabel="Ver detalle" />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="relative overflow-hidden border-t border-[#dbe8e0] bg-[linear-gradient(135deg,#f4f9f6_0%,#e8f3ec_100%)] py-16">
-        <div className="absolute right-0 top-0 h-80 w-80 rounded-full bg-[rgba(10,143,74,0.08)] blur-3xl" aria-hidden="true" />
-
-        <div className="container relative z-10 text-center">
-          <h2 className="text-[clamp(2rem,4vw,3rem)] font-bold text-[#173326]">Listo para comenzar?</h2>
-          <p className="mx-auto mt-4 max-w-3xl text-[1.08rem] text-[#4f6b5d]">
-            Unete a cientos de jovenes que ya estan participando en actividades de la OMJ Curicó.
-          </p>
-
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link to="/register" className="inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-7 py-3.5 text-[0.98rem] font-bold !text-white transition-colors hover:bg-[var(--primary-strong)] hover:!text-white">
-              Crear cuenta gratis
-              <Icon name="activity" className="h-4 w-4" />
-            </Link>
-            <Link to="/login" className="inline-flex items-center rounded-xl border border-[#b8d8c5] bg-white px-7 py-3.5 text-[0.98rem] font-bold text-[#1f3b2d] transition-colors hover:bg-[#f2f8f4]">
-              Iniciar sesion
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <footer className="bg-[#14271f] py-10 text-white">
-        <div className="container">
-          <div className="flex flex-col items-center justify-between gap-5 md:flex-row">
-            <div>
-              <div className="mb-2 flex items-center gap-3">
-                <div className="grid h-10 w-10 place-items-center rounded-xl bg-[linear-gradient(135deg,var(--primary-strong),var(--primary))]">
-                  <Icon name="sparkles" className="h-5 w-5 text-white" />
-                </div>
-                <span className="text-xl font-bold">OMJ Curico</span>
-              </div>
-              <p className="text-[0.9rem] text-[#a9bab0]">Oficina Municipal de la Juventud</p>
-            </div>
-
-            <div className="flex gap-7">
-              <a href="#funcionalidades" className="text-[#adc0b5] transition-colors hover:text-white">Funcionalidades</a>
-              <a href="#actividades" className="text-[#adc0b5] transition-colors hover:text-white">Actividades</a>
-              <Link to="/login" className="text-[#adc0b5] transition-colors hover:text-white">Iniciar sesion</Link>
-            </div>
-          </div>
-
-          <div className="mt-7 border-t border-[#2d473a] pt-7 text-center text-[0.82rem] text-[#98ada1]">
-            <p>© 2026 Oficina Municipal de la Juventud de Curico. Todos los derechos reservados.</p>
-          </div>
-        </div>
-      </footer>
+    <div className="min-h-screen bg-white text-[var(--pjc-ink)]">
+      <Hero onInstallClick={handleInstallClick}/>
+      <Features/>
+      <HowItWorks/>
+      <FinalCTA/>
+      <Footer/>
     </div>
   );
 }

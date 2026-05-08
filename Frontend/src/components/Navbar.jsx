@@ -302,7 +302,7 @@ export default function Navbar() {
 		].join(" ");
 
 	return (
-		<header className="sticky top-0 z-50 bg-[color:var(--nav-bg,white)]/95 backdrop-blur supports-[backdrop-filter]:bg-[color:var(--nav-bg,white)]/80 shadow-[0_8px_20px_-20px_rgba(6,40,24,0.55)]">
+		<header className="sticky top-0 z-50 bg-white backdrop-blur shadow-[0_8px_20px_-20px_rgba(6,40,24,0.55)]">
 			<nav className="mx-auto grid min-h-16 w-[min(98vw,1680px)] grid-cols-[auto_1fr_auto] items-center gap-x-8 px-4 sm:px-6 lg:gap-x-10 max-[1120px]:grid-cols-[auto_minmax(0,1fr)_auto] max-[860px]:min-h-[4.2rem] max-[860px]:w-full max-[860px]:grid-cols-[minmax(0,1fr)_auto] max-[860px]:gap-y-2 max-[860px]:py-2" ref={navRef}>
 				<div className="inline-flex items-center gap-2.5 justify-self-start min-[861px]:min-w-0">
 					<button
@@ -319,7 +319,7 @@ export default function Navbar() {
 
 					<Link to="/" className="inline-flex items-center gap-2.5 justify-self-start min-[861px]:min-w-0">
 						<img className="block h-8 w-8 min-w-8 rounded-md object-cover shadow-[0_6px_14px_-10px_rgba(8,38,23,0.5)]" src="/iconOMJ.jpg" alt="Logo OMJ" />
-						<span className="text-[0.98rem] font-bold leading-[1.2] tracking-[0.005em] max-[1120px]:max-w-[11.2rem] max-[1120px]:overflow-hidden max-[1120px]:text-ellipsis max-[1120px]:whitespace-nowrap max-[1120px]:text-[0.92rem] max-[860px]:hidden">Plataforma Juvenil Curico</span>
+						<span className="font-semibold text-[15px] tracking-tight">Plataforma Juvenil Curico</span>
 					</Link>
 				</div>
 
