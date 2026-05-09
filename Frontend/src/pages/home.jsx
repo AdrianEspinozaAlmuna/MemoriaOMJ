@@ -76,13 +76,6 @@ const Hero = ({ onInstallClick }) => {
         <div className="grid lg:grid-cols-12 gap-10 lg:gap-14 items-start">
           {/* copy */}
           <div className="lg:col-span-7">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-[var(--pjc-primary-50)] border border-[var(--pjc-primary-200)] rounded-full text-[12px] font-medium text-[var(--pjc-primary-800)]">
-              <span className="relative flex w-1.5 h-1.5">
-                <span className="absolute inline-flex w-full h-full rounded-full bg-[var(--pjc-primary)] opacity-60 animate-ping"/>
-                <span className="relative inline-flex w-1.5 h-1.5 rounded-full bg-[var(--pjc-primary)]"/>
-              </span>
-              Oficina Municipal de la Juventud · Curicó
-            </div>
             <h1 className="mt-5 text-[44px] sm:text-[56px] lg:text-[68px] leading-[1.02] tracking-[-0.025em] font-semibold text-[var(--pjc-ink)]">
               Donde lo que pasa<br/>en la ciudad<br/>
               <span className="relative inline-block">
@@ -93,14 +86,14 @@ const Hero = ({ onInstallClick }) => {
             <p className="mt-6 text-[17px] sm:text-[18px] leading-relaxed text-[var(--pjc-muted)] max-w-[560px]">
               Inscríbete en talleres, deporte, cultura y voluntariado. Crea tus propias actividades, súmate a grupos y conecta con la red juvenil de la municipalidad — todo desde tu celular.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-8 flex flex-wrap gap-3 text-white">
               <Link to="/register" className="inline-flex items-center gap-2 px-5 py-3 bg-[var(--pjc-primary)] text-white rounded-sm font-medium hover:bg-[var(--pjc-primary-700)] transition shadow-[0_1px_0_rgba(0,0,0,0.06)]">
                 Crear mi cuenta gratis
                 <Icon d={I.arrow} size={18}/>
               </Link>
               <button 
                 onClick={onInstallClick}
-                className="inline-flex items-center gap-2 px-5 py-3 bg-white border border-zinc-200 text-[var(--pjc-ink)] rounded-sm font-medium hover:border-zinc-300 hover:bg-zinc-50 transition">
+                className="inline-flex items-center gap-2 px-5 py-3 bg-white border-2 border-[var(--primary-soft)] text-[var(--primary)] rounded-sm font-medium hover:border-[var(--primary)] hover:bg-[var(--gray)] transition">
                 <Icon d={I.download} size={18}/> Instalar como app
               </button>
             </div>
@@ -406,8 +399,8 @@ const FinalCTA = () => (
             <Link to="/register" className="inline-flex items-center gap-2 px-5 py-3 bg-[var(--pjc-primary)] text-white rounded-sm font-medium hover:bg-[var(--pjc-primary-700)] transition">
               Crear mi cuenta <Icon d={I.arrow} size={18}/>
             </Link>
-            <a href="#org" className="inline-flex items-center gap-2 px-5 py-3 border border-white/25 text-white rounded-sm font-medium hover:bg-white/10 transition">
-              Soy organización
+            <a href="/login" className="inline-flex items-center gap-2 px-5 py-3 border-2 border-white/25 text-white rounded-sm font-medium hover:bg-white/10 transition">
+              Ya tengo cuenta
             </a>
           </div>
           <ul className="mt-7 flex flex-wrap gap-x-6 gap-y-2 text-[13px] text-zinc-300">

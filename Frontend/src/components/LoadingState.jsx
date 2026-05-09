@@ -7,7 +7,7 @@ export default function LoadingState({
   className = ""
 }) {
   return (
-    <article className={`rounded-xl border border-[#d8e6dd] bg-[var(--bg)] p-5 ${className}`} role="status" aria-live="polite">
+    <article className={`rounded-xl border border-[#d8e6dd] bg-white p-5 ${className}`} role="status" aria-live="polite">
       <div className={`grid place-items-center text-center ${minHeightClass}`}>
         <div className="w-full max-w-[360px] space-y-4">
           <div className="mx-auto relative inline-flex h-14 w-14 items-center justify-center" aria-hidden="true">

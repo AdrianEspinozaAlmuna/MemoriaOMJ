@@ -318,7 +318,7 @@ export default function Navbar() {
 					</button>
 
 					<Link to="/" className="inline-flex items-center gap-2.5 justify-self-start min-[861px]:min-w-0">
-						<img className="block h-8 w-8 min-w-8 rounded-md object-cover shadow-[0_6px_14px_-10px_rgba(8,38,23,0.5)]" src="/iconOMJ.jpg" alt="Logo OMJ" />
+						<img className="block h-8 w-8 min-w-8 rounded-sm object-cover shadow-[0_6px_14px_-10px_rgba(8,38,23,0.5)]" src="/iconOMJ.jpg" alt="Logo OMJ" />
 						<span className="font-semibold text-[15px] tracking-tight">Plataforma Juvenil Curico</span>
 					</Link>
 				</div>
@@ -402,7 +402,7 @@ export default function Navbar() {
 						<div className="relative">
 							<button
 								type="button"
-								className="relative inline-flex h-[2.5rem] w-[2.5rem] items-center justify-center cursor-pointer rounded-sm bg-[color:var(--nav-bg,white)] transition-colors duration-200 hover:bg-[var(--primary-hover)]"
+								className="relative inline-flex h-[2.5rem] w-[2.5rem] items-center justify-center cursor-pointer rounded-sm transition-colors duration-200 hover:bg-[var(--primary-hover)]"
 								aria-label="Notificaciones"
 								onClick={() => {
 									setNotificationsOpen(previous => !previous);
@@ -473,7 +473,7 @@ export default function Navbar() {
 
 					{isAuthenticated && (
 						<div className="flex items-center gap-2 max-[1120px]:gap-1.5">
-							<div className="hidden min-[861px]:flex items-center gap-2 rounded-sm bg-[color:var(--bg)] px-2.5 py-2 text-[0.89rem] font-semibold leading-none text-[#2e4c3d]">
+							<div className="hidden min-[861px]:flex items-center gap-2 rounded-sm bg-white px-2.5 py-2 text-[0.88rem] font-semibold leading-none text-[var(--text)]">
 								<UserRound aria-hidden="true" focusable="false" className="h-5 w-5 text-[#2e4c3d]" strokeWidth={1.5} />
 								<span className="max-w-[12rem] min-w-0 overflow-hidden">
 									<span className="block truncate">{fullName}</span>

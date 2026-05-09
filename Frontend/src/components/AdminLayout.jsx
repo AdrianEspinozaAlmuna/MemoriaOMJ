@@ -117,7 +117,7 @@ export default function AdminLayout() {
 		].join(" ");
 
 	return (
-		<div className={`grid min-h-screen bg-[var(--bg-neutral)] animate-[revealUp_0.7s_ease_both] max-[980px]:grid-cols-1 max-[980px]:relative ${sidebarCollapsed ? "grid-cols-[84px_minmax(0,1fr)]" : "grid-cols-[232px_minmax(0,1fr)]"}`}>
+		<div className={`grid min-h-screen bg-[var(--bg)] animate-[revealUp_0.7s_ease_both] max-[980px]:grid-cols-1 max-[980px]:relative ${sidebarCollapsed ? "grid-cols-[84px_minmax(0,1fr)]" : "grid-cols-[232px_minmax(0,1fr)]"}`}>
 			<button
 				type="button"
 				className="fixed left-3 top-3 z-40 hidden h-9 w-9 items-center justify-center rounded-sm border border-[#d8e6dd] bg-white text-[#2f463a] shadow-[0_8px_20px_-16px_rgba(10,27,16,0.45)] max-[980px]:inline-flex"
@@ -198,7 +198,7 @@ export default function AdminLayout() {
 						</div>
 					</div>
 				</div>
-				<div className="px-4 py-5 max-[980px]:pt-6 max-[640px]:px-3.5 max-[640px]:py-4">
+				<div className="px-4 py-5 max-[980px]:pt-6 max-[640px]:px-3.5 max-[640px]:py-4 mt-3">
 					<div className="mx-auto w-full max-w-7xl">
 						<Outlet />
 					</div>
