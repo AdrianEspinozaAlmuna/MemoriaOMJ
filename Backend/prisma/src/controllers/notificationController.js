@@ -424,6 +424,52 @@ async function createDirectNotification(req, res) {
   }
 }
 
+// Registrar token FCM para el usuario autenticado
+async function registerFcmToken(req, res) {
+  const idUsuario = getUserIdFromToken(req.user || {});
+  const token = String(req.body?.token || "").trim();
+  const platform = String(req.body?.platform || "").slice(0, 255);
+
+  if (!idUsuario) return res.status(403).json({ message: "No se pudo identificar el usuario autenticado" });
+  if (!token) return res.status(400).json({ message: "Token FCM requerido" });
+
+  try {
+    // Upsert token (permite múltiples tokens por usuario)
+    await prisma.fcm_token.upsert({
+      where: { token },
+      update: { id_usuario: idUsuario, platform, updatedAt: new Date() },
+      create: { id_usuario: idUsuario, token, platform }
+    });
+
+    return res.json({ ok: true });
+  } catch (error) {
+    console.error("[notifications] registerFcmToken failed:", error);
+    return res.status(500).json({ message: "Error registrando token FCM", detail: error.message });
+  }
+}
+
+// Endpoint admin: enviar push via Firebase Admin (acepta { tokens: [], title, body, data })
+async function adminSendPush(req, res) {
+  const isAdmin = req.user?.rol === "admin";
+  if (!isAdmin) return res.status(403).json({ message: "No tienes permisos" });
+
+  const tokens = Array.isArray(req.body?.tokens) ? req.body.tokens.filter(Boolean) : [];
+  const titulo = String(req.body?.title ?? req.body?.titulo ?? "").trim();
+  const body = String(req.body?.body ?? req.body?.descripcion ?? "").trim();
+  const data = typeof req.body?.data === "object" ? req.body.data : {};
+
+  if (!tokens.length) return res.status(400).json({ message: "Se requieren tokens para enviar" });
+
+  try {
+    const { sendToTokens } = require("../firebaseAdmin");
+    const result = await sendToTokens(tokens, { title: titulo, body, data });
+    return res.json({ ok: true, result });
+  } catch (error) {
+    console.error("[notifications] adminSendPush failed:", error);
+    return res.status(500).json({ message: "Error enviando notificaciones push", detail: error.message });
+  }
+}
+
 module.exports = {
   listMyNotifications,
   listAdminNotifications,
@@ -432,4 +478,7 @@ module.exports = {
   markAllNotificationsAsRead,
   createBroadcastNotification,
   createDirectNotification
+  ,
+  registerFcmToken,
+  adminSendPush
 };

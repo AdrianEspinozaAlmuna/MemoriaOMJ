@@ -13,15 +13,18 @@ model actividad {
   id_sala                 Int?
   titulo                  String                    @db.VarChar(255)
   descripcion             String?
+  id_tipo_actividad       Int?
   fecha                   DateTime                  @db.Date
   hora_inicio             DateTime                  @db.Time(6)
   hora_termino            DateTime?                 @db.Time(6)
   max_participantes       Int?
   chat_bidireccional      Boolean                   @default(true)
+  revision_original_data  Json?
   aprobado                Boolean                   @default(false)
   estado                  estado_actividad          @default(pendiente)
   usuario                 usuario                   @relation(fields: [id_encargado], references: [id_usuario], onUpdate: NoAction)
   sala                    salas?                    @relation(fields: [id_sala], references: [id_sala], onDelete: SetNull, onUpdate: NoAction)
+  tipo_actividad_rel      tipo_actividad?           @relation(fields: [id_tipo_actividad], references: [id_tipo], onDelete: SetNull, onUpdate: NoAction)
   actividad_mensaje       actividad_mensaje[]
   actividad_participantes actividad_participantes[]
   actividad_grupos        actividad_grupo[]
@@ -129,8 +132,32 @@ model usuario {
   notificaciones_enviadas notificaciones[] @relation("NotificacionEmisor")
   notificaciones_recibidas notificaciones[] @relation("NotificacionReceptor")
   participantes_grupo     participantes_grupo[]
+  fcm_tokens              fcm_token[]
 
   @@index([mail], map: "idx_usuario_mail")
+}
+
+model fcm_token {
+  id         Int      @id @default(autoincrement())
+  id_usuario Int
+  token      String   @unique
+  platform   String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  usuario usuario @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
+
+  @@index([id_usuario], map: "idx_fcm_token_usuario")
+}
+
+model tipo_actividad {
+  id_tipo      Int          @id @default(autoincrement())
+  nombre       String       @unique @db.VarChar(100)
+  imagen_url   String       @db.Text
+  descripcion  String?
+  actividades  actividad[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 }
 
 enum estado_actividad {

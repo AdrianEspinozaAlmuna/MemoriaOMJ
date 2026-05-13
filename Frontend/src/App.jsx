@@ -19,7 +19,8 @@ import AdminCalendar from "./pages/adminCalendar";
 import AdminActivities from "./pages/adminActivities";
 import AdminReports from "./pages/adminReports";
 import AdminNotifications from "./pages/adminNotifications";
-import AdminSettings from "./pages/adminSettings";
+import AdminRoom from "./pages/adminRoom";
+import AdminImagesManager from "./pages/adminImagesManager";
 import ActivityDetail from "./pages/activityDetail";
 import { AdminProtectedRoute, ParticipantProtectedRoute, PublicOnlyRoute } from "./components/RouteGuards";
 
@@ -61,9 +62,11 @@ export default function App() {
               <Route path="calendario" element={<AdminCalendar />} />
               <Route path="actividades" element={<AdminActivities />} />
               <Route path="actividad/:activityId" element={<ActivityDetail />} />
+              <Route path="crear-actividad" element={<CreateActivity />} />
               <Route path="reportes" element={<AdminReports />} />
               <Route path="notificaciones" element={<AdminNotifications />} />
-              <Route path="configuracion" element={<AdminSettings />} />
+              <Route path="imagenes" element={<AdminImagesManager />} />
+              <Route path="salas" element={<AdminRoom />} />
             </Route>
           </Route>
         </Routes>

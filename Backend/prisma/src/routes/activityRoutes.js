@@ -12,6 +12,7 @@ const {
   removeParticipant,
   rateActivity,
   reviewActivity,
+  requestActivityEdit,
   cancelActivity,
   createActivityMessage
 } = require("../controllers/activityController");
@@ -22,6 +23,7 @@ router.get("/admin", requireAuth, requireRole("admin"), listAdminActivities);
 router.get("/:id_actividad", requireAuth, getActivityById);
 
 router.post("/", requireAuth, requireRole("participante", "admin"), createActivity);
+router.patch("/:id_actividad/request-edit", requireAuth, requireRole("participante", "admin"), requestActivityEdit);
 router.patch("/:id_actividad/review", requireAuth, requireRole("admin"), reviewActivity);
 router.patch("/:id_actividad/cancel", requireAuth, requireRole("participante", "admin", "encargado"), cancelActivity);
 router.patch("/:id_actividad/attendance", requireAuth, requireRole("participante", "admin", "encargado"), markMyAttendance);

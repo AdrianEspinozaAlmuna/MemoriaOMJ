@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { submitActivityProposal } from "../services/userViewsService";
+import { Link, useLocation } from "react-router-dom";
+import { getActivityDetail, submitActivityEditRequest, submitActivityProposal } from "../services/userViewsService";
 import api from "../services/api";
 
 // Las opciones de salas vendran desde la API (/salas)
@@ -8,6 +8,7 @@ import api from "../services/api";
 const initialForm = {
   title: "",
   description: "",
+  id_tipo_actividad: "",
   room: "",
   date: "",
   hora_inicio: "",
@@ -24,11 +25,18 @@ function formatConflictRange(conflict) {
 }
 
 export default function CreateActivity() {
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const editActivityId = searchParams.get("edit");
+  const isEditMode = Boolean(editActivityId);
+  const isAdminRoute = location.pathname.startsWith("/admin");
   const [form, setForm] = useState(initialForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState({ type: "", title: "", message: "", hint: "" });
   const [roomOptions, setRoomOptions] = useState([]);
   const [gruposDisponibles, setGruposDisponibles] = useState([]);
+  const [tiposActividad, setTiposActividad] = useState([]);
+  const [loadingEditActivity, setLoadingEditActivity] = useState(isEditMode);
 
   function handleChange(event) {
     const { name, value, type, checked } = event.target;
@@ -61,6 +69,16 @@ export default function CreateActivity() {
         title: "Faltan datos requeridos",
         message: "Completa todos los campos obligatorios para continuar.",
         hint: "Revisa titulo, descripcion, fecha y bloque horario."
+      });
+      return;
+    }
+
+    if (!form.id_tipo_actividad) {
+      setFeedback({
+        type: "error",
+        title: "Tipo requerido",
+        message: "Debes seleccionar un tipo de actividad.",
+        hint: "El tipo define la portada y clasificacion de la actividad."
       });
       return;
     }
@@ -111,28 +129,45 @@ export default function CreateActivity() {
     setIsSubmitting(true);
 
     try {
-      const response = await submitActivityProposal({
+      const payload = {
         title: form.title.trim(),
         description: form.description.trim(),
+        id_tipo_actividad: Number(form.id_tipo_actividad),
         id_sala: Number(form.room),
         date: form.date,
         hora_inicio: form.hora_inicio,
         hora_termino: form.hora_termino,
         max_participantes: maxParticipants,
         chat_bidireccional: form.chat_bidireccional,
-        grupos_seleccionados: form.grupos_seleccionados,
         aprobado: false,
         estado: "pendiente"
-      });
+      };
+
+      const response = isEditMode
+        ? await submitActivityEditRequest(editActivityId, payload)
+        : await submitActivityProposal({
+            ...payload,
+            grupos_seleccionados: form.grupos_seleccionados
+          });
 
       if (response?.ok) {
         setFeedback({
           type: "success",
-          title: "Propuesta enviada",
-          message: "Tu actividad fue registrada correctamente y quedo en revision.",
-          hint: "El equipo OMJ te notificara cuando cambie su estado."
+          title: isEditMode ? "Edicion enviada" : "Propuesta enviada",
+          message: isEditMode
+            ? "Tu solicitud de edicion fue registrada correctamente y quedo en revision."
+            : "Tu actividad fue registrada correctamente y quedo en revision.",
+          hint: isEditMode
+            ? "Cuando el admin la revise, te notificaremos el resultado."
+            : "El equipo OMJ te notificara cuando cambie su estado."
         });
-        setForm(initialForm);
+        if (!isEditMode) {
+          setForm(previous => ({
+            ...initialForm,
+            room: previous.room,
+            id_tipo_actividad: previous.id_tipo_actividad
+          }));
+        }
       } else if (response?.status === 409 || response?.conflict) {
         const conflictName = response?.conflict?.titulo || "otra actividad";
         const conflictRange = formatConflictRange(response?.conflict);
@@ -189,7 +224,30 @@ export default function CreateActivity() {
       setForm(previous => ({ ...previous, room: "1" }));
     }
 
+    async function loadTipos() {
+      try {
+        const res = await api.get("/imagenes");
+        if (!mounted) return;
+        const tipos = Array.isArray(res.data?.tipos) ? res.data.tipos : [];
+        setTiposActividad(tipos);
+        if (tipos.length > 0) {
+          setForm(previous => ({
+            ...previous,
+            id_tipo_actividad: String(tipos[0].id_tipo)
+          }));
+        }
+      } catch (e) {
+        console.error("Error cargando tipos de actividad:", e);
+        setTiposActividad([]);
+      }
+    }
+
     async function loadGrupos() {
+      if (isEditMode) {
+        setGruposDisponibles([]);
+        return;
+      }
+
       try {
         const res = await api.get("/groups");
         if (!mounted) return;
@@ -201,16 +259,89 @@ export default function CreateActivity() {
     }
 
     loadRooms();
+    loadTipos();
     loadGrupos();
     return () => { mounted = false; };
-  }, []);
+  }, [isEditMode]);
+
+  useEffect(() => {
+    if (!isEditMode || !editActivityId) {
+      setLoadingEditActivity(false);
+      return;
+    }
+
+    let mounted = true;
+
+    async function loadEditActivity() {
+      setLoadingEditActivity(true);
+      const response = await getActivityDetail(editActivityId);
+
+      if (!mounted) return;
+
+      if (!response.ok) {
+        setFeedback({
+          type: "error",
+          title: "No se pudo cargar la actividad",
+          message: response.message || "No se pudo cargar la actividad para editarla.",
+          hint: "Revisa que la actividad exista y vuelve a intentarlo."
+        });
+        setLoadingEditActivity(false);
+        return;
+      }
+
+      const activity = response.activity || {};
+      setForm(previous => ({
+        ...previous,
+        title: activity.title || "",
+        description: activity.description || "",
+        id_tipo_actividad: activity.id_tipo_actividad ? String(activity.id_tipo_actividad) : previous.id_tipo_actividad,
+        room: activity.id_sala ? String(activity.id_sala) : previous.room,
+        date: activity.date || "",
+        hora_inicio: activity.hora_inicio || "",
+        hora_termino: activity.hora_termino || "",
+        max_participantes: activity.capacity ?? previous.max_participantes,
+        chat_bidireccional: activity.chat_bidireccional ?? true
+      }));
+      setLoadingEditActivity(false);
+    }
+
+    loadEditActivity();
+
+    return () => {
+      mounted = false;
+    };
+  }, [editActivityId, isEditMode]);
+
+  const tipoSeleccionado = tiposActividad.find(tipo => String(tipo.id_tipo) === String(form.id_tipo_actividad));
+  const backLink = isEditMode
+    ? `${isAdminRoute ? "/admin/actividad" : "/user/actividad"}/${editActivityId}`
+    : isAdminRoute
+      ? "/admin/dashboard"
+      : "/user/dashboard";
+
+  if (isEditMode && loadingEditActivity) {
+    return (
+      <section className="max-w-7xl mx-auto px-4 py-6 space-y-8">
+        <article className="rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-6 shadow-sm">
+          <p className="m-0 text-[0.92rem] font-semibold text-[var(--text)]">Cargando actividad para edición</p>
+          <p className="mt-2 text-[0.88rem] text-[var(--text-muted)]">Estamos preparando los datos actuales para que puedas enviar cambios a revisión.</p>
+        </article>
+      </section>
+    );
+  }
 
   return (
     <section className="max-w-7xl mx-auto px-4 py-6 space-y-8">
       <header>
         <p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Panel de usuario</p>
-        <h1 className="mt-2 mb-0 text-[clamp(1.8rem,2.5vw,2.3rem)] font-bold text-[var(--text)]">Crear actividad</h1>
-        <p className="mt-2 text-[0.92rem] text-[var(--text-muted)]">Propone una nueva actividad indicando lugar, fecha y horario para su revision.</p>
+        <h1 className="mt-2 mb-0 text-[clamp(1.8rem,2.5vw,2.3rem)] font-bold text-[var(--text)]">
+          {isEditMode ? "Editar actividad" : "Crear actividad"}
+        </h1>
+        <p className="mt-2 text-[0.92rem] text-[var(--text-muted)]">
+          {isEditMode
+            ? "Ajusta los datos de la actividad y envía la modificación a revisión."
+            : "Propone una nueva actividad indicando lugar, fecha y horario para su revision."}
+        </p>
       </header>
 
       <section className="rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-6 shadow-sm">
@@ -248,6 +379,54 @@ export default function CreateActivity() {
               required
             />
             <p className="text-right text-[0.75rem] text-[var(--text-muted)]">{form.description.length}/500</p>
+          </div>
+
+          <div className="grid gap-3 rounded-sm border border-[#d8e6dd] bg-white p-4">
+            <div>
+              <p className="m-0 text-[0.88rem] font-semibold text-[var(--text)]">Tipo de actividad</p>
+              <p className="m-0 mt-1 text-[0.8rem] text-[var(--text-muted)]">Selecciona la categoria que se asociara a esta actividad.</p>
+            </div>
+
+            {tiposActividad.length === 0 ? (
+              <p className="m-0 text-[0.82rem] text-[#8b2f22]">No hay tipos de actividad registrados en el catalogo.</p>
+            ) : (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {tiposActividad.map(tipo => {
+                  const selected = String(form.id_tipo_actividad) === String(tipo.id_tipo);
+                  return (
+                    <label
+                      key={tipo.id_tipo}
+                      className={[
+                        "cursor-pointer overflow-hidden rounded-sm border bg-[var(--panel-bg)] transition-all",
+                        selected
+                          ? "border-[var(--primary)] ring-2 ring-[#05a63d]/20"
+                          : "border-[#d8e6dd] hover:border-[#b7d1c0]"
+                      ].join(" ")}
+                    >
+                      <input
+                        type="radio"
+                        name="id_tipo_actividad"
+                        value={String(tipo.id_tipo)}
+                        checked={selected}
+                        onChange={handleChange}
+                        className="sr-only"
+                      />
+                      <img src={tipo.imagen_url} alt={tipo.nombre} className="h-24 w-full object-cover" />
+                      <div className="p-2.5">
+                        <p className="m-0 text-[0.84rem] font-semibold text-[var(--text)]">{tipo.nombre}</p>
+                        <p className="m-0 mt-0.5 line-clamp-2 text-[0.75rem] text-[var(--text-muted)]">{tipo.descripcion || "Sin descripcion"}</p>
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+
+            {tipoSeleccionado && (
+              <p className="m-0 text-[0.78rem] text-[var(--text-muted)]">
+                Seleccionado: <strong>{tipoSeleccionado.nombre}</strong>
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -352,7 +531,7 @@ export default function CreateActivity() {
             </div>
           </div>
 
-          {gruposDisponibles.length > 0 && (
+          {!isEditMode && gruposDisponibles.length > 0 && (
             <div className="grid gap-3 border-t border-[#d8e6dd] pt-5">
               <div>
                 <p className="m-0 text-[0.88rem] font-semibold text-[var(--text)]">Agregar grupos a la actividad (opcional)</p>
@@ -421,16 +600,16 @@ export default function CreateActivity() {
             <button
               type="submit"
               className="inline-flex items-center rounded-sm border border-[var(--primary)] bg-[var(--primary)] px-5 py-2.5 text-[0.9rem] font-semibold text-white transition-all hover:bg-[#0a7f3d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#05a63d]/30 disabled:cursor-not-allowed disabled:opacity-70"
-              disabled={isSubmitting}
+              disabled={isSubmitting || (isEditMode && loadingEditActivity)}
             >
-              {isSubmitting ? "Enviando..." : "Enviar propuesta"}
+              {isSubmitting ? "Enviando..." : isEditMode ? "Enviar edición a revisión" : "Enviar propuesta"}
             </button>
 
             <Link
-              to="/user/dashboard"
+              to={backLink}
               className="inline-flex items-center rounded-sm border border-[#d8e6dd] bg-white px-5 py-2.5 text-[0.9rem] font-semibold text-[#284536] transition-colors hover:bg-[#f5f9f7]"
             >
-              Volver al inicio
+              {isEditMode ? "Volver al detalle" : "Volver al inicio"}
             </Link>
           </div>
         </form>

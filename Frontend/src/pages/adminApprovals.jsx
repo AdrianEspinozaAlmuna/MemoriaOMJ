@@ -32,6 +32,7 @@ function getStatusKey(item) {
 
 function getStatusLabel(item) {
 	const statusKey = getStatusKey(item);
+	if (statusKey === "pendiente" && item?.revision_pendiente) return "Edición pendiente";
 	if (statusKey === "pendiente") return "Pendiente";
 	if (statusKey === "aprobada") return "Aprobada";
 	if (statusKey === "rechazada" || statusKey === "cancelada") return "Rechazada";
@@ -184,17 +185,7 @@ export default function AdminApprovals() {
 				{!loading && filteredItems.map(item => (
 					<ActivityCard
 						key={item.id}
-						activity={{
-							...item,
-							manager: item.manager,
-							category: item.category,
-							date: item.date,
-							time: item.time,
-							capacity: item.capacity,
-							enrolled: item.enrolled,
-							state: getStatusLabel(item),
-							image: item.image
-						}}
+						activity={item}
 						actionLabel="Revisar"
 						onActionClick={openItemModal}
 					/>
@@ -301,6 +292,9 @@ export default function AdminApprovals() {
 									{getStatusLabel(activeItem)}
 								</span>
 								<p className="m-0 text-[0.88rem] text-[var(--text-muted)]">Esta revisión impacta directamente en la publicación de la actividad dentro del calendario del sistema.</p>
+								{activeItem.revision_pendiente && (
+									<p className="m-0 text-[0.84rem] font-medium text-[#1f6e45]">Esta solicitud corresponde a una edición de una actividad ya publicada.</p>
+								)}
 								<div className="grid gap-2 rounded-[12px] border border-[#dce7df] bg-white p-3">
 									<p className="m-0 text-[0.78rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Resumen</p>
 									<p className="m-0 text-[0.88rem] text-[var(--text-muted)]"><strong className="text-[var(--text)]">Duración:</strong> {activeItem.time || `${activeItem.startTime || "-"} - ${activeItem.endTime || "-"}`}</p>

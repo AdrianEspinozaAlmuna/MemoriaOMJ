@@ -26,6 +26,43 @@ function emitNotificationBatch(notifications = []) {
   }
 }
 
+function buildActivityRevisionSnapshot(activity) {
+  return {
+    titulo: activity.titulo,
+    descripcion: activity.descripcion || null,
+    id_sala: activity.id_sala || null,
+    id_tipo_actividad: activity.id_tipo_actividad || null,
+    fecha: toDateLabel(activity.fecha),
+    hora_inicio: toTimeLabel(activity.hora_inicio),
+    hora_termino: toTimeLabel(activity.hora_termino),
+    max_participantes: activity.max_participantes || null,
+    chat_bidireccional: Boolean(activity.chat_bidireccional),
+    aprobado: Boolean(activity.aprobado),
+    estado: activity.estado
+  };
+}
+
+function restoreActivityRevisionSnapshot(snapshot = {}, currentActivity = {}) {
+  const restoredDate = snapshot.fecha ? new Date(snapshot.fecha) : currentActivity.fecha;
+  const restoredStartTime = snapshot.hora_inicio ? timeStringToDate(snapshot.hora_inicio) : currentActivity.hora_inicio;
+  const restoredEndTime = snapshot.hora_termino ? timeStringToDate(snapshot.hora_termino) : currentActivity.hora_termino;
+
+  return {
+    titulo: snapshot.titulo ?? currentActivity.titulo,
+    descripcion: snapshot.descripcion ?? currentActivity.descripcion,
+    id_sala: snapshot.id_sala ?? currentActivity.id_sala,
+    id_tipo_actividad: snapshot.id_tipo_actividad ?? currentActivity.id_tipo_actividad,
+    fecha: restoredDate,
+    hora_inicio: restoredStartTime,
+    hora_termino: restoredEndTime,
+    max_participantes: snapshot.max_participantes ?? currentActivity.max_participantes,
+    chat_bidireccional: typeof snapshot.chat_bidireccional === "boolean" ? snapshot.chat_bidireccional : currentActivity.chat_bidireccional,
+    aprobado: typeof snapshot.aprobado === "boolean" ? snapshot.aprobado : currentActivity.aprobado,
+    estado: snapshot.estado ?? currentActivity.estado,
+    revision_original_data: null
+  };
+}
+
 async function syncActivityStatuses(db = prisma) {
   // Usa hora de Chile para asegurar transiciones coherentes con la operación local.
   await db.$executeRaw`
@@ -112,6 +149,10 @@ function serializeActivity(activity, currentUserId = null) {
     activity.actividad_participantes?.filter(item => item.rol === "participante").length ??
     0;
 
+  const tipoActividad = activity.tipo_actividad_rel || null;
+  const tipoNombre = tipoActividad?.nombre || "Tipo no especificado";
+  const tipoImagen = tipoActividad?.imagen_url || null;
+
   return {
     id: activity.id_actividad,
     id_actividad: activity.id_actividad,
@@ -126,10 +167,22 @@ function serializeActivity(activity, currentUserId = null) {
     hora_termino: toTimeLabel(activity.hora_termino),
     place: activity.sala?.nombre || "Lugar por confirmar",
     lugar: activity.sala?.nombre || "Lugar por confirmar",
+    id_sala: activity.id_sala ?? null,
     manager: activity.usuario?.nombre
       ? `${activity.usuario.nombre} ${activity.usuario.apellido || ""}`.trim()
       : null,
     id_encargado: activity.id_encargado,
+    id_tipo_actividad: activity.id_tipo_actividad ?? null,
+    category: tipoNombre,
+    tipo_actividad: tipoActividad
+      ? {
+          id_tipo: tipoActividad.id_tipo,
+          nombre: tipoActividad.nombre,
+          imagen_url: tipoActividad.imagen_url
+        }
+      : null,
+    type: tipoNombre,
+    image: tipoImagen,
     capacity: activity.max_participantes,
     max_participantes: activity.max_participantes,
     enrolled: enrolledCount,
@@ -140,7 +193,8 @@ function serializeActivity(activity, currentUserId = null) {
     status: mapEstadoToUi(activity.estado, membership?.rol),
     estado: activity.estado,
     rol_en_actividad: membership?.rol || null,
-    chat_bidireccional: activity.chat_bidireccional
+    chat_bidireccional: activity.chat_bidireccional,
+    revision_pendiente: Boolean(activity.revision_original_data)
   };
 }
 
@@ -172,6 +226,7 @@ async function listActivities(req, res) {
     const include = {
       usuario: { select: { id_usuario: true, nombre: true, apellido: true } },
       sala: { select: { id_sala: true, nombre: true, capacidad: true } },
+      tipo_actividad_rel: { select: { id_tipo: true, nombre: true, imagen_url: true } },
       _count: {
         select: {
           actividad_participantes: {
@@ -218,6 +273,8 @@ async function listAdminActivities(req, res) {
       orderBy: [{ fecha: "asc" }, { hora_inicio: "asc" }],
       include: {
         usuario: { select: { id_usuario: true, nombre: true, apellido: true } },
+        sala: { select: { id_sala: true, nombre: true, capacidad: true } },
+        tipo_actividad_rel: { select: { id_tipo: true, nombre: true, imagen_url: true } },
         _count: {
           select: {
             actividad_participantes: {
@@ -249,6 +306,8 @@ async function getActivityById(req, res) {
       where: { id_actividad: idActividad },
       include: {
         usuario: { select: { id_usuario: true, nombre: true, apellido: true } },
+        sala: { select: { id_sala: true, nombre: true, capacidad: true } },
+        tipo_actividad_rel: { select: { id_tipo: true, nombre: true, imagen_url: true } },
         actividad_participantes: {
           include: {
             usuario: {
@@ -295,17 +354,30 @@ async function getActivityById(req, res) {
     const base = serializeActivity(activity, currentUserId);
     const participantsById = new Map();
 
-    activity.actividad_participantes
-      .filter(item => item.rol === "participante")
-      .forEach(item => {
+    activity.actividad_participantes.forEach(item => {
+      if (item.rol === "encargado") {
         participantsById.set(item.usuario.id_usuario, {
           id: item.usuario.id_usuario,
           name: `${item.usuario.nombre} ${item.usuario.apellido || ""}`.trim(),
+          role: "encargado",
+          status: "Encargado",
+          asistio: item.asistio,
+          valoracion: item.valoracion
+        });
+        return;
+      }
+
+      if (item.rol === "participante") {
+        participantsById.set(item.usuario.id_usuario, {
+          id: item.usuario.id_usuario,
+          name: `${item.usuario.nombre} ${item.usuario.apellido || ""}`.trim(),
+          role: "participante",
           status: item.asistio ? "Asistencia registrada" : "Confirmado",
           asistio: item.asistio,
           valoracion: item.valoracion
         });
-      });
+      }
+    });
 
     activity.actividad_grupos.forEach(entry => {
       const grupo = entry.grupo;
@@ -333,8 +405,9 @@ async function getActivityById(req, res) {
     });
 
     const participants = [...participantsById.values()];
-    base.enrolled = participants.length;
-    base.inscritos = participants.length;
+    const enrolledCount = activity.actividad_participantes.filter(item => item.rol === "participante").length;
+    base.enrolled = enrolledCount;
+    base.inscritos = enrolledCount;
 
     const ratingValues = participants
       .map(item => Number(item.valoracion))
@@ -375,6 +448,233 @@ async function getActivityById(req, res) {
   }
 }
 
+async function requestActivityEdit(req, res) {
+  const idActividad = parseActivityId(req.params.id_actividad);
+  const idUsuario = getUserIdFromToken(req.user);
+
+  if (!idActividad) {
+    return res.status(400).json({ message: "id_actividad invalido" });
+  }
+
+  if (!idUsuario) {
+    return res.status(403).json({ message: "No se pudo identificar el usuario autenticado" });
+  }
+
+  const {
+    title,
+    titulo,
+    description,
+    descripcion,
+    date,
+    fecha,
+    hora_inicio,
+    hora_termino,
+    max_participantes,
+    capacity,
+    chat_bidireccional = true
+  } = req.body || {};
+  const id_sala = req.body?.id_sala ?? null;
+  const id_tipo_actividad_raw = req.body?.id_tipo_actividad;
+
+  const activityTitle = (title || titulo || "").trim();
+  const activityDescription = (description || descripcion || "").trim();
+  const activityDate = new Date(date || fecha || "");
+  const startTime = timeStringToDate(hora_inicio);
+  const endTime = timeStringToDate(hora_termino);
+  const maxParticipants = Number(max_participantes ?? capacity ?? 0);
+  const salaId = Number(id_sala);
+  const idTipoActividad = Number(id_tipo_actividad_raw);
+
+  if (!activityTitle || !activityDate || Number.isNaN(activityDate.getTime()) || !startTime) {
+    return res.status(400).json({ message: "Faltan datos requeridos de actividad" });
+  }
+
+  if (endTime && endTime <= startTime) {
+    return res.status(400).json({ message: "hora_termino debe ser mayor a hora_inicio" });
+  }
+
+  if (!Number.isInteger(maxParticipants) || maxParticipants < 1) {
+    return res.status(400).json({ message: "max_participantes invalido" });
+  }
+
+  if (!Number.isInteger(salaId) || salaId < 1) {
+    return res.status(400).json({ message: "id_sala invalido" });
+  }
+
+  if (!Number.isInteger(idTipoActividad) || idTipoActividad < 1) {
+    return res.status(400).json({ message: "id_tipo_actividad invalido" });
+  }
+
+  try {
+    await syncActivityStatuses();
+
+    const existing = await prisma.actividad.findUnique({
+      where: { id_actividad: idActividad },
+      include: {
+        usuario: { select: { id_usuario: true, nombre: true, apellido: true } },
+        sala: { select: { id_sala: true, nombre: true, capacidad: true } },
+        tipo_actividad_rel: { select: { id_tipo: true, nombre: true, imagen_url: true } },
+        actividad_participantes: {
+          select: { id_usuario: true, rol: true, asistio: true, valoracion: true }
+        },
+        _count: {
+          select: {
+            actividad_participantes: {
+              where: { rol: "participante" }
+            }
+          }
+        }
+      }
+    });
+
+    if (!existing) {
+      return res.status(404).json({ message: "Actividad no encontrada" });
+    }
+
+    const isAdmin = req.user?.rol === "admin";
+    const isOwner = Number(existing.id_encargado) === idUsuario;
+
+    if (!isAdmin && !isOwner) {
+      return res.status(403).json({ message: "No tienes permisos para editar esta actividad" });
+    }
+
+    if (existing.estado === "finalizada") {
+      return res.status(400).json({ message: "No puedes editar una actividad finalizada" });
+    }
+
+    if (existing.estado === "cancelada") {
+      return res.status(400).json({ message: "No puedes editar una actividad cancelada" });
+    }
+
+    if (existing.revision_original_data) {
+      return res.status(400).json({ message: "Ya existe una solicitud de edición pendiente para esta actividad" });
+    }
+
+    if (existing.estado === "en_curso") {
+      return res.status(400).json({ message: "No puedes editar una actividad en curso" });
+    }
+
+    const room = await prisma.salas.findUnique({ where: { id_sala: salaId } });
+    if (!room) {
+      return res.status(400).json({ message: "La sala seleccionada no existe" });
+    }
+
+    const tipoActividad = await prisma.tipo_actividad.findUnique({ where: { id_tipo: idTipoActividad } });
+    if (!tipoActividad) {
+      return res.status(400).json({ message: "El tipo de actividad seleccionado no existe" });
+    }
+
+    const roomCapacity = Number(room.capacidad ?? room.capacity ?? 0);
+    if (Number.isInteger(roomCapacity) && roomCapacity > 0 && maxParticipants > roomCapacity) {
+      return res.status(400).json({
+        message: "El cupo no puede superar la capacidad de la sala.",
+        capacity: roomCapacity
+      });
+    }
+
+    const enrolledCount = existing._count?.actividad_participantes ?? 0;
+    if (maxParticipants < enrolledCount) {
+      return res.status(400).json({
+        message: "El nuevo cupo no puede ser menor que la cantidad actual de inscritos.",
+        enrolled: enrolledCount
+      });
+    }
+
+    const sameRoomActivities = await prisma.actividad.findMany({
+      where: {
+        fecha: activityDate,
+        id_sala: salaId,
+        id_actividad: { not: idActividad },
+        estado: {
+          in: ["pendiente", "programada", "en_curso"]
+        }
+      },
+      select: {
+        id_actividad: true,
+        titulo: true,
+        hora_inicio: true,
+        hora_termino: true
+      }
+    });
+
+    const conflictingActivity = sameRoomActivities.find(candidate =>
+      hasTimeOverlap({
+        newStart: startTime,
+        newEnd: endTime,
+        existingStart: candidate.hora_inicio,
+        existingEnd: candidate.hora_termino
+      })
+    );
+
+    if (conflictingActivity) {
+      return res.status(409).json({
+        message: "Ya existe una actividad en la misma sala y horario.",
+        conflict: {
+          id_actividad: conflictingActivity.id_actividad,
+          titulo: conflictingActivity.titulo,
+          hora_inicio: toTimeLabel(conflictingActivity.hora_inicio),
+          hora_termino: toTimeLabel(conflictingActivity.hora_termino)
+        }
+      });
+    }
+
+    const revisionSnapshot = buildActivityRevisionSnapshot(existing);
+
+    const updated = await prisma.actividad.update({
+      where: { id_actividad: idActividad },
+      data: {
+        titulo: activityTitle,
+        descripcion: activityDescription || null,
+        id_sala: salaId,
+        id_tipo_actividad: idTipoActividad,
+        fecha: activityDate,
+        hora_inicio: startTime,
+        hora_termino: endTime,
+        max_participantes: maxParticipants,
+        chat_bidireccional: Boolean(chat_bidireccional),
+        aprobado: false,
+        estado: "pendiente",
+        revision_original_data: revisionSnapshot
+      },
+      include: {
+        usuario: { select: { id_usuario: true, nombre: true, apellido: true } },
+        sala: { select: { id_sala: true, nombre: true, capacidad: true } },
+        tipo_actividad_rel: { select: { id_tipo: true, nombre: true, imagen_url: true } },
+        _count: {
+          select: {
+            actividad_participantes: {
+              where: { rol: "participante" }
+            }
+          }
+        }
+      }
+    });
+
+    try {
+      const adminNotifications = await notifyAdminUsers(prisma, idUsuario, {
+        titulo: "Edición de actividad pendiente",
+        descripcion: `Se solicitó la edición de la actividad ${activityTitle} para revisión.`,
+        tipo: "actividad",
+        id_actividad: idActividad
+      });
+
+      if (adminNotifications?.[0]) {
+        emitNotificationCreated(adminNotifications[0], { broadcastAdmins: true });
+      }
+    } catch (notificationError) {
+      console.error("[activities] edit notification failed:", notificationError);
+    }
+
+    return res.json({
+      ok: true,
+      message: "Edición enviada correctamente para revisión",
+      activity: serializeActivity(updated, idUsuario)
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Error editando actividad", detail: error.message });
+  }
+}
+
 async function createActivity(req, res) {
   const idEncargado = getUserIdFromToken(req.user);
   if (!idEncargado) {
@@ -396,6 +696,7 @@ async function createActivity(req, res) {
     grupos_seleccionados = []
   } = req.body || {};
   const id_sala = req.body?.id_sala ?? null;
+  const id_tipo_actividad_raw = req.body?.id_tipo_actividad;
 
   const activityTitle = (title || titulo || "").trim();
   const activityDescription = (description || descripcion || "").trim();
@@ -407,14 +708,23 @@ async function createActivity(req, res) {
     ? [...new Set(grupos_seleccionados.map(value => Number(value)).filter(value => Number.isInteger(value) && value > 0))]
     : [];
   let salaId = null;
+  const idTipoActividad = Number(id_tipo_actividad_raw);
 
   if (!id_sala) {
     return res.status(400).json({ message: "id_sala es requerido" });
   }
 
+  if (!id_tipo_actividad_raw) {
+    return res.status(400).json({ message: "id_tipo_actividad es requerido" });
+  }
+
   salaId = Number(id_sala);
   if (!Number.isInteger(salaId) || salaId < 1) {
     return res.status(400).json({ message: "id_sala invalido" });
+  }
+
+  if (!Number.isInteger(idTipoActividad) || idTipoActividad < 1) {
+    return res.status(400).json({ message: "id_tipo_actividad invalido" });
   }
 
   if (!activityTitle || !activityDate || Number.isNaN(activityDate.getTime()) || !startTime) {
@@ -433,6 +743,11 @@ async function createActivity(req, res) {
     const sala = await prisma.salas.findUnique({ where: { id_sala: salaId } });
     if (!sala) {
       return res.status(400).json({ message: "La sala seleccionada no existe" });
+    }
+
+    const tipoActividad = await prisma.tipo_actividad.findUnique({ where: { id_tipo: idTipoActividad } });
+    if (!tipoActividad) {
+      return res.status(400).json({ message: "El tipo de actividad seleccionado no existe" });
     }
 
     const roomCapacity = Number(sala.capacidad ?? sala.capacity ?? 0);
@@ -485,6 +800,7 @@ async function createActivity(req, res) {
         data: {
           id_encargado: idEncargado,
           id_sala: salaId,
+          id_tipo_actividad: idTipoActividad,
           titulo: activityTitle,
           descripcion: activityDescription || null,
           fecha: activityDate,
@@ -497,6 +813,7 @@ async function createActivity(req, res) {
         },
         include: {
           usuario: { select: { id_usuario: true, nombre: true, apellido: true } },
+          tipo_actividad_rel: { select: { id_tipo: true, nombre: true, imagen_url: true } },
           _count: {
             select: {
               actividad_participantes: {
@@ -1062,6 +1379,10 @@ async function reviewActivity(req, res) {
       return res.status(404).json({ message: "Actividad no encontrada" });
     }
 
+    const pendingRevision = existing.revision_original_data && typeof existing.revision_original_data === "object"
+      ? existing.revision_original_data
+      : null;
+
     let updated;
     try {
       updated = await prisma.actividad.update({
@@ -1070,14 +1391,19 @@ async function reviewActivity(req, res) {
           action === "approve"
             ? {
                 aprobado: true,
-                estado: existing.estado === "pendiente" ? "programada" : existing.estado
+                estado: existing.estado === "pendiente" ? "programada" : existing.estado,
+                revision_original_data: null
               }
-            : {
-                aprobado: false,
-                estado: "rechazada"
-              },
+            : pendingRevision
+              ? restoreActivityRevisionSnapshot(pendingRevision, existing)
+              : {
+                  aprobado: false,
+                  estado: "rechazada"
+                },
         include: {
           usuario: { select: { id_usuario: true, nombre: true, apellido: true } },
+          sala: { select: { id_sala: true, nombre: true, capacidad: true } },
+          tipo_actividad_rel: { select: { id_tipo: true, nombre: true, imagen_url: true } },
           _count: {
             select: {
               actividad_participantes: {
@@ -1102,6 +1428,8 @@ async function reviewActivity(req, res) {
           },
           include: {
             usuario: { select: { id_usuario: true, nombre: true, apellido: true } },
+            sala: { select: { id_sala: true, nombre: true, capacidad: true } },
+            tipo_actividad_rel: { select: { id_tipo: true, nombre: true, imagen_url: true } },
             _count: {
               select: {
                 actividad_participantes: {
@@ -1119,26 +1447,61 @@ async function reviewActivity(req, res) {
     const activityTitle = existing?.titulo || updated?.titulo || `#${idActividad}`;
     const reason = String(req.body?.descripcion ?? req.body?.reason ?? "").trim();
 
-    const ownerNotification = action === "approve"
-      ? {
-          titulo: `Aprobación de propuesta actividad`,
-          descripcion: "La actividad quedó habilitada para publicarse.",
+    const ownerNotification = pendingRevision
+      ? action === "approve"
+        ? {
+            titulo: "Edición de actividad aprobada",
+            descripcion: "Los cambios solicitados fueron publicados.",
+            tipo: "actividad",
+            id_actividad: idActividad
+          }
+        : {
+            titulo: "Edición de actividad rechazada",
+            descripcion: reason || "Los cambios solicitados no fueron aprobados.",
+            tipo: "actividad",
+            id_actividad: idActividad
+          }
+      : action === "approve"
+        ? {
+            titulo: "Aprobación de propuesta actividad",
+            descripcion: "La actividad quedó habilitada para publicarse.",
+            tipo: "actividad",
+            id_actividad: idActividad
+          }
+        : {
+            titulo: "Rechazo propuesta actividad",
+            descripcion: reason || "La actividad no fue aprobada por administración.",
+            tipo: "actividad",
+            id_actividad: idActividad
+          };
+
+    try {
+      const ownerNotifications = await notifyActivityOwner(prisma, idUsuario, idActividad, ownerNotification);
+      emitNotificationBatch(ownerNotifications);
+    } catch (notifError) {
+      console.error("[reviewActivity] ownerNotification failed:", notifError);
+    }
+
+    if (action === "approve" && pendingRevision) {
+      try {
+        const participantsNotifications = await notifyActivityParticipants(prisma, idUsuario, idActividad, {
+          titulo: "Actividad actualizada",
+          descripcion: "Los cambios aprobados ya están disponibles para los participantes inscritos.",
           tipo: "actividad",
           id_actividad: idActividad
-        }
-      : {
-          titulo: `Rechazo propuesta actividad`,
-          descripcion: reason || "La actividad no fue aprobada por administración.",
-          tipo: "actividad",
-          id_actividad: idActividad
-        };
-
-    const ownerNotifications = await notifyActivityOwner(prisma, idUsuario, idActividad, ownerNotification);
-
-    emitNotificationBatch(ownerNotifications);
+        }, { includeOwner: false });
+        emitNotificationBatch(participantsNotifications);
+      } catch (notifError) {
+        console.error("[reviewActivity] participantsNotification failed:", notifError);
+      }
+    }
 
     if (action === "approve") {
-      await syncActivityStatuses();
+      try {
+        await syncActivityStatuses();
+      } catch (syncError) {
+        console.error("[reviewActivity] syncActivityStatuses failed:", syncError);
+      }
     }
 
     return res.json({
@@ -1147,6 +1510,7 @@ async function reviewActivity(req, res) {
       activity: serializeActivity(updated)
     });
   } catch (error) {
+    console.error("[reviewActivity] main error:", error);
     return res.status(500).json({ message: "Error revisando actividad", detail: error.message });
   }
 }
@@ -1345,6 +1709,7 @@ module.exports = {
   removeParticipant,
   rateActivity,
   reviewActivity,
+  requestActivityEdit,
   cancelActivity,
   createActivityMessage
 };

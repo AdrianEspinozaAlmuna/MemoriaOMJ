@@ -1,5 +1,5 @@
 import React from "react";
-import { ListCheck, BarChart3, Bell, CalendarDays, CheckCircle2, Circle, DoorOpen, LayoutDashboard, LogOut, Menu, PanelLeftClose, PanelLeftOpen, UserRound, Users, X } from "lucide-react";
+import { ListCheck, BarChart3, Bell, CalendarDays, CheckCircle2, Circle, LayoutGrid, DoorOpen, LayoutDashboard, LogOut, Menu, PanelLeftClose, PanelLeftOpen, UserRound, Users, X } from "lucide-react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 function decodeToken(token) {
@@ -22,7 +22,8 @@ const mainLinks = [
 	{ to: "/admin/actividades", label: "Actividades", icon: "list" },
 	{ to: "/admin/reportes", label: "Reportes", icon: "report" },
 	{ to: "/admin/notificaciones", label: "Notificaciones", icon: "bell" },
-	{ to: "/admin/configuracion", label: "Salas", icon: "rooms" }
+	{ to: "/admin/imagenes", label: "Catalogo de Tipos", icon: "LayoutGrid" },
+	{ to: "/admin/salas", label: "Salas", icon: "rooms" }
 ];
 
 function SidebarIcon({ name, className = "h-4 w-4" }) {
@@ -50,7 +51,12 @@ function SidebarIcon({ name, className = "h-4 w-4" }) {
 	if (name === "rooms") {
 		return <DoorOpen aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
 	}
-	return <Circle aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
+	if (name === "tags") {
+		return <Tags aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
+	}
+	if (name === "LayoutGrid") {
+		return <LayoutGrid aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
+	}
 }
 
 export default function AdminLayout() {
@@ -106,6 +112,7 @@ export default function AdminLayout() {
 		if (path.endsWith("/admin/actividades")) return "Actividades";
 		if (path.endsWith("/admin/reportes")) return "Reportes";
 		if (path.endsWith("/admin/notificaciones")) return "Notificaciones";
+		if (path.endsWith("/admin/imagenes")) return "Catalogo de tipos";
 		if (path.endsWith("/admin/configuracion")) return "Salas";
 		return "Panel de administrador";
 	}

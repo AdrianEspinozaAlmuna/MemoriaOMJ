@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const http = require("http");
+const path = require("path");
 require("dotenv").config();
 const userRoutes = require("./routes/userRoutes");
 const activityRoutes = require("./routes/activityRoutes");
@@ -8,12 +9,14 @@ const dashboardRoutes = require("./routes/dashboardRoutes");
 const salasRoutes = require("./routes/salasRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const groupRoutes = require("./routes/groupRoutes");
+const imageRoutes = require("./routes/imageRoutes");
 const { prisma } = require("./prisma/client");
 const { initRealtimeServer } = require("./realtime");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.use("/api/users", userRoutes);
 app.use("/api/activities", activityRoutes);
@@ -21,6 +24,7 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/salas", salasRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/groups", groupRoutes);
+app.use("/api/imagenes", imageRoutes);
 
 app.get("/api/health", async (req, res) => {
   // prueba simple de conexión a la BD

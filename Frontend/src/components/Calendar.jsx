@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight, ChevronLeft, ChevronRight, Clock3, LayoutGrid, MapPin, Rows3, UserRound, Users } from "lucide-react";
 import Modal from "./Modal";
 import { parseDateForChile } from "../utils/chileDate";
+import { resolveActivityImage } from "../services/activityImagesService";
 
 // Demo images fallback (used when activity has no image)
 const DEMO_PICS = [
@@ -151,7 +152,7 @@ function getActivityTimeRange(activity) {
 function CompactCalendarActivityCard({ activity, onClick, showPlace = true }) {
   const creator = getActivityCreator(activity);
   const participantsLabel = getActivityParticipants(activity);
-  const imageSrc = activity.image || activity.imageUrl || activity.img || pickDemoImage(activity);
+  const imageSrc = resolveActivityImage(activity);
   return (
     <button
       type="button"

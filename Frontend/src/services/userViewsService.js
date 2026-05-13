@@ -1,4 +1,5 @@
 import api from "./api";
+import { resolveActivityImage } from "./activityImagesService";
 
 const WAIT_TIME = 420;
 
@@ -344,12 +345,16 @@ function toUiActivity(item = {}) {
     place: item.place || item.lugar || "Lugar por confirmar",
     description: item.description || item.descripcion || "",
     manager: item.manager || null,
+    category: item.category || item.tipo_actividad?.nombre || item.type || "Actividad",
+    type: item.type || item.tipo_actividad?.nombre || item.category || "Actividad",
+    image: resolveActivityImage(item),
     status: item.status || "disponible",
     state: item.estado || null,
     capacity: item.capacity ?? item.max_participantes ?? null,
     enrolled: item.enrolled ?? item.inscritos ?? 0,
     chat_bidireccional: item.chat_bidireccional ?? true,
-    approved: item.approved ?? item.aprobado ?? false
+    approved: item.approved ?? item.aprobado ?? false,
+    revision_pendiente: Boolean(item.revision_pendiente)
   };
 }
 
@@ -529,6 +534,26 @@ export async function submitActivityProposal(payload) {
       ok: false,
       status: error?.response?.status || null,
       message: responseData?.message || "No se pudo enviar la propuesta.",
+      conflict: responseData?.conflict || null
+    };
+  }
+}
+
+export async function submitActivityEditRequest(activityId, payload) {
+  try {
+    const { data } = await api.patch(`/activities/${activityId}/request-edit`, payload);
+    return {
+      ok: true,
+      status: 200,
+      message: data?.message || "Edición enviada correctamente para revisión.",
+      activity: data?.activity || null
+    };
+  } catch (error) {
+    const responseData = error?.response?.data || {};
+    return {
+      ok: false,
+      status: error?.response?.status || null,
+      message: responseData?.message || "No se pudo enviar la edición para revisión.",
       conflict: responseData?.conflict || null
     };
   }

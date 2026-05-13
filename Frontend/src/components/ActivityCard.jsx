@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { CalendarDays, CheckCircle2, CircleDot, Clock3, PlayCircle, MapPin, UserRound, Users, XCircle } from "lucide-react";
 import { ArrowRight } from "lucide-react";
 import { formatDateForChile, parseDateForChile } from "../utils/chileDate";
+import { resolveActivityImage } from "../services/activityImagesService";
 
 function formatDate(dateValue) {
   return formatDateForChile(dateValue, {
@@ -135,7 +136,7 @@ function CardBody({ activity, actionLabel, emphasizeEnrollment = false }) {
   const placeLabel = activity.place || "Lugar por confirmar";
   const enrolled = activity.enrolled ?? activity.participants ?? activity.inscritos ?? null;
   const capacity = activity.capacity ?? activity.max_participantes ?? activity.capacidad ?? null;
-  const imageSrc = activity.image || activity.imageUrl || activity.img || null;
+  const imageSrc = resolveActivityImage(activity);
   const StatusIcon = getStatusIcon(activity);
   const isEnrolled = String(activity?.status || "").toLowerCase() === "inscrito";
 
@@ -180,6 +181,11 @@ function CardBody({ activity, actionLabel, emphasizeEnrollment = false }) {
           <div className="mt-3 border-t border-[#e8f0ea] pt-3">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[0.85rem] font-medium text-[var(--text)] max-[760px]:text-[0.82rem]">
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                {getTopLabel(activity) && (
+                  <p className="m-0 inline-flex items-center gap-2">
+                    <span className="inline-flex rounded-sm bg-[#eef8f2] px-2 py-0.5 text-[0.75rem] font-semibold text-[#1f6e45]">{getTopLabel(activity)}</span>
+                  </p>
+                )}
                 <p className="m-0 inline-flex items-center gap-2">
                   <CalendarIcon className="h-4 w-4 text-[var(--primary)]" />
                   {formatDate(activity.date)}

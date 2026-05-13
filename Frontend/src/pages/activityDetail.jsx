@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
-import { BadgeCheck, CalendarDays, Clock3, Lock, MapPin, MessageCircle, MoreHorizontal, Send, User, Star } from "lucide-react";
-import { Link, useLocation, useParams } from "react-router-dom";
+import { BadgeCheck, CalendarDays, Clock3, Lock, MapPin, MessageCircle, MoreHorizontal, Send, User, Star, CheckCircle2, Clock, AlertCircle, XCircle } from "lucide-react";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import Modal from "../components/Modal";
 import { formatDateForChile } from "../utils/chileDate";
 import { cancelActivityEnrollment, cancelManagedActivity, enrollInActivity, getActivityDetail, markMyAttendance, markParticipantAttendance, rateActivity, removeParticipantFromActivity, sendActivityMessage } from "../services/userViewsService";
@@ -73,12 +73,12 @@ const ratingsData = {
 };
 
 function getStatusBadge(status) {
-	if (status === "finalizada") return { label: "Finalizada", className: "bg-[#e7f5ec] text-[#177945]" };
-	if (status === "en_curso") return { label: "En curso", className: "bg-[#e9f3ff] text-[#1d4f91]" };
-	if (status === "rechazada") return { label: "Rechazada", className: "bg-[#fff1ed] text-[#8a3b2a]" };
-	if (status === "cancelada") return { label: "Cancelada", className: "bg-[#fff1ed] text-[#8a3b2a]" };
-	if (status === "pendiente") return { label: "Pendiente", className: "bg-[#fff3de] text-[#a86612]" };
-	return { label: "Programada", className: "bg-[#ecf7f0] text-[#1f6e45]" };
+	if (status === "finalizada") return { label: "Finalizada", className: "bg-[#e7f5ec] text-[#177945]", icon: CheckCircle2 };
+	if (status === "en_curso") return { label: "En curso", className: "bg-[#e9f3ff] text-[#1d4f91]", icon: Clock };
+	if (status === "rechazada") return { label: "Rechazada", className: "bg-[#fff1ed] text-[#8a3b2a]", icon: XCircle };
+	if (status === "cancelada") return { label: "Cancelada", className: "bg-[#fff1ed] text-[#8a3b2a]", icon: XCircle };
+	if (status === "pendiente") return { label: "Pendiente", className: "bg-[#fff3de] text-[#a86612]", icon: AlertCircle };
+	return { label: "Programada", className: "bg-[#ecf7f0] text-[#1f6e45]", icon: CheckCircle2 };
 }
 
 function formatDate(value) {
@@ -102,6 +102,7 @@ function normalizeActivity(rawActivity = {}) {
 		hora_inicio: rawActivity.hora_inicio || rawActivity.time || fallbackActivity.hora_inicio,
 		hora_termino: rawActivity.hora_termino || fallbackActivity.hora_termino,
 		place: rawActivity.place || rawActivity.lugar || fallbackActivity.place,
+		id_sala: rawActivity.id_sala || fallbackActivity.id_sala || null,
 		manager: rawActivity.manager || fallbackActivity.manager,
 		id_encargado: rawActivity.id_encargado || fallbackActivity.id_encargado,
 		capacity: Number(rawActivity.capacity ?? rawActivity.max_participantes ?? fallbackActivity.capacity),
@@ -111,6 +112,8 @@ function normalizeActivity(rawActivity = {}) {
 		chat_bidireccional: rawActivity.chat_bidireccional ?? fallbackActivity.chat_bidireccional,
 		aprobado: rawActivity.aprobado ?? rawActivity.approved ?? fallbackActivity.aprobado,
 		status: rawActivity.estado || rawActivity.status || fallbackActivity.status,
+		revision_pendiente: Boolean(rawActivity.revision_pendiente),
+		tipo_actividad: rawActivity.tipo_actividad || rawActivity.tipo_actividad_rel || null,
 		ratings: hasRatings ? rawActivity.ratings : ratingsData,
 		participants: hasParticipants && Array.isArray(rawActivity.participants)
 			? rawActivity.participants
@@ -124,6 +127,7 @@ function normalizeActivity(rawActivity = {}) {
 export default function ActivityDetail() {
 	const { activityId } = useParams();
 	const location = useLocation();
+	const navigate = useNavigate();
 	const user = decodeToken(localStorage.getItem("token"));
 	const role = user?.rol || "participante";
 	const currentUserId = getTokenUserId(user);
@@ -275,6 +279,7 @@ export default function ActivityDetail() {
 	const currentUserRating = Number(currentParticipant?.valoracion);
 	const hasExistingRating = Number.isInteger(currentUserRating) && currentUserRating >= 1 && currentUserRating <= 5;
 	const canCancelActivity = canManageActivity && !isFinished && !isCanceled;
+	const canEditActivity = canManageActivity && !isFinished && !isCanceled && !isInProgress && !activity?.revision_pendiente;
 	const canSendChat = Boolean(activity?.chat_bidireccional) || canManageActivity;
 	const isChatReadOnlyForUser = !canSendChat;
 	const canRateInActivity = isFinished && role === "participante" && !canManageActivity;
@@ -282,6 +287,7 @@ export default function ActivityDetail() {
 	const canCancelEnrollment = isEnrolled && !isInProgress;
 	const hasAttendanceRegistered = Boolean(currentParticipant?.asistio);
 	const backTo = location.pathname.startsWith("/admin") ? "/admin/actividades" : "/user/mis-actividades";
+	const editTo = `${location.pathname.startsWith("/admin") ? "/admin/crear-actividad" : "/user/crear-actividad"}?edit=${activity?.id || activityId}`;
 
 	useEffect(() => {
 		if (!canRateInActivity) {
@@ -588,7 +594,18 @@ export default function ActivityDetail() {
 							<h1 className="m-0 text-[clamp(1.8rem,2.5vw,2.3rem)] font-bold text-[var(--text)]">{activity.title}</h1>
 							<p className="mt-2 text-[0.93rem] text-[var(--text-muted)]">Actividad #{activityId || "sin-id"} · Capacidad máxima {activity.capacity} participantes</p>
 						</div>
-						<span className={`inline-flex rounded-lg px-3 py-1.5 text-[0.78rem] font-semibold flex-shrink-0 ${statusBadge.className}`}>{statusBadge.label}</span>
+					</div>
+				</div>
+
+				<div className="rounded-xl border border-[#d8e6dd] bg-white p-5 relative overflow-hidden">
+					{activity.tipo_actividad?.imagen_url && (
+						<div className="absolute inset-0 opacity-80 pointer-events-none">
+							<img src={activity.tipo_actividad.imagen_url} alt="" className="w-full h-full object-cover" />
+						</div>
+					)}
+					<div className="relative z-10">
+						<p className="m-0 text-[0.75rem] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">Tipo de actividad</p>
+						<p className="m-0 mt-2 text-[1.1rem] font-bold text-[var(--text)]">{activity.tipo_actividad?.nombre || "No especificado"}</p>
 					</div>
 				</div>
 
@@ -631,13 +648,16 @@ export default function ActivityDetail() {
 									</div>
 									<div className="rounded-sm border border-[#e2ebe4] bg-white px-3.5 py-3">
 										<p className="m-0 text-[0.8rem] text-[var(--text-muted)]">Estado</p>
-										<p className="mt-1 text-[0.9rem] font-semibold text-[var(--text)]">{statusBadge.label}</p>
+										<p className="mt-1 inline-flex items-center gap-2 text-[0.9rem] font-semibold text-[var(--text)]">
+											{statusBadge.icon && <statusBadge.icon className="h-4 w-4 text-[var(--primary)]" strokeWidth={1.8} />}
+											{statusBadge.label}
+										</p>
 									</div>
 									<div className="rounded-sm border border-[#e2ebe4] bg-white px-3.5 py-3">
 										<p className="m-0 text-[0.8rem] text-[var(--text-muted)]">Aprobación</p>
 										<p className="mt-1 inline-flex items-center gap-2 text-[0.9rem] font-semibold text-[var(--text)]">
 											<BadgeCheck className="h-4 w-4 text-[var(--primary)]" strokeWidth={1.8} />
-											{activity.aprobado ? "Aprobada" : "Pendiente de aprobación"}
+											{activity.aprobado ? "Aprobada" : "Pendiente"}{activity.revision_pendiente ? " · edición" : ""}
 										</p>
 									</div>
 								</div>
@@ -647,13 +667,16 @@ export default function ActivityDetail() {
 						<article className="order-4 rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-6 shadow-sm lg:order-none">
 							<div className="flex items-center justify-between gap-3 mb-4">
 								<h2 className="m-0 text-[1rem] font-semibold text-[var(--text)]">Participantes Inscritos</h2>
-								<span className="rounded-full bg-[#ebf6ef] px-3 py-1 text-[0.75rem] font-semibold text-[#266346]">{participants.length}</span>
+								<span className="rounded-full bg-[#ebf6ef] px-3 py-1 text-[0.75rem] font-semibold text-[#266346]">{enrolledCount}</span>
 							</div>
 
 							<div className="overflow-visible rounded-lg border border-[#e0e9e2] bg-white">
 								<div className="divide-y divide-[#e5ede8]">
-									{participants.map(person => (
-										<div key={person.id} className="relative grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3 px-3.5 py-3 sm:grid-cols-[auto_1fr_auto_auto] sm:items-center">
+																			{participants.map(person => {
+																				const isOwnerParticipant = person.role === "encargado" || Number(person.id) === Number(activity.id_encargado);
+
+																				return (
+																				<div key={person.id} className="relative grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3 px-3.5 py-3 sm:grid-cols-[auto_1fr_auto_auto] sm:items-center">
 											<span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-[#d7e4dd] bg-transparent text-[0.7rem] font-bold text-[#2f5c45]">
 												{person.name
 													.split(" ")
@@ -664,16 +687,16 @@ export default function ActivityDetail() {
 											<div className="min-w-0 pr-1">
 												<p className="m-0 break-words text-[0.91rem] font-semibold leading-snug text-[var(--text)] sm:truncate">{person.name}</p>
 												<p className="m-0 mt-0.5 text-[0.8rem] text-[var(--text-muted)]">
-													{person.age} años
-													<span className={`sm:hidden ${person.status === "Confirmado" ? "text-[#177945]" : "text-[#b87015]"}`}>
-														{" "}· {person.status}
-													</span>
+																							{person.age ? `${person.age} años` : isOwnerParticipant ? "Responsable de la actividad" : "Sin edad registrada"}
+																							<span className={`sm:hidden ${person.status === "Confirmado" ? "text-[#177945]" : isOwnerParticipant ? "text-[#1f6e45]" : "text-[#b87015]"}`}>
+																								{" "}· {isOwnerParticipant ? "Encargado" : person.status}
+																							</span>
 												</p>
 											</div>
-											<span className={`hidden flex-shrink-0 rounded-full px-2.5 py-1 text-[0.72rem] font-semibold whitespace-nowrap sm:inline-flex ${person.status === "Confirmado" ? "bg-[#e7f5ec] text-[#177945]" : "bg-[#fff3de] text-[#b87015]"}`}>
-												{person.status}
+																					<span className={`hidden flex-shrink-0 rounded-full px-2.5 py-1 text-[0.72rem] font-semibold whitespace-nowrap sm:inline-flex ${isOwnerParticipant ? "bg-[#eef8f2] text-[#1f6e45]" : person.status === "Confirmado" ? "bg-[#e7f5ec] text-[#177945]" : "bg-[#fff3de] text-[#b87015]"}`}>
+																						{isOwnerParticipant ? "Encargado" : person.status}
 											</span>
-											{canManageActivity && !isFinished && (
+																					{canManageActivity && !isFinished && !isOwnerParticipant && (
 												<>
 													<button
 														type="button"
@@ -702,7 +725,8 @@ export default function ActivityDetail() {
 												</>
 											)}
 										</div>
-									))}
+																				);
+																			})}
 								</div>
 							</div>
 						</article>
@@ -819,7 +843,14 @@ export default function ActivityDetail() {
 								<div className="mt-4 space-y-2.5">
 									{canManageActivity ? (
 										<>
-											<button type="button" className="w-full rounded-sm border border-[var(--primary)] bg-[var(--primary)] px-4 py-2.5 text-[0.88rem] font-semibold text-white transition-all hover:bg-[var(--primary-strong)]">Editar actividad</button>
+											<button
+												type="button"
+												onClick={() => navigate(editTo)}
+												disabled={!canEditActivity}
+												className="w-full rounded-sm border border-[var(--primary)] bg-[var(--primary)] px-4 py-2.5 text-[0.88rem] font-semibold text-white transition-all hover:bg-[var(--primary-strong)] disabled:cursor-not-allowed disabled:border-[#dce6df] disabled:bg-[#f4f8f6] disabled:text-[#7d9084]"
+											>
+												{activity.revision_pendiente ? "Edición en revisión" : "Editar actividad"}
+											</button>
 											<button type="button" className="w-full rounded-sm border border-[var(--primary-soft)] bg-[white] px-4 py-2.5 text-[0.88rem] font-semibold text-[var(--primary)] transition-all hover:bg-[#ecf7f0]">Gestionar inscritos</button>
 											<button type="button" className="w-full rounded-sm border border-[var(--reject)] bg-[#fff3ef] px-4 py-2.5 text-[0.88rem] font-semibold text-[var(--reject)] transition-all hover:bg-[#ffe9e2]">Enviar notificación</button>
 											{canCancelActivity && (
