@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, ChevronLeft, ChevronRight, LayoutGrid, MapPin, Rows3, UserRound, Users } from "lucide-react";
+import { ArrowRight, ChevronLeft, Clock3, ChevronRight, LayoutGrid, MapPin, Rows3, UserRound, Users } from "lucide-react";
 import Modal from "./Modal";
 import { parseDateForChile } from "../utils/chileDate";
 import { resolveActivityImage } from "../services/activityImagesService";
