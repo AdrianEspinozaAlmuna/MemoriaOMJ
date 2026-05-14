@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { CalendarDays, CheckCircle2, Filter, Search, Star, TrendingUp, UserRound, XCircle } from "lucide-react";
 import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, PieChart, Pie, Cell } from "recharts";
 import { getAttendanceData } from "../services/userViewsService";
+import { getActivityStatusMeta } from "../utils/activityStatus";
 import LoadingState from "../components/LoadingState";
 import { formatDateForChile } from "../utils/chileDate";
 
@@ -17,6 +18,27 @@ function parseMonthlyData(data = "") {
     total: Number(match[2]),
     percent: Number(match[3])
   };
+}
+
+function parseActivityTime(timeString = "") {
+  if (!timeString) return "-";
+  
+  // Si es un ISO timestamp como "1970-01-01T22:05:00.000Z", extraer HH:MM
+  try {
+    const match = String(timeString).match(/(\d{2}):(\d{2})/);
+    if (match) {
+      return `${match[1]}:${match[2]}`;
+    }
+  } catch (e) {
+    // Continuar con el fallback
+  }
+  
+  // Si ya es un formato HH:MM, devolverlo tal cual
+  if (/^\d{2}:\d{2}$/.test(String(timeString).trim())) {
+    return timeString.trim();
+  }
+  
+  return timeString || "-";
 }
 
 function getMonthlyLevel(percent) {
@@ -71,6 +93,24 @@ function getFinalStatus(status = "") {
   if (normalized.includes("program")) return "Programado";
   if (isAttendedStatus(status)) return "Completado";
   return "Finalizado";
+}
+
+function mapToActivityStatus(finalStatus = "", activityState = "") {
+  // Primero, chequear si viene el estado de la actividad explícitamente desde el backend
+  const activityNormalized = String(activityState).toLowerCase().trim();
+  if (activityNormalized === "cancelada" || activityNormalized.includes("cancel")) return "cancelada";
+  if (activityNormalized === "programada" || activityNormalized.includes("program")) return "programada";
+  if (activityNormalized === "en_curso" || activityNormalized.includes("curso")) return "en_curso";
+  if (activityNormalized === "finalizada" || activityNormalized.includes("finaliza")) return "finalizada";
+  
+  // Si no hay estado explícito, inferir del estado de asistencia
+  const normalized = String(finalStatus).toLowerCase();
+  if (normalized.includes("cancel")) return "cancelada";
+  if (normalized.includes("inscrit")) return "inscrito";
+  if (normalized.includes("curso")) return "en_curso";
+  if (normalized.includes("program")) return "programada";
+  if (normalized.includes("complet")) return "finalizada";
+  return "finalizada";
 }
 
 function getAttendancePillClass(status = "") {
@@ -440,7 +480,22 @@ export default function MyAttendance() {
                   <td className="border-b border-[#d8e6dd] px-3 py-3">
                     <span className={`text-[0.9rem] ${getAttendanceTextClass(row.status)}`}>{getAttendanceLabel(row.status)}</span>
                   </td>
-                  <td className="border-b border-[#d8e6dd] px-3 py-3 text-[var(--text)]">{getFinalStatus(row.status)}</td>
+                  <td className="border-b border-[#d8e6dd] px-3 py-3">
+                    {(() => {
+                      const finalStatus = getFinalStatus(row.status);
+                      // row.state contiene el estado real de la actividad desde el backend
+                      const statusKey = mapToActivityStatus(finalStatus, row.state);
+                      const statusMeta = getActivityStatusMeta(statusKey);
+                      const StatusIcon = statusMeta?.icon;
+                      
+                      return (
+                        <span className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[0.82rem] font-semibold ${statusMeta?.className || 'bg-[#f3f4f6] text-[#475569]'}`}>
+                          {StatusIcon && <StatusIcon className="h-3.5 w-3.5" strokeWidth={1.8} />}
+                          {statusMeta?.label || finalStatus}
+                        </span>
+                      );
+                    })()}
+                  </td>
                   <td className="border-b border-[#d8e6dd] px-3 py-3">
                     <div className="inline-flex items-center gap-0.5" aria-label={`Calificacion ${getRowRating(row.status)} de 5`}>
                       {(() => {
@@ -457,7 +512,7 @@ export default function MyAttendance() {
                   </td>
                   
                   <td className="border-b border-[#d8e6dd] px-3 py-3 text-[var(--text)]">{formatDateForChile(row.date, { day: "2-digit", month: "2-digit", year: "numeric" })}</td>
-                  <td className="border-b border-[#d8e6dd] px-3 py-3 text-[var(--text)]">{row.time || "-"}</td>
+                  <td className="border-b border-[#d8e6dd] px-3 py-3 text-[var(--text)]">{parseActivityTime(row.time)}</td>
                   <td className="border-b border-[#d8e6dd] px-3 py-3 text-[var(--text)]">{row.place || "-"}</td>
                   <td className="border-b border-[#d8e6dd] px-3 py-3">
                     <Link

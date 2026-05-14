@@ -47,13 +47,26 @@ export async function uploadImage(file, path = "uploads/") {
 export async function requestNotificationPermissionAndGetToken(vapidKey) {
   if (!messagingInstance) throw new Error("Firebase Messaging no inicializado. Llama a initFirebase(config) primero.");
   if (typeof Notification === "undefined") throw new Error("El navegador no soporta notificaciones.");
+  if (!vapidKey) throw new Error("VAPID key no configurada");
 
   const permission = await Notification.requestPermission();
   if (permission !== "granted") {
     throw new Error("Permiso de notificaciones denegado");
   }
 
-  const currentToken = await getToken(messagingInstance, { vapidKey });
+  let serviceWorkerRegistration = null;
+  if (typeof navigator !== "undefined" && navigator.serviceWorker) {
+    try {
+      serviceWorkerRegistration = await navigator.serviceWorker.ready;
+    } catch (_error) {
+      serviceWorkerRegistration = null;
+    }
+  }
+
+  const currentToken = await getToken(messagingInstance, {
+    vapidKey,
+    ...(serviceWorkerRegistration ? { serviceWorkerRegistration } : {})
+  });
   if (!currentToken) throw new Error("No se pudo obtener token de FCM");
 
   // Registrar token en backend

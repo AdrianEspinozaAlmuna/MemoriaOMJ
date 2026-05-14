@@ -1,9 +1,10 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
-import { BadgeCheck, CalendarDays, Clock3, Lock, MapPin, MessageCircle, MoreHorizontal, Send, User, Star, CheckCircle2, Clock, AlertCircle, XCircle } from "lucide-react";
+import { CalendarDays, Clock3, Lock, MapPin, MessageCircle, MoreHorizontal, Send, User, Star } from "lucide-react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import Modal from "../components/Modal";
 import { formatDateForChile } from "../utils/chileDate";
+import { getActivityStatusMeta } from "../utils/activityStatus";
 import { cancelActivityEnrollment, cancelManagedActivity, enrollInActivity, getActivityDetail, markMyAttendance, markParticipantAttendance, rateActivity, removeParticipantFromActivity, sendActivityMessage } from "../services/userViewsService";
 import { API_BASE_URL } from "../services/api";
 
@@ -71,15 +72,6 @@ const ratingsData = {
 		{ stars: 1, count: 0 }
 	]
 };
-
-function getStatusBadge(status) {
-	if (status === "finalizada") return { label: "Finalizada", className: "bg-[#e7f5ec] text-[#177945]", icon: CheckCircle2 };
-	if (status === "en_curso") return { label: "En curso", className: "bg-[#e9f3ff] text-[#1d4f91]", icon: Clock };
-	if (status === "rechazada") return { label: "Rechazada", className: "bg-[#fff1ed] text-[#8a3b2a]", icon: XCircle };
-	if (status === "cancelada") return { label: "Cancelada", className: "bg-[#fff1ed] text-[#8a3b2a]", icon: XCircle };
-	if (status === "pendiente") return { label: "Pendiente", className: "bg-[#fff3de] text-[#a86612]", icon: AlertCircle };
-	return { label: "Programada", className: "bg-[#ecf7f0] text-[#1f6e45]", icon: CheckCircle2 };
-}
 
 function formatDate(value) {
 	return formatDateForChile(value, {
@@ -157,6 +149,7 @@ export default function ActivityDetail() {
 	const [chatBusy, setChatBusy] = useState(false);
 	const [chatError, setChatError] = useState("");
 	const socketRef = useRef(null);
+	const participantMenuRef = useRef(null);
 
 	useEffect(() => {
 		if (typeof window !== "undefined") {
@@ -245,6 +238,19 @@ export default function ActivityDetail() {
 		};
 	}, [activityId]);
 
+	useEffect(() => {
+		const handleClickOutside = event => {
+			if (participantMenuRef.current && !participantMenuRef.current.contains(event.target)) {
+				setActiveParticipantMenu(null);
+			}
+		};
+
+		if (activeParticipantMenu !== null) {
+			document.addEventListener("mousedown", handleClickOutside);
+			return () => document.removeEventListener("mousedown", handleClickOutside);
+		}
+	}, [activeParticipantMenu]);
+
 	async function refreshActivityDetail(options = {}) {
 		const { silentError = false } = options;
 		const response = await getActivityDetail(activityId);
@@ -265,7 +271,7 @@ export default function ActivityDetail() {
 		return true;
 	}
 
-	const statusBadge = useMemo(() => getStatusBadge(activity?.status), [activity?.status]);
+	const statusBadge = useMemo(() => getActivityStatusMeta(activity?.status), [activity?.status]);
 	const ratings = activity?.ratings || ratingsData;
 	const ratingsTotal = Array.isArray(ratings.distribution)
 		? ratings.distribution.reduce((acc, item) => acc + Number(item.count || 0), 0)
@@ -286,6 +292,7 @@ export default function ActivityDetail() {
 	const freeSpots = useMemo(() => Math.max((activity?.capacity ?? 0) - enrolledCount, 0), [enrolledCount, activity?.capacity]);
 	const canCancelEnrollment = isEnrolled && !isInProgress;
 	const hasAttendanceRegistered = Boolean(currentParticipant?.asistio);
+	const canMarkOwnAttendance = isInProgress && !hasAttendanceRegistered && (isEnrolled || canManageActivity);
 	const backTo = location.pathname.startsWith("/admin") ? "/admin/actividades" : "/user/mis-actividades";
 	const editTo = `${location.pathname.startsWith("/admin") ? "/admin/crear-actividad" : "/user/crear-actividad"}?edit=${activity?.id || activityId}`;
 
@@ -370,7 +377,7 @@ export default function ActivityDetail() {
 	}
 
 	async function handleMarkAttendance() {
-		if (!isEnrolled || !isInProgress || hasAttendanceRegistered || attendanceBusy) return;
+		if (!canMarkOwnAttendance || attendanceBusy) return;
 
 		setAttendanceBusy(true);
 		setEnrollmentError("");
@@ -597,21 +604,9 @@ export default function ActivityDetail() {
 					</div>
 				</div>
 
-				<div className="rounded-xl border border-[#d8e6dd] bg-white p-5 relative overflow-hidden">
-					{activity.tipo_actividad?.imagen_url && (
-						<div className="absolute inset-0 opacity-80 pointer-events-none">
-							<img src={activity.tipo_actividad.imagen_url} alt="" className="w-full h-full object-cover" />
-						</div>
-					)}
-					<div className="relative z-10">
-						<p className="m-0 text-[0.75rem] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">Tipo de actividad</p>
-						<p className="m-0 mt-2 text-[1.1rem] font-bold text-[var(--text)]">{activity.tipo_actividad?.nombre || "No especificado"}</p>
-					</div>
-				</div>
-
 				<section className="flex flex-col gap-6 lg:grid lg:items-start lg:grid-cols-[1.35fr_0.65fr]">
 					<div className="grid auto-rows-max content-start gap-6 max-lg:contents">
-						<article className="order-1 rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-6 shadow-sm lg:order-none">
+						<article className="order-1 rounded-sm border border-[#d8e6dd] bg-[var(--panel-bg)] p-6 shadow-sm lg:order-none">
 							<h2 className="m-0 text-[1rem] font-semibold text-[var(--text)]">Descripción</h2>
 							<p className="mt-3 text-[0.94rem] leading-relaxed text-[var(--text-muted)]">{activity.description}</p>
 
@@ -646,19 +641,33 @@ export default function ActivityDetail() {
 											{activity.manager} (ID {activity.id_encargado})
 										</p>
 									</div>
-									<div className="rounded-sm border border-[#e2ebe4] bg-white px-3.5 py-3">
-										<p className="m-0 text-[0.8rem] text-[var(--text-muted)]">Estado</p>
-										<p className="mt-1 inline-flex items-center gap-2 text-[0.9rem] font-semibold text-[var(--text)]">
-											{statusBadge.icon && <statusBadge.icon className="h-4 w-4 text-[var(--primary)]" strokeWidth={1.8} />}
-											{statusBadge.label}
-										</p>
+									<div className="min-h-[96px] rounded-sm border border-[#e2ebe4] bg-white px-3.5 py-3 flex items-center">
+										<div className="flex w-full items-center justify-between gap-3">
+											<div>
+												<p className="m-0 text-[0.8rem] text-[var(--text-muted)]">Estado</p>
+												<p className={`mt-1 inline-flex items-center gap-2 text-[0.9rem] font-semibold ${statusBadge.textColor}`}>
+													{statusBadge.icon && <statusBadge.icon className={`h-4 w-4 ${statusBadge.textColor}`} strokeWidth={1.8} />}
+													{statusBadge.label}
+												</p>
+											</div>
+										</div>
 									</div>
-									<div className="rounded-sm border border-[#e2ebe4] bg-white px-3.5 py-3">
-										<p className="m-0 text-[0.8rem] text-[var(--text-muted)]">Aprobación</p>
-										<p className="mt-1 inline-flex items-center gap-2 text-[0.9rem] font-semibold text-[var(--text)]">
-											<BadgeCheck className="h-4 w-4 text-[var(--primary)]" strokeWidth={1.8} />
-											{activity.aprobado ? "Aprobada" : "Pendiente"}{activity.revision_pendiente ? " · edición" : ""}
-										</p>
+									<div className="min-h-[96px] overflow-hidden rounded-sm border border-[#e2ebe4] bg-white">
+										<div className="flex h-full min-h-[96px] items-stretch">
+											<div className="flex w-1/2 flex-col justify-center border-r border-[#e2ebe4] bg-white px-3.5 py-3">
+												<p className="m-0 text-[0.75rem] text-[var(--text-muted)] uppercase tracking-[0.05em]">Tipo</p>
+												<p className="m-0 mt-2 text-[0.92rem] font-bold text-[var(--text)] line-clamp-2">
+													{activity.tipo_actividad?.nombre || "No especificado"}
+												</p>
+											</div>
+											<div className="relative w-1/2 overflow-hidden bg-gray-200">
+												{activity.tipo_actividad?.imagen_url ? (
+													<img src={activity.tipo_actividad.imagen_url} alt={activity.tipo_actividad?.nombre || "Tipo"} className="absolute inset-0 h-full w-full object-cover" />
+												) : (
+													<div className="absolute inset-0 bg-gradient-to-r from-[var(--primary)] to-[#f59e0b] opacity-50" />
+												)}
+											</div>
+										</div>
 									</div>
 								</div>
 							</div>
@@ -708,7 +717,10 @@ export default function ActivityDetail() {
 													</button>
 
 													{activeParticipantMenu === person.id && (
-														<div className="absolute right-3 top-[calc(100%_-_8px)] z-40 w-[190px] rounded-md border border-[#dce7e0] bg-white p-1.5 shadow-[0_14px_24px_-20px_rgba(10,43,26,0.55)]">
+														<div 
+															ref={participantMenuRef}
+															className="absolute right-3 top-[calc(100%_-_8px)] z-40 w-[190px] rounded-md border border-[#dce7e0] bg-white p-1.5 shadow-[0_14px_24px_-20px_rgba(10,43,26,0.55)]"
+														>
 															{isInProgress && (
 																<button
 																	type="button"
@@ -851,7 +863,6 @@ export default function ActivityDetail() {
 											>
 												{activity.revision_pendiente ? "Edición en revisión" : "Editar actividad"}
 											</button>
-											<button type="button" className="w-full rounded-sm border border-[var(--primary-soft)] bg-[white] px-4 py-2.5 text-[0.88rem] font-semibold text-[var(--primary)] transition-all hover:bg-[#ecf7f0]">Gestionar inscritos</button>
 											<button type="button" className="w-full rounded-sm border border-[var(--reject)] bg-[#fff3ef] px-4 py-2.5 text-[0.88rem] font-semibold text-[var(--reject)] transition-all hover:bg-[#ffe9e2]">Enviar notificación</button>
 											{canCancelActivity && (
 												<button
@@ -862,29 +873,41 @@ export default function ActivityDetail() {
 													Cancelar actividad
 												</button>
 											)}
+											{isInProgress && !hasAttendanceRegistered && (
+												<button
+													type="button"
+													onClick={handleMarkAttendance}
+													disabled={attendanceBusy}
+													className="w-full rounded-sm border-2 border-[var(--primary)] bg-[var(--primary)] px-4 py-2.5 text-[0.88rem] font-semibold text-[white] transition-all hover:bg-[var(--primary-strong)] hover:border-[var(--primary-strong)] disabled:cursor-not-allowed disabled:border-[#dce6df] disabled:bg-[#f4f8f6] disabled:text-[#7d9084]"
+												>
+													{attendanceBusy ? "Registrando asistencia..." : "Marcar mi asistencia"}
+												</button>
+											)}
 										</>
 									) : (
 										<>
-											<button type="button" onClick={handleEnrollmentToggle} disabled={enrollmentBusy || (!isEnrolled && freeSpots === 0) || (isEnrolled && !canCancelEnrollment)} className={`w-full rounded-sm border px-4 py-2.5 text-[0.88rem] font-semibold transition-all ${isEnrolled ? "border-[var(--reject)] bg-[var(--reject)] text-white hover:bg-[var(--reject-hover)] disabled:border-[#dce6df] disabled:bg-[#f4f8f6] disabled:text-[#7d9084]" : "border-[var(--primary)] bg-[var(--primary)] text-white hover:bg-[var(--primary-strong)] disabled:border-[#dce6df] disabled:bg-[#f4f8f6] disabled:text-[#7d9084]"}`}>
-											{isEnrolled ? (isInProgress ? "Inscripción bloqueada en curso" : "Cancelar inscripción") : freeSpots === 0 ? "Sin cupos" : "Inscribirme"}
-										</button>
-										{enrollmentError && (
-											<p className="m-0 text-[0.82rem] font-semibold text-[#9f3b2d]">{enrollmentError}</p>
-										)}
-										{isEnrolled && (
-											<div className="px-1">
-												<p className="m-0 text-[0.84rem] font-semibold text-[var(--primary)]">{enrollmentMessage || "Inscrito correctamente en la actividad."}</p>
-												<p className="m-0 mt-0.5 text-[0.78rem] text-[var(--text-muted)]">Tu cupo quedó reservado y podrás registrar asistencia cuando la actividad esté en curso.</p>
-											</div>
-										)}
-										{isEnrolled && isInProgress && (
-											<button
-												type="button"
-												onClick={handleMarkAttendance}
-												disabled={attendanceBusy || hasAttendanceRegistered}
+											{isInProgress && (
+												<button type="button" onClick={handleEnrollmentToggle} disabled={enrollmentBusy || (!isEnrolled && freeSpots === 0) || (isEnrolled && !canCancelEnrollment)} className={`w-full rounded-sm border px-4 py-2.5 text-[0.88rem] font-semibold transition-all ${isEnrolled ? "border-[var(--reject)] bg-[var(--reject)] text-white hover:bg-[var(--reject-hover)] disabled:border-[#dce6df] disabled:bg-[#f4f8f6] disabled:text-[#7d9084]" : "border-[var(--primary)] bg-[var(--primary)] text-white hover:bg-[var(--primary-strong)] disabled:border-[#dce6df] disabled:bg-[#f4f8f6] disabled:text-[#7d9084]"}`}>
+												{isEnrolled ? "Cancelar inscripción" : freeSpots === 0 ? "Sin cupos" : "Inscribirme"}
+											</button>
+											)}
+											{enrollmentError && (
+												<p className="m-0 text-[0.82rem] font-semibold text-[#9f3b2d]">{enrollmentError}</p>
+											)}
+											{isEnrolled && (
+												<div className="px-1">
+													<p className="m-0 text-[0.84rem] font-semibold text-[var(--primary)]">{enrollmentMessage || "Inscrito correctamente en la actividad."}</p>
+													<p className="m-0 mt-0.5 text-[0.78rem] text-[var(--text-muted)]">Tu cupo quedó reservado y podrás registrar asistencia cuando la actividad esté en curso.</p>
+												</div>
+											)}
+											{canMarkOwnAttendance && (
+												<button
+													type="button"
+													onClick={handleMarkAttendance}
+													disabled={attendanceBusy || hasAttendanceRegistered}
 												className="w-full rounded-sm border-2 border-[var(--primary)] bg-[var(--primary)] px-4 py-2.5 text-[0.88rem] font-semibold text-[white] transition-all hover:bg-[var(--primary-strong)] hover:border-[var(--primary-strong)] disabled:cursor-not-allowed disabled:border-[#dce6df] disabled:bg-[#f4f8f6] disabled:text-[#7d9084]"
 											>
-												{hasAttendanceRegistered ? "Asistencia ya registrada" : attendanceBusy ? "Registrando asistencia..." : "Marcar asistencia"}
+												{hasAttendanceRegistered ? "Asistencia ya registrada" : attendanceBusy ? "Registrando asistencia..." : isActivityManager ? "Marcar mi asistencia" : "Marcar asistencia"}
 											</button>
 										)}
 									</>

@@ -1,4 +1,5 @@
 const { prisma } = require("../prisma/client");
+const { dispatchNotificationSideEffects } = require("./notificationDeliveryService");
 
 function normalizeNotificationText(value, fallback = "") {
   if (typeof value !== "string") return fallback;
@@ -100,11 +101,14 @@ async function createNotificationRecord(db = prisma, payload = {}) {
     const inserted = await db.$queryRawUnsafe(insertSql);
 
     const row = Array.isArray(inserted) ? inserted[0] : inserted;
+    if (row) {
+      void dispatchNotificationSideEffects(db, row);
+    }
     return row || null;
   } catch (err) {
     // fallback: intentar con Prisma ORM si la inserción cruda falla
     try {
-      return await db.notificaciones.create({
+      const created = await db.notificaciones.create({
         data: {
           id_emisor: idEmisorRaw,
           id_receptor: idReceptorRaw,
@@ -115,6 +119,9 @@ async function createNotificationRecord(db = prisma, payload = {}) {
           leida: false
         }
       });
+
+      void dispatchNotificationSideEffects(db, created);
+      return created;
     } catch (err2) {
       throw err; // regresa el error original para logging upstream
     }

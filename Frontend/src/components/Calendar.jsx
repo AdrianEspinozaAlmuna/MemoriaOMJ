@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, ChevronLeft, ChevronRight, Clock3, LayoutGrid, MapPin, Rows3, UserRound, Users } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, LayoutGrid, MapPin, Rows3, UserRound, Users } from "lucide-react";
 import Modal from "./Modal";
 import { parseDateForChile } from "../utils/chileDate";
 import { resolveActivityImage } from "../services/activityImagesService";
+import { getActivityStatusClass, getActivityStatusLabel } from "../utils/activityStatus";
 
 // Demo images fallback (used when activity has no image)
 const DEMO_PICS = [
@@ -99,32 +100,7 @@ function formatShortDate(date) {
 }
 
 function getActivityStatus(activity) {
-  const state = String(activity.state || "").toLowerCase();
-  if (state === "en_curso") return "En curso";
-  if (state === "programada") return "Programada";
-  if (state === "finalizada") return "Finalizada";
-  if (state === "pendiente") return "Pendiente";
-  if (state === "rechazada") return "Rechazada";
-  if (state === "cancelada") return "Cancelada";
-  if (activity.state) return String(activity.state);
-  if (activity.status === "inscrito") return "Inscrito";
-  if (activity.status === "disponible") return "Disponible";
-  return "Activo";
-}
-
-function getActivityStatusClass(activity) {
-  const status = String(activity.state || activity.status || "").toLowerCase();
-
-  if (status === "pendiente") return "border-[#f3d39a] bg-[#fff4de] text-[#a86612]";
-  if (status === "programada") return "border-[#bfe4cd] bg-[#e7f5ec] text-[#177945]";
-  if (status === "en_curso") return "border-[#bfd9f5] bg-[#e9f3ff] text-[#1d4f91]";
-  if (status === "finalizada") return "border-[#d5dae1] bg-[#f1f3f5] text-[#475467]";
-  if (status === "rechazada") return "border-[#f1c8be] bg-[#fff1ed] text-[#8a3b2a]";
-  if (status === "cancelada") return "border-[#f1c8be] bg-[#fff1ed] text-[#8a3b2a]";
-  if (status === "inscrito") return "border-[#9ec9ea] bg-[#e8f5ff] text-[#1f5f8b]";
-  if (status === "disponible") return "border-[#bfe4cd] bg-[#e7f5ec] text-[#177945]";
-
-  return "border-[#d8e6dd] bg-white text-[#496053]";
+  return getActivityStatusLabel(activity);
 }
 
 function getActivityCreator(activity) {

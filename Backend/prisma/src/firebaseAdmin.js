@@ -101,7 +101,12 @@ function buildMessagePayload(notification = {}, data = {}) {
 
 async function sendToTokens(tokens = [], notification = {}) {
   initFirebaseAdmin();
-  if (!admin.messaging) throw new Error("Firebase Admin Messaging no disponible o no inicializado");
+  if (!admin.apps || admin.apps.length === 0) {
+    throw new Error("Firebase Admin no inicializado");
+  }
+  if (!Array.isArray(tokens) || tokens.length === 0) {
+    return { successCount: 0, failureCount: 0, results: [] };
+  }
   const payload = buildMessagePayload(notification, notification.data || {});
   try {
     const response = await admin.messaging().sendToDevice(tokens, payload);

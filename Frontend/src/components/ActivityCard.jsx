@@ -1,9 +1,10 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { CalendarDays, CheckCircle2, CircleDot, Clock3, PlayCircle, MapPin, UserRound, Users, XCircle } from "lucide-react";
+import { CalendarDays, CircleDot, MapPin, UserRound, Users, Clock3 } from "lucide-react";
 import { ArrowRight } from "lucide-react";
 import { formatDateForChile, parseDateForChile } from "../utils/chileDate";
 import { resolveActivityImage } from "../services/activityImagesService";
+import { getActivityStatusClass, getActivityStatusIcon, getActivityStatusLabel } from "../utils/activityStatus";
 
 function formatDate(dateValue) {
   return formatDateForChile(dateValue, {
@@ -41,18 +42,6 @@ function formatTimeRange(activity) {
   return formatTime(activity);
 }
 
-function CalendarIcon({ className = "h-4 w-4" }) {
-  return <CalendarDays aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
-}
-
-function PlaceIcon({ className = "h-4 w-4" }) {
-  return <MapPin aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
-}
-
-function TimeIcon({ className = "h-4 w-4" }) {
-  return <Clock3 aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
-}
-
 function getCreator(activity) {
   return activity.manager || activity.createdBy || activity.author || "OMJ Curicó";
 }
@@ -61,67 +50,6 @@ function getDescription(activity) {
   if (activity.description) return activity.description;
 
   return "Encuentro organizado por la OMJ.";
-}
-
-function getStatus(activity) {
-  if (activity.state === "en_curso") return "En curso";
-  if (activity.state === "programada") return "Programada";
-  if (activity.state === "finalizada") return "Finalizada";
-  if (activity.state === "pendiente") return "Pendiente";
-    if (activity.state === "rechazada") return "Rechazada";
-    if (activity.state === "cancelada") return "Cancelada";
-  if (activity.state) return String(activity.state);
-  if (activity.status === "inscrito") return "Inscrito";
-  if (activity.status === "disponible") return "Disponible";
-  return "Activo";
-}
-
-function getStatusIcon(activity) {
-  const status = String(activity.state || activity.status || "").toLowerCase();
-
-  if (status === "programada") return CheckCircle2;
-  if (status === "en_curso") return PlayCircle;
-  if (status === "finalizada") return CheckCircle2;
-    if (status === "rechazada") return XCircle;
-    if (status === "cancelada") return XCircle;
-  if (status === "pendiente") return Clock3;
-  if (status === "inscrito") return CheckCircle2;
-
-  return Clock3;
-}
-
-function getStatusClasses(activity) {
-  const status = String(activity.state || activity.status || "").toLowerCase();
-
-  if (status === "pendiente") {
-    return "bg-[#fff4de] text-[#a86612]";
-  }
-
-  if (status === "programada") {
-    return "bg-[#e7f5ec] text-[#177945]";
-  }
-
-  if (status === "en_curso") {
-    return "bg-[#e9f3ff] text-[#1d4f91]";
-  }
-
-  if (status === "finalizada") {
-    return "bg-[#f1f3f5] text-[#475467]";
-  }
-
-    if (status === "rechazada") {
-      return "bg-[#fff1ed] text-[#8a3b2a]";
-    }
-
-    if (status === "cancelada") {
-    return "bg-[#fff1ed] text-[#8a3b2a]";
-  }
-
-  if (status === "inscrito") {
-    return "bg-[#e8f5ff] text-[#1f5f8b]";
-  }
-
-  return "bg-[var(--primary)]/10 text-[var(--primary-strong)]";
 }
 
 function getTopLabel(activity) {
@@ -137,7 +65,7 @@ function CardBody({ activity, actionLabel, emphasizeEnrollment = false }) {
   const enrolled = activity.enrolled ?? activity.participants ?? activity.inscritos ?? null;
   const capacity = activity.capacity ?? activity.max_participantes ?? activity.capacidad ?? null;
   const imageSrc = resolveActivityImage(activity);
-  const StatusIcon = getStatusIcon(activity);
+  const StatusIcon = getActivityStatusIcon(activity);
   const isEnrolled = String(activity?.status || "").toLowerCase() === "inscrito";
 
   return (
@@ -170,9 +98,9 @@ function CardBody({ activity, actionLabel, emphasizeEnrollment = false }) {
               </p>
             </div>
 
-            <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-sm px-3 py-1 text-[0.72rem] font-semibold ${getStatusClasses(activity)}`}>
+            <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-sm px-3 py-1 text-[0.72rem] font-semibold ${getActivityStatusClass(activity)}`}>
               <StatusIcon className="h-3.5 w-3.5" strokeWidth={2} />
-              {getStatus(activity)}
+              {getActivityStatusLabel(activity)}
             </span>
           </div>
 
@@ -187,15 +115,15 @@ function CardBody({ activity, actionLabel, emphasizeEnrollment = false }) {
                   </p>
                 )}
                 <p className="m-0 inline-flex items-center gap-2">
-                  <CalendarIcon className="h-4 w-4 text-[var(--primary)]" />
+                  <CalendarDays className="h-4 w-4 text-[var(--primary)]" />
                   {formatDate(activity.date)}
                 </p>
                 <p className="m-0 inline-flex items-center gap-2">
-                  <PlaceIcon className="h-4 w-4 text-[var(--primary)]" />
+                  <MapPin className="h-4 w-4 text-[var(--primary)]" />
                   {placeLabel}
                 </p>
                 <p className="m-0 inline-flex items-center gap-2">
-                  <TimeIcon className="h-4 w-4 text-[var(--primary)]" />
+                  <Clock3 className="h-4 w-4 text-[var(--primary)]" />
                   {formatTimeRange(activity)}
                 </p>
                 {(enrolled !== null || capacity !== null) && (

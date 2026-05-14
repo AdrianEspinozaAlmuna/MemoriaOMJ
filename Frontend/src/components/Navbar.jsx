@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
 import api, { API_BASE_URL } from "../services/api";
 import { getMyNotifications, normalizeNotification } from "../services/notificationsService";
+import { requestNotificationPermissionAndGetToken } from "../services/firebase";
 
 const SOCKET_BASE_URL = (import.meta.env.VITE_SOCKET_URL || API_BASE_URL).replace(/\/api\/?$/, "");
 const NOTIFICATION_BADGE_TTL_MS = 15 * 60 * 1000;
@@ -37,6 +38,7 @@ export default function Navbar() {
 	const navRef = useRef(null);
 	const isMountedRef = useRef(true);
 	const notificationTimersRef = useRef(new Map());
+	const pushRegistrationAttemptedRef = useRef(false);
 
   const token = localStorage.getItem("token");
   const user = decodeToken(token);
@@ -132,6 +134,7 @@ export default function Navbar() {
 
 	useEffect(() => {
 		if (!isAuthenticated) {
+			pushRegistrationAttemptedRef.current = false;
 			return;
 		}
 
@@ -142,6 +145,24 @@ export default function Navbar() {
 		return () => {
 			mounted = false;
 		};
+	}, [isAuthenticated]);
+
+	useEffect(() => {
+		if (!isAuthenticated || pushRegistrationAttemptedRef.current) {
+			return;
+		}
+
+		const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
+		if (!vapidKey) {
+			console.warn("VITE_FIREBASE_VAPID_KEY no definido. Push FCM deshabilitado.");
+			return;
+		}
+
+		pushRegistrationAttemptedRef.current = true;
+		requestNotificationPermissionAndGetToken(vapidKey).catch(error => {
+			console.warn("No se pudo registrar token FCM:", error?.message || error);
+			pushRegistrationAttemptedRef.current = false;
+		});
 	}, [isAuthenticated]);
 
 	useEffect(() => {
@@ -364,18 +385,18 @@ export default function Navbar() {
 								Mis actividades
 							</NavLink>
 							<NavLink
-								to="/user/grupos"
-								onClick={handleNavItemClick}
-								className={navLinkClass}
-							>
-								Mis Grupos
-							</NavLink>
-							<NavLink
 								to="/user/asistencia"
 								onClick={handleNavItemClick}
 								className={navLinkClass}
 							>
 								Mis asistencias
+							</NavLink>
+							<NavLink
+								to="/user/grupos"
+								onClick={handleNavItemClick}
+								className={navLinkClass}
+							>
+								Mis Grupos
 							</NavLink>
 						</>
 					)}

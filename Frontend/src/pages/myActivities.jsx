@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { BarChart3, CalendarDays, CheckCircle2, Clock3, MapPin, Percent, PlayCircle, Plus, Star, TrendingUp, Users, UsersRound, XCircle } from "lucide-react";
+import { BarChart3, CalendarDays, CalendarCheck2, Clock3, MapPin, Percent, PlayCircle, Plus, Star, TrendingUp, Users, UsersRound } from "lucide-react";
 import { getMyActivitiesData } from "../services/userViewsService";
 import ActivityCard from "../components/ActivityCard";
 import LoadingState from "../components/LoadingState";
 import { formatDateForChile, parseDateForChile } from "../utils/chileDate";
+import { getActivityStatusClass as getSharedStatusClass, getActivityStatusIcon as getSharedStatusIcon, getActivityStatusLabel as getSharedStatusLabel } from "../utils/activityStatus";
 
 function formatDate(dateValue) {
   return formatDateForChile(dateValue, {
@@ -85,22 +86,16 @@ function ActiveActivityRow({ activity, mode = "created" }) {
 
 const STATUS_FILTERS = [
   { value: "all", label: "Todas", icon: CalendarDays, className: "border-[#d8e6dd] bg-white text-[#496053]" },
-  { value: "pendiente", label: "Pendiente", icon: Clock3, className: "border-[#f3d39a] bg-[#fff4de] text-[#a86612]" },
-  { value: "programada", label: "Programada", icon: CheckCircle2, className: "border-[#bfe4cd] bg-[#e7f5ec] text-[#177945]" },
-  { value: "en_curso", label: "En curso", icon: PlayCircle, className: "border-[#bfd9f5] bg-[#e9f3ff] text-[#1d4f91]" },
-  { value: "finalizada", label: "Finalizada", icon: CheckCircle2, className: "border-[#d5dae1] bg-[#f1f3f5] text-[#475467]" },
-  { value: "rechazada", label: "Rechazada", icon: XCircle, className: "border-[#f1c8be] bg-[#fff1ed] text-[#8a3b2a]" },
-  { value: "cancelada", label: "Cancelada", icon: XCircle, className: "border-[#f1c8be] bg-[#fff1ed] text-[#8a3b2a]" }
+  { value: "pendiente", label: "Pendiente", icon: Clock3, className: "border-[#facc15] bg-[#fef9c3] text-[#a16207]" },
+  { value: "programada", label: "Programada", icon: CalendarCheck2, className: "border-[#2563eb] bg-[#dbeafe] text-[#1d4ed8]" },
+  { value: "en_curso", label: "En curso", icon: PlayCircle, className: "border-[#22c55e] bg-[#dcfce7] text-[#15803d]" },
+  { value: "finalizada", label: "Finalizada", icon: getSharedStatusIcon("finalizada"), className: "border-[#14b8a6] bg-[#ccfbf1] text-[#0f766e]" },
+  { value: "rechazada", label: "Rechazada", icon: getSharedStatusIcon("rechazada"), className: "border-[#dc2626] bg-[#fee2e2] text-[#991b1b]" },
+  { value: "cancelada", label: "Cancelada", icon: getSharedStatusIcon("cancelada"), className: "border-[#f97316] bg-[#ffedd5] text-[#c2410c]" }
 ];
 
 function getStateIcon(state) {
-  if (state === "pendiente") return Clock3;
-  if (state === "programada") return CheckCircle2;
-  if (state === "en_curso") return PlayCircle;
-  if (state === "finalizada") return CheckCircle2;
-  if (state === "rechazada") return XCircle;
-  if (state === "cancelada") return XCircle;
-  return CalendarDays;
+  return getSharedStatusIcon(state);
 }
 
 function getActivityState(activity) {
@@ -109,23 +104,11 @@ function getActivityState(activity) {
 }
 
 function getStateLabel(state) {
-  if (state === "en_curso") return "En curso";
-  if (state === "finalizada") return "Finalizada";
-  if (state === "programada") return "Programada";
-  if (state === "pendiente") return "Pendiente";
-  if (state === "rechazada") return "Rechazada";
-  if (state === "cancelada") return "Cancelada";
-  return "Sin estado";
+  return getSharedStatusLabel(state);
 }
 
 function getStatePillClass(state) {
-  if (state === "pendiente") return "border-[#f3d39a] bg-[#fff4de] text-[#a86612]";
-  if (state === "programada") return "border-[#bfe4cd] bg-[#e7f5ec] text-[#177945]";
-  if (state === "en_curso") return "border-[#bfd9f5] bg-[#e9f3ff] text-[#1d4f91]";
-  if (state === "finalizada") return "border-[#d5dae1] bg-[#f1f3f5] text-[#475467]";
-  if (state === "rechazada") return "border-[#f1c8be] bg-[#fff1ed] text-[#8a3b2a]";
-  if (state === "cancelada") return "border-[#f1c8be] bg-[#fff1ed] text-[#8a3b2a]";
-  return "border-[#d8e6dd] bg-white text-[#496053]";
+  return getSharedStatusClass(state);
 }
 
 function PaginationFooter({ currentPage, totalPages, onPageChange, start = 1, end = 0, total = 0 }) {

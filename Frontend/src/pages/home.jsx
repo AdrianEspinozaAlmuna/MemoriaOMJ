@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
+import { requestNotificationPermissionAndGetToken } from "../services/firebase";
 
 // ─── ICONS (outline, 1.6 stroke — matches dashboard) ──────────────────────
 const Icon = ({ d, size = 20, stroke = 1.6, fill = 'none', className = '' }) => (
@@ -93,8 +94,8 @@ const Hero = ({ onInstallClick }) => {
               </Link>
               <button 
                 onClick={onInstallClick}
-                className="inline-flex items-center gap-2 px-5 py-3 bg-white border-2 border-[var(--primary-soft)] text-[var(--primary)] rounded-sm font-medium hover:border-[var(--primary)] hover:bg-[var(--gray)] transition">
-                <Icon d={I.download} size={18}/> Instalar como app
+                className="inline-flex items-center gap-2 px-5 py-3 bg-white border-2 border-[var(--primary-soft)] text-[var(--primary)] rounded-sm font-medium hover:border-[var(--primary)] hover:bg-[var(--gray)] transition disabled:cursor-not-allowed disabled:opacity-60">
+                <Icon d={I.download} size={18}/> Instalar app PWA
               </button>
             </div>
             <div className="mt-7 flex items-center gap-4 text-[13px] text-[var(--pjc-muted)]">
@@ -146,9 +147,9 @@ const HeroVisual = () => (
         </div>
         <div className="px-4 mt-3 space-y-2">
           {[
-            { t:'Taller de muralismo', l:'Casa de la Cultura', h:'17:00', s:'Inscrito', sc:'green' },
+            { t:'Taller de muralismo', l:'Casa de la Cultura', h:'17:00', s:'Programada', sc:'green' },
             { t:'Liga de fútbol joven', l:'Estadio La Granja', h:'19:30', s:'En curso', sc:'blue' },
-            { t:'Voluntariado río Guaiquillo', l:'Parque Aguas Negras', h:'Sáb 10:00', s:'Cupos', sc:'amber' },
+            { t:'Voluntariado río Guaiquillo', l:'Parque Aguas Negras', h:'Sáb 10:00', s:'Pendiente', sc:'amber' },
           ].map((a,i)=>(
             <div key={i} className="bg-white rounded-sm border border-zinc-200 p-3">
               <div className="flex items-start justify-between gap-2">
@@ -517,6 +518,7 @@ const Footer = () => (
 export default function Home() {
   const [installPrompt, setInstallPrompt] = useState(null);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [installHint, setInstallHint] = useState("");
 
   useEffect(() => {
     // Verificar si la app ya está instalada
@@ -526,18 +528,21 @@ export default function Home() {
 
     if (isStandalone) {
       setIsInstalled(true);
+      setInstallHint("La app ya está instalada en este dispositivo.");
     }
 
     // Escuchar el evento beforeinstallprompt
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault();
       setInstallPrompt(e);
+      setInstallHint("");
     };
 
     // Escuchar cuando se instale
     const handleAppInstalled = () => {
       setIsInstalled(true);
       setInstallPrompt(null);
+      setInstallHint("La app ya quedó instalada.");
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
@@ -550,8 +555,13 @@ export default function Home() {
   }, []);
 
   const handleInstallClick = async () => {
+    if (isInstalled) {
+      setInstallHint("La app ya está instalada.");
+      return;
+    }
+
     if (!installPrompt) {
-      alert("La instalación no está disponible en este navegador. Intenta desde un navegador compatible como Chrome o Edge.");
+      setInstallHint("Edge no expuso el instalador en esta sesión. Si estás en InPrivate, abre la app en una ventana normal para instalarla.");
       return;
     }
 
@@ -561,6 +571,21 @@ export default function Home() {
     if (outcome === "accepted") {
       setInstallPrompt(null);
       setIsInstalled(true);
+      setInstallHint("La app se instaló correctamente.");
+      // Intentar solicitar permisos de notificaciones push tras la instalación
+      try {
+        const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
+        if (vapidKey) {
+          await requestNotificationPermissionAndGetToken(vapidKey);
+          setInstallHint(prev => prev + " Notificaciones habilitadas.");
+        } else {
+          console.warn("VITE_FIREBASE_VAPID_KEY no definido. No se solicitaron notificaciones.");
+        }
+      } catch (err) {
+        console.warn("No se pudo activar notificaciones tras instalar:", err?.message || err);
+        // No bloquear la UX por el fallo; informar brevemente al usuario
+        setInstallHint(prev => prev + " (No se pudo habilitar notificaciones)");
+      }
     }
   };
 
@@ -597,6 +622,13 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white text-[var(--pjc-ink)]">
       <Hero onInstallClick={handleInstallClick}/>
+      <div className="mx-auto max-w-[1200px] px-4 sm:px-6 -mt-8">
+        {installHint && (
+          <div className="rounded-sm border border-[#d8e6dd] bg-[#f7fcf9] px-4 py-3 text-[0.9rem] text-[var(--pjc-muted)] shadow-sm">
+            {installHint}
+          </div>
+        )}
+      </div>
       <Features/>
       <HowItWorks/>
       <FinalCTA/>

@@ -1,6 +1,7 @@
 import React from "react";
 import { ListCheck, BarChart3, Bell, CalendarDays, CheckCircle2, Circle, LayoutGrid, DoorOpen, LayoutDashboard, LogOut, Menu, PanelLeftClose, PanelLeftOpen, UserRound, Users, X } from "lucide-react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { getAdminActivities } from "../services/userViewsService";
 
 function decodeToken(token) {
 	if (!token) return null;
@@ -66,9 +67,23 @@ export default function AdminLayout() {
 	const navigate = useNavigate();
 	const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
 	const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
+	const [pendingApprovalsCount, setPendingApprovalsCount] = React.useState(0);
 
 	const displayName = user?.nombre ? `${user.nombre} ${user.apellido || ""}`.trim() : "Admin Usuario";
 	const displayEmail = user?.mail || user?.email || "";
+
+	React.useEffect(() => {
+		async function loadPendingCount() {
+			try {
+				const data = await getAdminActivities({ approved: false, estado: "pendiente" });
+				setPendingApprovalsCount(Array.isArray(data) ? data.length : 0);
+			} catch (error) {
+				console.error("Error cargando aprobaciones pendientes:", error);
+			}
+		}
+
+		loadPendingCount();
+	}, []);
 
 	React.useEffect(() => {
 		setMobileNavOpen(false);
@@ -157,6 +172,11 @@ export default function AdminLayout() {
 						>
 							<SidebarIcon name={link.icon} className="h-4 w-4" />
 								<span className={sidebarCollapsed ? "min-[981px]:hidden" : ""}>{link.label}</span>
+								{link.to === "/admin/aprobaciones" && pendingApprovalsCount > 0 && (
+									<span className="ml-auto inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#e03a3a] px-1 text-[0.66rem] font-bold leading-none text-white shadow-[0_8px_16px_-10px_rgba(224,58,58,0.8)]">
+										{pendingApprovalsCount > 9 ? "9+" : pendingApprovalsCount}
+									</span>
+								)}
 						</NavLink>
 					))}
 				</nav>

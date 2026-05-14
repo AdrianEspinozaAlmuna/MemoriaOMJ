@@ -4,7 +4,6 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import "./styles.css";
 import { initFirebase } from "./services/firebase";
-import { requestNotificationPermissionAndGetToken } from "./services/firebase.js";
 
 // Inicializar Firebase con credenciales del .env
 const firebaseConfig = {
@@ -61,9 +60,6 @@ if ("serviceWorker" in navigator) {
     });
   });
 }
-
-// Después de montar la app
-requestNotificationPermissionAndGetToken(import.meta.env.VITE_FIREBASE_VAPID_KEY);
 
 const root = createRoot(document.getElementById("root"));
 root.render(

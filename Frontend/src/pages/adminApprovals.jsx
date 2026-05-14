@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { CalendarDays, Clock3, ListChecks, MapPin, UserRound } from "lucide-react";
+import { CalendarDays, Clock3, ListChecks, MapPin, UserRound, RefreshCw } from "lucide-react";
 import Modal from "../components/Modal";
 import ActivityCard from "../components/ActivityCard";
 import LoadingState from "../components/LoadingState";
@@ -49,19 +49,29 @@ export default function AdminApprovals() {
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState("");
 	const [actionMessage, setActionMessage] = useState("");
+	const [refreshing, setRefreshing] = useState(false);
+
+	async function loadPendingApprovals() {
+		setLoading(true);
+		setError("");
+		const data = await getAdminActivities({ approved: false, estado: "pendiente" });
+		setItems(Array.isArray(data) ? data : []);
+		setLoading(false);
+	}
+
+	async function handleRefresh() {
+		setRefreshing(true);
+		setError("");
+		try {
+			await loadPendingApprovals();
+		} catch (err) {
+			setError("No se pudieron recargar las aprobaciones.");
+		}
+		setRefreshing(false);
+	}
 
 	useEffect(() => {
 		let mounted = true;
-
-		async function loadPendingApprovals() {
-			setLoading(true);
-			setError("");
-			const data = await getAdminActivities({ approved: false, estado: "pendiente" });
-
-			if (!mounted) return;
-			setItems(Array.isArray(data) ? data : []);
-			setLoading(false);
-		}
 
 		loadPendingApprovals().catch(() => {
 			if (!mounted) return;
@@ -149,10 +159,22 @@ export default function AdminApprovals() {
 
 	return (
 		<section className="animate-[revealUp_0.7s_ease_both] space-y-8">
-			<header className="space-y-2">
-				<p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Panel de administrador</p>
-				<h1 className="m-0 text-[clamp(1.8rem,2.5vw,2.3rem)] font-bold text-[var(--text)]">Aprobacion de actividades</h1>
-				<p className="max-w-3xl text-[0.92rem] text-[var(--text-muted)]">Revisa y aprueba propuestas de actividades antes de publicarlas.</p>
+			<header className="flex items-start justify-between gap-4">
+				<div className="space-y-2">
+					<p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Panel de administrador</p>
+					<h1 className="m-0 text-[clamp(1.8rem,2.5vw,2.3rem)] font-bold text-[var(--text)]">Aprobacion de actividades</h1>
+					<p className="max-w-3xl text-[0.92rem] text-[var(--text-muted)]">Revisa y aprueba propuestas de actividades antes de publicarlas.</p>
+				</div>
+				<button
+					type="button"
+					onClick={handleRefresh}
+					disabled={loading || refreshing}
+					className="inline-flex items-center gap-2 rounded-sm border border-[var(--primary)] bg-white px-4 py-2.5 text-[0.88rem] font-semibold text-[var(--primary)] transition-all hover:bg-[var(--primary)] hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+					aria-label="Actualizar aprobaciones"
+				>
+					<RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} strokeWidth={2} />
+					{refreshing ? 'Actualizando...' : 'Actualizar'}
+				</button>
 			</header>
 
 			{actionMessage && (
