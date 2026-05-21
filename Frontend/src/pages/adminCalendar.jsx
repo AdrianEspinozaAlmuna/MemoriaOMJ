@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, ListFilter, Tags } from "lucide-react";
+import { ChevronLeft, ChevronRight, ListFilter, Plus, Tags } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Calendar from "../components/Calendar";
 import { getCalendarData } from "../services/userViewsService";
@@ -54,10 +54,20 @@ export default function AdminCalendar() {
 
 	return (
 		<section className="animate-[revealUp_0.7s_ease_both] space-y-8">
-			<header className="space-y-2">
-				<p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Panel de administrador</p>
-				<h1 className="m-0 text-[clamp(1.8rem,2.5vw,2.3rem)] font-bold text-[var(--text)]">Calendario de actividades</h1>
-				<p className="max-w-3xl text-[0.92rem] text-[var(--text-muted)]">Explora todas las actividades disponibles y filtra por tipo o grupo.</p>
+			<header className="flex flex-wrap items-end justify-between gap-4">
+				<div className="space-y-2">
+					<p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Panel de administrador</p>
+					<h1 className="m-0 text-[clamp(1.8rem,2.5vw,2.3rem)] font-bold text-[var(--text)]">Calendario de actividades</h1>
+					<p className="max-w-3xl text-[0.92rem] text-[var(--text-muted)]">Explora todas las actividades disponibles y filtra por tipo o grupo.</p>
+				</div>
+				<button
+					type="button"
+					onClick={() => navigate("/admin/crear-actividad")}
+					className="inline-flex items-center gap-2 rounded-sm border border-[var(--primary)] bg-[var(--primary)] px-3.5 py-2 text-[0.84rem] font-semibold text-white transition-all hover:bg-[#0a7f3d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#05a63d]/30"
+				>
+					<Plus className="h-4 w-4" strokeWidth={2} />
+					Crear actividad
+				</button>
 			</header>
 
 			<section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-bg)] p-6 shadow-[0_8px_20px_-18px_rgba(16,24,40,0.22)] space-y-5">
@@ -106,6 +116,7 @@ export default function AdminCalendar() {
 					viewMode="mensual"
 					monthDate={monthDate}
 					onActivityClick={activity => navigate(`/admin/actividad/${activity.id}`)}
+					createActivityPath="/admin/crear-actividad"
 				/>
 			</section>
 		</section>

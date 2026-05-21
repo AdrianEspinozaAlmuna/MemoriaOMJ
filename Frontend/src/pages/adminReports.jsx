@@ -2,7 +2,8 @@ import React, { useMemo, useState } from "react";
 import {
 	Activity, BarChart3, CalendarDays, PieChart as PieChartIcon,
 	Star, TrendingUp, Users, Download, Filter, Clock,
-	BookOpen, MapPin, ChevronRight, ArrowUpRight, Layers
+	BookOpen, MapPin, ChevronRight, ArrowUpRight, Layers,
+	CircleCheck, CircleX, Clock3, AlertTriangle
 } from "lucide-react";
 import {
 	ResponsiveContainer, LineChart, Line, CartesianGrid,
@@ -10,6 +11,7 @@ import {
 } from "recharts";
 
 import { getAdminActivities } from "../services/userViewsService";
+import { getActivityStatusMeta } from "../utils/activityStatus";
 
 // data will be loaded from API via getAdminActivities
 
@@ -162,12 +164,23 @@ function formatDuration(minutes) {
 
 function formatActivityStatus(value) {
 	const raw = String(value || "").toLowerCase();
-	if (raw.includes("cancel")) return { label: "Cancelada", bg: "#fff5f5", color: "#a73f3f" };
-	if (raw.includes("rech")) return { label: "Rechazada", bg: "#fff5f5", color: "#a73f3f" };
-	if (raw.includes("final") || raw.includes("termin") || raw.includes("complet")) return { label: "Finalizada", bg: "#eef5ff", color: "#1d4f91" };
-	if (raw.includes("aprob") || raw.includes("program")) return { label: "Aprobada", bg: "#eef8f2", color: "#1f6e45" };
-	if (raw.includes("pend") || raw.includes("revision")) return { label: "Pendiente", bg: "#fff9e6", color: "#7a5a00" };
-	return { label: value || "Pendiente", bg: "#fff9e6", color: "#7a5a00" };
+	const normalized = raw.includes("cancel")
+		? "cancelada"
+		: raw.includes("rech")
+			? "rechazada"
+			: raw.includes("final") || raw.includes("termin") || raw.includes("complet")
+				? "finalizada"
+				: raw.includes("aprob") || raw.includes("program")
+					? "programada"
+					: raw.includes("pend") || raw.includes("revision")
+						? "pendiente"
+						: value;
+	const meta = getActivityStatusMeta(normalized);
+	return {
+		label: meta.label,
+		className: meta.className,
+		icon: meta.icon
+	};
 }
 
 // ─────────────────────────────────────────
@@ -600,7 +613,8 @@ export default function AdminReports() {
 													{(() => {
 														const display = formatActivityStatus(row.state || row.status || row.estado);
 														return (
-															<span className="inline-block rounded-sm px-2 py-0.5 text-[0.72rem] font-semibold" style={{ backgroundColor: display.bg, color: display.color }}>
+															<span className={`inline-flex items-center gap-1 rounded-sm px-2 py-0.5 text-[0.72rem] font-semibold ${display.className}`}>
+																<display.icon className="h-3 w-3" strokeWidth={2.2} />
 																{display.label}
 															</span>
 														);

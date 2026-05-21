@@ -139,8 +139,8 @@ export default function CreateActivity() {
         hora_termino: form.hora_termino,
         max_participantes: maxParticipants,
         chat_bidireccional: form.chat_bidireccional,
-        aprobado: false,
-        estado: "pendiente"
+        aprobado: isAdminRoute,
+        estado: isAdminRoute ? "programada" : "pendiente"
       };
 
       const response = isEditMode
@@ -153,13 +153,17 @@ export default function CreateActivity() {
       if (response?.ok) {
         setFeedback({
           type: "success",
-          title: isEditMode ? "Edicion enviada" : "Propuesta enviada",
+          title: isEditMode ? "Edicion enviada" : isAdminRoute ? "Actividad publicada" : "Propuesta enviada",
           message: isEditMode
             ? "Tu solicitud de edicion fue registrada correctamente y quedo en revision."
-            : "Tu actividad fue registrada correctamente y quedo en revision.",
+            : isAdminRoute
+              ? "La actividad se registro y quedo publicada para los usuarios."
+              : "Tu actividad fue registrada correctamente y quedo en revision.",
           hint: isEditMode
             ? "Cuando el admin la revise, te notificaremos el resultado."
-            : "El equipo OMJ te notificara cuando cambie su estado."
+            : isAdminRoute
+              ? "Puedes gestionarla desde el panel de actividades cuando lo necesites."
+              : "El equipo OMJ te notificara cuando cambie su estado."
         });
         if (!isEditMode) {
           setForm(previous => ({
@@ -333,14 +337,16 @@ export default function CreateActivity() {
   return (
     <section className="max-w-7xl mx-auto px-4 py-6 space-y-8">
       <header>
-        <p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Panel de usuario</p>
+        <p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">{isAdminRoute ? "Panel de administrador" : "Panel de usuario"}</p>
         <h1 className="mt-2 mb-0 text-[clamp(1.8rem,2.5vw,2.3rem)] font-bold text-[var(--text)]">
           {isEditMode ? "Editar actividad" : "Crear actividad"}
         </h1>
         <p className="mt-2 text-[0.92rem] text-[var(--text-muted)]">
           {isEditMode
             ? "Ajusta los datos de la actividad y envía la modificación a revisión."
-            : "Propone una nueva actividad indicando lugar, fecha y horario para su revision."}
+            : isAdminRoute
+              ? "Crea una actividad con publicación inmediata indicando lugar, fecha y horario."
+              : "Propone una nueva actividad indicando lugar, fecha y horario para su revision."}
         </p>
       </header>
 

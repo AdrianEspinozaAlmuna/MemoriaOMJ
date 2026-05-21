@@ -1,5 +1,5 @@
 import React from "react";
-import { ListCheck, BarChart3, Bell, CalendarDays, CheckCircle2, Circle, LayoutGrid, DoorOpen, LayoutDashboard, LogOut, Menu, PanelLeftClose, PanelLeftOpen, UserRound, Users, X } from "lucide-react";
+import { ListCheck, BarChart3, Bell, CalendarDays, CheckCircle2, Circle, LayoutGrid, DoorOpen, Home, LogOut, Menu, PanelLeftClose, PanelLeftOpen, Plus, UserRound, Users, X } from "lucide-react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { getAdminActivities } from "../services/userViewsService";
 
@@ -15,8 +15,18 @@ function decodeToken(token) {
 	}
 }
 
+function getInitials(name = "") {
+	return String(name)
+		.trim()
+		.split(/\s+/)
+		.filter(Boolean)
+		.slice(0, 2)
+		.map(part => part[0]?.toUpperCase() || "")
+		.join("") || "A";
+}
+
 const mainLinks = [
-	{ to: "/admin/dashboard", label: "Dashboard", icon: "dashboard" },
+	{ to: "/admin/dashboard", label: "Dashboard", icon: "home" },
 	{ to: "/admin/usuarios", label: "Usuarios", icon: "users" },
 	{ to: "/admin/aprobaciones", label: "Aprobaciones", icon: "check" },
 	{ to: "/admin/calendario", label: "Calendario", icon: "calendar" },
@@ -27,9 +37,9 @@ const mainLinks = [
 	{ to: "/admin/salas", label: "Salas", icon: "rooms" }
 ];
 
-function SidebarIcon({ name, className = "h-4 w-4" }) {
-	if (name === "dashboard") {
-		return <LayoutDashboard aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
+function SidebarIcon({ name, className = "h-[18px] w-[18px]" }) {
+	if (name === "home") {
+		return <Home aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
 	}
 	if (name === "users") {
 		return <Users aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
@@ -71,6 +81,7 @@ export default function AdminLayout() {
 
 	const displayName = user?.nombre ? `${user.nombre} ${user.apellido || ""}`.trim() : "Admin Usuario";
 	const displayEmail = user?.mail || user?.email || "";
+	const displayInitials = getInitials(displayName);
 
 	React.useEffect(() => {
 		async function loadPendingCount() {
@@ -134,26 +145,17 @@ export default function AdminLayout() {
 
 	const navLinkClass = ({ isActive }) =>
 		[
-			"flex items-center gap-2 rounded-sm px-3 py-2 text-[0.92rem] font-semibold text-[#355447] [transition:background-color_150ms_ease,color_120ms_ease] hover:bg-[#edf2ef] hover:text-[#162a1e] focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(5,166,61,0.15)]",
+			"flex items-center gap-2 rounded-sm py-2 text-[0.92rem] font-semibold text-[#355447] [transition:background-color_150ms_ease,color_120ms_ease] hover:bg-[#edf2ef] hover:text-[#162a1e] focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(5,166,61,0.15)]",
+			sidebarCollapsed ? "px-3 min-[981px]:justify-center min-[981px]:px-0" : "px-3",
 			isActive ? "bg-[var(--primary-active)] !text-[var(--primary-strong)]" : ""
 		].join(" ");
 
 	return (
 		<div className={`grid min-h-screen bg-[var(--bg)] animate-[revealUp_0.7s_ease_both] max-[980px]:grid-cols-1 max-[980px]:relative ${sidebarCollapsed ? "grid-cols-[84px_minmax(0,1fr)]" : "grid-cols-[232px_minmax(0,1fr)]"}`}>
-			<button
-				type="button"
-				className="fixed left-3 top-3 z-40 hidden h-9 w-9 items-center justify-center rounded-sm border border-[#d8e6dd] bg-white text-[#2f463a] shadow-[0_8px_20px_-16px_rgba(10,27,16,0.45)] max-[980px]:inline-flex"
-				onClick={() => setMobileNavOpen(previous => !previous)}
-				aria-expanded={mobileNavOpen}
-				aria-label={mobileNavOpen ? "Cerrar menu de administracion" : "Abrir menu de administracion"}
-			>
-				{mobileNavOpen ? <X className="h-4 w-4" strokeWidth={2} /> : <Menu className="h-4 w-4" strokeWidth={2} />}
-			</button>
-
 			{mobileNavOpen && <button type="button" className="fixed inset-0 z-30 hidden bg-[#10261a]/20 max-[980px]:block" onClick={closeMobileNav} aria-label="Cerrar menu" />}
 
 			<aside className={`${mobileNavOpen ? "max-[980px]:translate-x-0" : "max-[980px]:-translate-x-[110%]"} border-r border-[#e0e5e2] bg-[white] px-3 pb-4 pt-3 min-[981px]:sticky min-[981px]:top-0 min-[981px]:h-screen min-[981px]:overflow-y-auto min-[981px]:flex min-[981px]:flex-col max-[980px]:fixed max-[980px]:left-0 max-[980px]:top-0 max-[980px]:z-[35] max-[980px]:h-screen max-[980px]:w-[236px] max-[980px]:overflow-y-auto max-[980px]:shadow-[0_16px_28px_-18px_rgba(10,27,16,0.5)] max-[980px]:transition-transform max-[980px]:duration-200 ${sidebarCollapsed ? "min-[981px]:w-[84px] min-[981px]:px-2" : "min-[981px]:w-[232px]"}`}>
-				<div className="mb-3 flex items-center gap-2 px-2">
+				<div className={`mb-3 flex items-center gap-2 px-2 ${sidebarCollapsed ? "min-[981px]:justify-center" : ""}`}>
 					<img src="/iconOMJ.jpg" alt="OMJ" className="h-7 w-7 rounded-md border border-[#d8dfda]" />
 					<div className={`min-w-0 ${sidebarCollapsed ? "min-[981px]:hidden" : ""}`}>
 						<p className="m-0 truncate text-[0.84rem] font-semibold text-[#455b50]">Administracion OMJ</p>
@@ -170,10 +172,12 @@ export default function AdminLayout() {
 							onClick={closeMobileNav}
 							className={navLinkClass}
 						>
-							<SidebarIcon name={link.icon} className="h-4 w-4" />
+							<span className="inline-flex h-5 w-5 shrink-0 items-center justify-center">
+								<SidebarIcon name={link.icon} className="h-[18px] w-[18px] shrink-0" />
+							</span>
 								<span className={sidebarCollapsed ? "min-[981px]:hidden" : ""}>{link.label}</span>
 								{link.to === "/admin/aprobaciones" && pendingApprovalsCount > 0 && (
-									<span className="ml-auto inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#e03a3a] px-1 text-[0.66rem] font-bold leading-none text-white shadow-[0_8px_16px_-10px_rgba(224,58,58,0.8)]">
+									<span className={`ml-auto inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#e03a3a] px-1 text-[0.66rem] font-bold leading-none text-white shadow-[0_8px_16px_-10px_rgba(224,58,58,0.8)] ${sidebarCollapsed ? "min-[981px]:hidden" : ""}`}>
 										{pendingApprovalsCount > 9 ? "9+" : pendingApprovalsCount}
 									</span>
 								)}
@@ -184,12 +188,16 @@ export default function AdminLayout() {
 				<div className="mt-5 border-t border-[#e2e6e3] pt-3 min-[981px]:mt-auto">
 					<p className="mb-2 px-2 text-[0.74rem] font-semibold uppercase tracking-[0.08em] text-[#829087]">Cuenta</p>
 
-					<div className="grid gap-2">
-						<div className="inline-flex items-center gap-2 rounded-lg px-3 py-2.5 text-left text-[0.9rem] font-semibold text-[#2f463a]">
-							<span className="grid h-8 w-8 place-items-center text-[var(--primary-strong)]">
-								<UserRound aria-hidden="true" focusable="false" className="h-4 w-4" strokeWidth={2} />
+					<div className={`grid gap-2 ${sidebarCollapsed ? "min-[981px]:place-items-center" : ""}`}>
+						<div className={`rounded-lg px-3 py-2.5 text-left text-[0.9rem] font-semibold text-[#2f463a] ${sidebarCollapsed ? "min-[981px]:grid min-[981px]:place-items-center min-[981px]:px-0 min-[981px]:text-center" : "inline-flex items-center gap-2"}`}>
+							<span className="grid h-8 w-8 place-items-center rounded-full bg-[#eef8f2] text-[var(--primary-strong)]">
+								{sidebarCollapsed ? (
+									<span className="text-[0.76rem] font-bold tracking-[0.03em]">{displayInitials}</span>
+								) : (
+									<UserRound aria-hidden="true" focusable="false" className="h-4 w-4" strokeWidth={2} />
+								)}
 							</span>
-							<span className="grid min-w-0">
+							<span className={`grid min-w-0 ${sidebarCollapsed ? "min-[981px]:hidden" : ""}`}>
 								<span className="truncate">{displayName}</span>
 								{displayEmail && <span className="truncate text-[0.74rem] font-normal text-[#7a8881]">{displayEmail}</span>}
 							</span>
@@ -198,10 +206,10 @@ export default function AdminLayout() {
 						<button
 							type="button"
 							onClick={handleLogout}
-							className="inline-flex w-full items-center gap-2 rounded-sm border border-[var(--reject-hover)] bg-white px-2.5 py-2 text-left text-[0.84rem] font-semibold text-[var(--reject-hover)] hover:bg-[#ffefed]"
+							className={`inline-flex w-full items-center rounded-sm border border-[var(--reject-hover)] bg-white py-2 text-left text-[0.84rem] font-semibold text-[var(--reject-hover)] hover:bg-[#ffefed] ${sidebarCollapsed ? "min-[981px]:justify-center min-[981px]:gap-0 min-[981px]:px-0" : "gap-2 px-2.5"}`}
 						>
 							<LogOut aria-hidden="true" focusable="false" className="h-4 w-4" strokeWidth={2} />
-							Cerrar sesion
+							<span className={sidebarCollapsed ? "min-[981px]:hidden" : ""}>Cerrar sesion</span>
 						</button>
 					</div>
 				</div>
@@ -211,17 +219,46 @@ export default function AdminLayout() {
 				<div className="sticky top-0 z-20 border-b border-[#dce7df] bg-white/95 backdrop-blur">
 					<div className="mx-auto flex w-full max-w items-center justify-between gap-3 px-4 py-3">
 						<div className="flex min-w-0 items-center gap-3">
-							<button type="button" onClick={toggleSidebar} className="inline-flex h-10 w-10 items-center justify-center rounded-md text-[var(--text)] hover:bg-[#eef7ef]" aria-label={sidebarCollapsed ? "Abrir barra lateral" : "Cerrar barra lateral"}>
+							<button
+								type="button"
+								onClick={() => setMobileNavOpen(previous => !previous)}
+								className="inline-flex h-10 w-10 items-center justify-center rounded-md text-[var(--text)] hover:bg-[#eef7ef] min-[981px]:hidden"
+								aria-expanded={mobileNavOpen}
+								aria-label={mobileNavOpen ? "Cerrar menu de administracion" : "Abrir menu de administracion"}
+							>
+								{mobileNavOpen ? <X className="h-5 w-5" strokeWidth={1.9} /> : <Menu className="h-5 w-5" strokeWidth={1.9} />}
+							</button>
+							<button type="button" onClick={toggleSidebar} className="inline-flex h-10 w-10 items-center justify-center rounded-md text-[var(--text)] hover:bg-[#eef7ef] max-[980px]:hidden" aria-label={sidebarCollapsed ? "Abrir barra lateral" : "Cerrar barra lateral"}>
 								{sidebarCollapsed ? <PanelLeftOpen className="h-6 w-6" strokeWidth={1.4} /> : <PanelLeftClose className="h-6 w-6" strokeWidth={1.4} />}
 							</button>
-							<div className="min-w-0">
+							<div className="inline-flex min-w-0 items-center gap-2 min-[981px]:hidden">
+								<img src="/iconOMJ.jpg" alt="OMJ" className="h-8 w-8 shrink-0 rounded-md border border-[#d8dfda]" />
+								<p className="m-0 truncate text-[1rem] font-semibold text-[var(--text)]">Plataforma Juvenil Curico</p>
+							</div>
+							<div className="min-w-0 max-[980px]:hidden">
 								<p className="m-0 text-[0.7rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Panel de administrador</p>
 								<h1 className="m-0 truncate text-[1.05rem] font-semibold text-[var(--text)]">{getPageTitle()}</h1>
 							</div>
 						</div>
 						<div className="flex items-center gap-2">
-							<span className="hidden rounded-full bg-[#eef8f1] px-3 py-1 text-[0.72rem] font-semibold text-[#2e5a45] sm:inline-flex">Sesión activa</span>
-							<span className="inline-flex rounded-full bg-[#f3f5f4] px-3 py-1 text-[0.72rem] font-semibold text-[#5f7168]">{displayName}</span>
+							<button
+								type="button"
+								onClick={() => navigate("/admin/crear-actividad")}
+								className="hidden items-center gap-2 rounded-sm bg-[var(--primary)] px-3 py-2 text-[0.72rem] font-semibold text-white hover:bg-[var(--primary-strong)] min-[981px]:inline-flex"
+								aria-label="Crear actividad"
+							>
+								<Plus aria-hidden="true" focusable="false" className="h-3.5 w-3.5" strokeWidth={2} />
+								Crear actividad
+							</button>
+							<span className="inline-flex rounded-full bg-[#f3f5f4] px-3 py-1 text-[0.72rem] font-semibold text-[#5f7168] max-[980px]:hidden">{displayName}</span>
+							<button
+								type="button"
+								onClick={handleLogout}
+								className="hidden h-9 w-9 items-center justify-center rounded-sm text-[#d43c3c] hover:bg-[#fff1f1] max-[980px]:inline-flex"
+								aria-label="Cerrar sesion"
+							>
+								<LogOut aria-hidden="true" focusable="false" className="h-4 w-4" strokeWidth={1.9} />
+							</button>
 						</div>
 					</div>
 				</div>

@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { Plus } from "lucide-react";
 import ActivityCard from "../components/ActivityCard";
 import LoadingState from "../components/LoadingState";
 import { getAdminActivities } from "../services/userViewsService";
@@ -55,10 +57,16 @@ export default function AdminActivities() {
 
 	return (
 		<section className="animate-[revealUp_0.7s_ease_both] space-y-8">
-			<header className="space-y-2">
-				<p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Panel de administrador</p>
-				<h1 className="m-0 text-[clamp(1.8rem,2.5vw,2.3rem)] font-bold text-[var(--text)]">Actividades disponibles</h1>
-				<p className="max-w-3xl text-[0.92rem] text-[var(--text-muted)]">Listado completo de actividades publicadas en formato de cards.</p>
+			<header className="flex flex-wrap items-end justify-between gap-4">
+				<div className="space-y-2">
+					<p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Panel de administrador</p>
+					<h1 className="m-0 text-[clamp(1.8rem,2.5vw,2.3rem)] font-bold text-[var(--text)]">Actividades disponibles</h1>
+					<p className="max-w-3xl text-[0.92rem] text-[var(--text-muted)]">Listado completo de actividades publicadas en formato de cards.</p>
+				</div>
+				<Link to="/admin/crear-actividad" className="inline-flex items-center gap-2 rounded-sm border border-[var(--primary)] bg-[var(--primary)] px-3.5 py-2 text-[0.84rem] font-semibold !text-white transition-all hover:bg-[#0a7f3d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#05a63d]/30">
+					<Plus className="h-4 w-4 !text-white" strokeWidth={2} />
+					Crear actividad
+				</Link>
 			</header>
 
 			<section className="rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-5 shadow-sm">
