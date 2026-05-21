@@ -79,12 +79,12 @@ export default function AdminDashboard() {
 						.slice(0, 3)
 					: [];
 
-				// Actualizar stats
+				// Actualizar stats — usa datos tal cual vienen del backend
 				const statsArray = [
-					{ label: "Total Usuarios", value: statsRes.totalUsers || 247 },
-					{ label: "Actividades Activas", value: statsRes.activeActivities || 18 },
-					{ label: "Aprobadas Recientes", value: statsRes.recentApprovals || 5 },
-					{ label: "Asistencia Promedio", value: statsRes.averageAttendance || "82%" }
+					{ label: "Total Usuarios", value: statsRes.totalUsers ?? "—" },
+					{ label: "Actividades Activas", value: statsRes.activeActivities ?? "—" },
+					{ label: "Aprobadas Recientes", value: statsRes.recentApprovals ?? "—" },
+					{ label: "Asistencia Promedio", value: statsRes.averageAttendance ?? "—" }
 				];
 				setStats(statsArray);
 
@@ -114,17 +114,20 @@ export default function AdminDashboard() {
 			</header>
 
 			<section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-				{stats.map((card, index) => (
-					<article key={card.label} className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-bg)] px-4 py-3.5 transition-colors">
-						<div className="flex items-center justify-between gap-2">
-							<p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.06em] text-[var(--text)]">{card.label}</p>
-							<span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--surface-soft)] text-[var(--primary)]">
-								<MetricIcon index={index} />
-							</span>
-						</div>
-						<strong className="mt-2 block text-[1.7rem] font-bold leading-none text-[var(--primary)]">{card.value}</strong>
-					</article>
-				))}
+				{stats.map((card, index) => {
+					const to = index === 0 ? "/admin/usuarios" : index === 1 ? "/admin/actividades" : index === 2 ? "/admin/actividades?status=aprobada" : "/admin/reportes";
+					return (
+						<Link key={card.label} to={to} className="group block rounded-xl border border-[var(--panel-border)] bg-[var(--panel-bg)] px-4 py-3.5 transition-colors hover:shadow-sm">
+							<div className="flex items-center justify-between gap-2">
+								<p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.06em] text-[var(--text)]">{card.label}</p>
+								<span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--surface-soft)] text-[var(--primary)]">
+									<MetricIcon index={index} />
+								</span>
+							</div>
+							<strong className="mt-2 block text-[1.7rem] font-bold leading-none text-[var(--primary)]">{card.value}</strong>
+						</Link>
+					);
+				})}
 			</section>
 
 			<section className="space-y-3.5">
@@ -141,9 +144,9 @@ export default function AdminDashboard() {
 							/>
 						))}
 					</div>
-					<button type="button" className="mt-3 w-full rounded-lg border border-[var(--panel-border)] bg-[var(--primary)] px-3 py-2.5 text-[0.9rem] font-semibold text-[white] hover:bg-[var(--primary-strong)]">
+					<Link to="/admin/actividades?status=aprobada" className="mt-3 block w-full rounded-sm border border-[var(--panel-border)] bg-[var(--primary)] px-3 py-2.5 text-[0.9rem] font-semibold !text-white text-center hover:bg-[var(--primary-strong)]" style={{ color: "#fff" }}>
 						Ver todas las aprobadas
-					</button>
+					</Link>
 				</article>
 			</section>
 
