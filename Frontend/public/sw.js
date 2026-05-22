@@ -3,32 +3,26 @@ const ASSETS = ["/", "/index.html"];
 
 // FCM en background usando el mismo service worker de la app.
 try {
+  importScripts("/firebase-config.js");
   importScripts("https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js");
   importScripts("https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js");
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyCdkF2YTAAGC-QQPbpA_1NO2U04WCG4dLU",
-    authDomain: "db-omj.firebaseapp.com",
-    projectId: "db-omj",
-    storageBucket: "db-omj.firebasestorage.app",
-    messagingSenderId: "610370458234",
-    appId: "1:610370458234:web:662e0f429915ee96b8e1c3",
-    measurementId: "G-DH68ZHC0FJ"
-  };
+  const firebaseConfig = self.__FIREBASE_CONFIG || null;
+  if (firebaseConfig?.apiKey) {
+    firebase.initializeApp(firebaseConfig);
+    const messaging = firebase.messaging();
 
-  firebase.initializeApp(firebaseConfig);
-  const messaging = firebase.messaging();
+    messaging.onBackgroundMessage(payload => {
+      const title = payload.notification?.title || payload?.data?.title || "Notificacion";
+      const options = {
+        body: payload.notification?.body || payload?.data?.body || "",
+        icon: payload.notification?.icon || "/icons/icon-192.png",
+        data: payload.data || {}
+      };
 
-  messaging.onBackgroundMessage(payload => {
-    const title = payload.notification?.title || payload?.data?.title || "Notificacion";
-    const options = {
-      body: payload.notification?.body || payload?.data?.body || "",
-      icon: payload.notification?.icon || "/icons/icon-192.png",
-      data: payload.data || {}
-    };
-
-    self.registration.showNotification(title, options);
-  });
+      self.registration.showNotification(title, options);
+    });
+  }
 } catch (_error) {
   // Si Firebase no esta disponible, el SW sigue funcionando para cache.
 }

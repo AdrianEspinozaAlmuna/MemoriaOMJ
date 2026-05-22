@@ -3,7 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "generate:firebase-config": "node ./scripts/generate-firebase-config.js",
+    "predev": "npm run generate:firebase-config",
     "dev": "vite",
+    "prebuild": "npm run generate:firebase-config",
     "build": "node ./node_modules/vite/bin/vite.js build",
     "preview": "vite preview"
   },
