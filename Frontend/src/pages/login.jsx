@@ -55,8 +55,10 @@ export default function Login() {
 	}
 
 	return (
-		<section className="container grid min-h-[70vh] place-items-center py-4 pb-6 max-[640px]:min-h-0 max-[640px]:place-items-start max-[640px]:py-2">
-			<article className="relative z-[1] w-full max-w-[440px] rounded-[14px] border border-[#e5e7eb] bg-white px-6 pb-6 pt-7 animate-[revealUp_0.7s_ease_both] max-[640px]:rounded-xl max-[640px]:px-4 max-[640px]:pb-5 max-[640px]:pt-6 max-[640px]:shadow-[0_14px_22px_-20px_rgba(15,35,23,0.33)]">
+		<section className="relative isolate w-full overflow-hidden bg-white">
+			<div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-[0.42]" style={{ backgroundImage: "radial-gradient(circle, #d4d4d8 1px, transparent 1px)", backgroundSize: "22px 22px", maskImage: "linear-gradient(to bottom, black 26%, transparent 92%)" }} />
+			<div className="relative mx-auto flex min-h-[calc(100vh-4.5rem)] w-full max-w-[1200px] items-center justify-center px-4 py-10 max-[640px]:min-h-[calc(100vh-4rem)] max-[640px]:px-3 max-[640px]:py-6">
+				<article className="relative z-[1] w-full max-w-[440px] rounded-[14px] border border-[#e5e7eb] bg-white px-6 pb-6 pt-7 animate-[revealUp_0.7s_ease_both] max-[640px]:rounded-xl max-[640px]:px-4 max-[640px]:pb-5 max-[640px]:pt-6 max-[640px]:shadow-[0_14px_22px_-20px_rgba(15,35,23,0.33)]">
 				<div className="mb-1 grid justify-items-center gap-0.5 text-center">
 					<div className="grid h-[3.2rem] w-[3.2rem] place-items-center rounded-[10px]" aria-hidden="true">
 						<img src="/iconOMJ.jpg" alt="OMJ" className="h-12 w-12 rounded-sm object-cover" />
@@ -109,7 +111,8 @@ export default function Login() {
 				<p className="mt-4 text-center text-[0.84rem] text-[var(--text-muted)]">
 					No tienes cuenta? <Link to="/register" className="font-semibold text-[var(--primary)] transition-colors duration-200 hover:text-[var(--primary-strong)]">Registrate</Link>
 				</p>
-			</article>
+				</article>
+			</div>
 		</section>
 	);
 }

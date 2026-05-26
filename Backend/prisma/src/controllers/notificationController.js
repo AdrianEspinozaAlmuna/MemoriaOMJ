@@ -71,6 +71,7 @@ function serializeNotification(notification) {
     receiverId: notification.id_receptor ?? receiver?.id_usuario ?? null,
     activityId: notification.id_actividad,
     id_actividad: notification.id_actividad,
+    activityTitle: notification.actividad?.titulo ?? null,
     type: notification.tipo,
     tipo: notification.tipo,
     title: notification.titulo,
@@ -177,12 +178,13 @@ async function listAdminNotifications(req, res) {
     if (unreadOnly) {
       where.leida = false;
     }
-    if (tipo && ["sistema", "actividad"].includes(tipo)) {
+    if (tipo && ["sistema", "actividad", "revision"].includes(tipo)) {
       where.tipo = tipo;
     }
     if (Number.isInteger(idActividad)) {
       where.id_actividad = idActividad;
     }
+    where.OR = [{ id_receptor: idUsuario }, { id_receptor: null }];
 
     const notifications = await prisma.notificaciones.findMany({
       where,

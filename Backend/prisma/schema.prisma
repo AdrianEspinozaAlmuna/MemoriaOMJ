@@ -187,6 +187,7 @@ enum rol_usuario {
 enum tipo_notificacion {
   sistema
   actividad
+  revision
 }
 
 enum estado_sala {
