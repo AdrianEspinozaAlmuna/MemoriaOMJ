@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Bell, BellRing, CalendarDays, ChevronRight, CheckCircle2, Home, LayoutDashboard, ListChecks, LoaderCircle, LogOut, Menu, RefreshCw, UserRound, Users } from "lucide-react";
+import { Bell, BellRing, CalendarDays, ChevronRight, UserCheck, Home, LayoutDashboard, ListChecks, LoaderCircle, LogOut, Menu, RefreshCw, UserRound, Users } from "lucide-react";
 import { Link, NavLink } from "react-router-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
@@ -331,7 +331,7 @@ export default function Navbar() {
 		const isActivity = item?.type === "actividad" || item?.themeKey === "activity" || item?.themeKey === "activity-change";
 
 		if (isReview) {
-			return "bg-[#e9f1ff] text-[#2f5fb3]";
+			return "bg-[#e8f7ec] text-[var(--primary)]";
 		}
 
 		if (isActivity) {
@@ -358,7 +358,7 @@ export default function Navbar() {
 		if (name === "home") return <Home aria-hidden="true" focusable="false" className={className} strokeWidth={1.9} />;
 		if (name === "calendar") return <CalendarDays aria-hidden="true" focusable="false" className={className} strokeWidth={1.9} />;
 		if (name === "activities") return <ListChecks aria-hidden="true" focusable="false" className={className} strokeWidth={1.9} />;
-		if (name === "attendance") return <CheckCircle2 aria-hidden="true" focusable="false" className={className} strokeWidth={1.9} />;
+		if (name === "attendance") return <UserCheck aria-hidden="true" focusable="false" className={className} strokeWidth={1.9} />;
 		if (name === "groups") return <Users aria-hidden="true" focusable="false" className={className} strokeWidth={1.9} />;
 		if (name === "admin") return <LayoutDashboard aria-hidden="true" focusable="false" className={className} strokeWidth={1.9} />;
 		return null;

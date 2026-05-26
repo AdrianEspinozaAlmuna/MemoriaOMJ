@@ -252,11 +252,11 @@ export default function AdminLayout() {
 							<button
 								type="button"
 								onClick={() => navigate("/admin/notificaciones")}
-								className="hidden h-10 items-center gap-2 rounded-sm border border-[#d7e4dc] bg-white px-4 py-2.5 text-[0.86rem] font-semibold text-[#335043] hover:bg-[#f3faf5] min-[981px]:inline-flex"
+								className="inline-flex h-10 items-center gap-2 rounded-sm border border-[#d7e4dc] bg-white px-4 py-2.5 text-[0.86rem] font-semibold text-[#335043] hover:bg-[#f3faf5] max-[980px]:px-0 max-[980px]:w-10 max-[980px]:justify-center min-[981px]:inline-flex"
 								aria-label="Ir a notificaciones"
 							>
 								<Bell aria-hidden="true" focusable="false" className="h-4 w-4 text-[var(--primary)]" strokeWidth={1.8} />
-								Notificaciones
+								<span className="max-[980px]:hidden">Notificaciones</span>
 							</button>
 							<button
 								type="button"
