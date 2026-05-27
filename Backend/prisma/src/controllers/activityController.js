@@ -654,7 +654,7 @@ async function requestActivityEdit(req, res) {
       const adminNotifications = await notifyAdminUsers(prisma, idUsuario, {
         titulo: "Edición de actividad pendiente",
         descripcion: `Se solicitó la edición de la actividad ${activityTitle} para revisión.`,
-        tipo: "actividad",
+        tipo: "revision",
         id_actividad: idActividad
       });
 
@@ -889,7 +889,7 @@ async function createActivity(req, res) {
       const adminNotifications = await notifyAdminUsers(prisma, idEncargado, {
         titulo: "Nueva propuesta de actividad",
         descripcion: `Se creó la actividad ${activityTitle} para revisión.`,
-        tipo: "actividad",
+        tipo: "revision",
         id_actividad: created.newActivity.id_actividad
       });
 
@@ -1452,26 +1452,26 @@ async function reviewActivity(req, res) {
         ? {
             titulo: "Edición de actividad aprobada",
             descripcion: "Los cambios solicitados fueron publicados.",
-            tipo: "actividad",
+            tipo: "revision",
             id_actividad: idActividad
           }
         : {
             titulo: "Edición de actividad rechazada",
             descripcion: reason || "Los cambios solicitados no fueron aprobados.",
-            tipo: "actividad",
+            tipo: "revision",
             id_actividad: idActividad
           }
       : action === "approve"
         ? {
             titulo: "Aprobación de propuesta actividad",
             descripcion: "La actividad quedó habilitada para publicarse.",
-            tipo: "actividad",
+            tipo: "revision",
             id_actividad: idActividad
           }
         : {
             titulo: "Rechazo propuesta actividad",
             descripcion: reason || "La actividad no fue aprobada por administración.",
-            tipo: "actividad",
+            tipo: "revision",
             id_actividad: idActividad
           };
 

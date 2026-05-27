@@ -364,10 +364,10 @@ export default function Calendar({ activities, viewMode, monthDate, onActivityCl
         hideHeader
         overlayClassName="bg-[rgba(18,27,35,0.22)]"
         /* Desktop: keep the previous panel look. Mobile: full-screen modal */
-        panelClassName="sm:max-w-[920px] sm:border-0 sm:bg-transparent sm:shadow-none max-w-full max-h-[calc(100vh-2rem)] sm:h-auto rounded-none sm:rounded-[10px] overflow-hidden"
-        contentClassName="p-0"
+        panelClassName="sm:max-w-[920px] sm:border-0 sm:bg-transparent sm:shadow-none max-w-full max-h-[calc(100dvh-1rem)] sm:max-h-[calc(100vh-2rem)] sm:h-auto rounded-none sm:rounded-[10px] overflow-hidden"
+        contentClassName="p-0 min-h-0"
       >
-        <div className="overflow-hidden rounded-[10px] sm:rounded-[10px] border border-[#e5e7eb] bg-[var(--surface)] shadow-[0_10px_24px_-18px_rgba(19,38,29,0.28)] max-h-[calc(100vh-3rem)] sm:h-auto">
+        <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[10px] sm:rounded-[10px] border border-[#e5e7eb] bg-[var(--surface)] shadow-[0_10px_24px_-18px_rgba(19,38,29,0.28)] max-h-[calc(100dvh-1.5rem)] sm:h-auto">
           <header className="relative overflow-hidden bg-white px-5 py-4 text-[var(--text)] shadow-[inset_0_-1px_0_0_#dbe8e0]">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -440,7 +440,7 @@ export default function Calendar({ activities, viewMode, monthDate, onActivityCl
             </div>
           </div>
 
-          <div className="max-h-[68vh] overflow-y-auto bg-[var(--surface)] border border-[#e5e7eb] px-5 py-4">
+          <div className="min-h-0 flex-1 overflow-y-auto bg-[var(--surface)] border border-[#e5e7eb] px-5 py-4 max-[640px]:max-h-[calc(100dvh-13rem)]">
             {selectedDayActivities.length === 0 ? (
               <div className="rounded-[10px] border border-dashed border-[#e5e7eb] bg-[#fbfcfb] p-4 text-[0.92rem] text-[var(--text-muted)]">
                 No hay actividades programadas para este dia.

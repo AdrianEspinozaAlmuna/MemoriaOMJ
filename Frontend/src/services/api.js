@@ -1,6 +1,11 @@
 import axios from "axios";
 
-export const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
+const FALLBACK_API_BASE_URL = import.meta.env.DEV ? "http://localhost:4000/api" : undefined;
+export const API_BASE_URL = import.meta.env.VITE_API_URL || FALLBACK_API_BASE_URL;
+
+if (import.meta.env.PROD && !import.meta.env.VITE_API_URL) {
+  console.warn("VITE_API_URL no está definido. El frontend en Vercel no podrá llamar al backend hasta configurarlo.");
+}
 
 const api = axios.create({
   baseURL: API_BASE_URL,

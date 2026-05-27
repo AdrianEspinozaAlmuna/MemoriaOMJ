@@ -36,6 +36,23 @@ function sqlLiteral(value) {
   return `'${String(value).replace(/'/g, "''")}'`;
 }
 
+function normalizeNotificationType(payload = {}) {
+  const explicitType = String(payload.tipo ?? payload.type ?? "").toLowerCase();
+  if (explicitType === "sistema" || explicitType === "actividad" || explicitType === "revision" || explicitType === "review") {
+    return explicitType;
+  }
+
+  const title = normalizeNotificationText(payload.titulo ?? payload.title).toLowerCase();
+  const description = normalizeNotificationText(payload.descripcion ?? payload.description).toLowerCase();
+  const text = `${title} ${description}`;
+
+  if (text.includes("aprob") || text.includes("rechaz") || text.includes("edición") || text.includes("edicion") || text.includes("revisión") || text.includes("revision")) {
+    return "revision";
+  }
+
+  return "sistema";
+}
+
 async function createNotificationRecord(db = prisma, payload = {}) {
   // receptor (destinatario) — puede venir como id_usuario o id_receptor
   const idReceptor = payload.id_receptor == null ? normalizeUserId(payload) : Number(payload.id_receptor);
@@ -57,7 +74,7 @@ async function createNotificationRecord(db = prisma, payload = {}) {
   const idReceptorRaw = idReceptorValid;
   const idActividadRaw = payload.id_actividad == null ? null : Number(payload.id_actividad);
   const idEmisorRaw = idEmisorValid;
-  const tipo = payload.tipo === "actividad" ? "actividad" : "sistema";
+  const tipo = normalizeNotificationType(payload);
   const descripcion = payload.descripcion == null ? null : String(payload.descripcion).trim() || null;
 
   // Evitar duplicados recientes: si ya existe una notificación con los mismos
@@ -167,7 +184,7 @@ async function notifyAdminUsers(db = prisma, idEmisor, payload = {}) {
     ...payload,
     id_emisor: idEmisor,
     id_receptor: admin.id_usuario,
-    tipo: payload.tipo || "actividad"
+    tipo: payload.tipo || "revision"
   });
 
   return created ? [created] : [];
@@ -189,7 +206,7 @@ async function notifyActivityOwner(db = prisma, idEmisor, activityId, payload = 
 
   return createNotificationsForUsers(db, idEmisor, [activity.id_encargado], {
     ...payload,
-    tipo: payload.tipo || "actividad",
+    tipo: payload.tipo || "revision",
     id_actividad: activityId
   });
 }

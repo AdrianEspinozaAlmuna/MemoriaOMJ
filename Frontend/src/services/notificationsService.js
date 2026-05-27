@@ -37,20 +37,29 @@ function deriveNotificationTheme(notification = {}) {
   const title = String(notification.titulo ?? notification.title ?? "").toLowerCase();
   const description = String(notification.descripcion ?? notification.description ?? "").toLowerCase();
   const text = `${title} ${description}`;
+  const tipo = String(notification.tipo ?? notification.type ?? "").toLowerCase();
+
+  if (tipo === "revision" || tipo === "review") {
+    return { key: "activity-change", label: "Actividad" };
+  }
+
+  if (text.includes("edición") || text.includes("edicion") || text.includes("cambios solicitados") || text.includes("solicitó la edición") || text.includes("solicito la edicion")) {
+    return { key: "activity-change", label: "Cambios de actividad" };
+  }
 
   if (text.includes("aprobad") || text.includes("rechaz")) {
-    return { key: "review", label: "Aprobación / rechazo" };
+    return { key: "activity-change", label: "Actividad" };
   }
 
   if (text.includes("cambio") || text.includes("modific") || text.includes("actualiz") || text.includes("cancel") || text.includes("reprogram") || text.includes("inscrip") || text.includes("asist")) {
     return { key: "activity-change", label: "Cambios de actividad" };
   }
 
-  if (String(notification.tipo ?? notification.type ?? "").toLowerCase() === "actividad") {
+  if (tipo === "actividad") {
     return { key: "activity", label: "Actividad" };
   }
 
-  return { key: "general", label: "Generales" };
+  return { key: "general", label: "Sistema" };
 }
 
 function normalizeNotification(notification = {}) {
@@ -62,6 +71,8 @@ function normalizeNotification(notification = {}) {
   const type = String(notification.tipo ?? notification.type ?? "sistema");
   const theme = deriveNotificationTheme(notification);
   const activity = notification.actividad || null;
+  const activityId = notification.id_actividad ?? notification.activityId ?? activity?.id_actividad ?? null;
+  const activityTitle = String(notification.activityTitle ?? notification.activity?.title ?? notification.actividad?.titulo ?? activity?.title ?? "").trim();
   const sender = notification.emisor || notification.sender || null;
   const receiver = notification.receptor || notification.receiver || null;
 
@@ -72,11 +83,13 @@ function normalizeNotification(notification = {}) {
     id_receptor: notification.id_receptor ?? notification.receiverId ?? receiver?.id_usuario ?? null,
     senderId: notification.id_emisor ?? notification.senderId ?? sender?.id_usuario ?? null,
     receiverId: notification.id_receptor ?? notification.receiverId ?? receiver?.id_usuario ?? null,
+    activityId,
+    activityTitle: activityTitle || null,
     title,
     titulo: title,
     detail: description,
     descripcion: description,
-    source: type === "actividad" ? "Actividad" : "Sistema",
+    source: type === "actividad" ? "Actividad" : type === "revision" ? "Aprobación / rechazo" : "Sistema",
     type,
     tipo: type,
     themeKey: theme.key,

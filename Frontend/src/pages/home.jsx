@@ -492,10 +492,6 @@ const Footer = () => (
         <div className="col-span-2 lg:col-span-2">
           <div className="text-[11px] tracking-[0.18em] uppercase font-semibold text-[var(--pjc-ink)]">Boletín</div>
           <p className="mt-4 text-[12.5px] text-[var(--pjc-muted)]">Resumen mensual de actividades y becas para jóvenes de Curicó.</p>
-          <form onSubmit={e=>e.preventDefault()} className="mt-3 flex">
-            <input type="email" placeholder="tu@correo.cl" className="flex-1 min-w-0 px-3 py-2 border border-zinc-200 rounded-l-sm text-[12.5px] focus:outline-none focus:border-[var(--pjc-primary)]"/>
-            <button className="px-3 bg-[var(--pjc-primary)] text-white rounded-r-sm hover:bg-[var(--pjc-primary-700)]" aria-label="Suscribir"><Icon d={I.send} size={14}/></button>
-          </form>
         </div>
       </div>
 

@@ -32,7 +32,6 @@ const mainLinks = [
 	{ to: "/admin/calendario", label: "Calendario", icon: "calendar" },
 	{ to: "/admin/actividades", label: "Actividades", icon: "list" },
 	{ to: "/admin/reportes", label: "Reportes", icon: "report" },
-	{ to: "/admin/notificaciones", label: "Notificaciones", icon: "bell" },
 	{ to: "/admin/imagenes", label: "Catalogo de Tipos", icon: "LayoutGrid" },
 	{ to: "/admin/salas", label: "Salas", icon: "rooms" }
 ];
@@ -244,13 +243,21 @@ export default function AdminLayout() {
 							<button
 								type="button"
 								onClick={() => navigate("/admin/crear-actividad")}
-								className="hidden items-center gap-2 rounded-sm bg-[var(--primary)] px-3 py-2 text-[0.72rem] font-semibold text-white hover:bg-[var(--primary-strong)] min-[981px]:inline-flex"
+								className="hidden h-10 items-center gap-2 rounded-sm bg-[var(--primary)] px-4 py-2.5 text-[0.86rem] font-semibold text-white hover:bg-[var(--primary-strong)] min-[981px]:inline-flex"
 								aria-label="Crear actividad"
 							>
-								<Plus aria-hidden="true" focusable="false" className="h-3.5 w-3.5" strokeWidth={2} />
+								<Plus aria-hidden="true" focusable="false" className="h-4 w-4" strokeWidth={2} />
 								Crear actividad
 							</button>
-							<span className="inline-flex rounded-full bg-[#f3f5f4] px-3 py-1 text-[0.72rem] font-semibold text-[#5f7168] max-[980px]:hidden">{displayName}</span>
+							<button
+								type="button"
+								onClick={() => navigate("/admin/notificaciones")}
+								className="inline-flex h-10 items-center gap-2 rounded-sm border border-[#d7e4dc] bg-white px-4 py-2.5 text-[0.86rem] font-semibold text-[#335043] hover:bg-[#f3faf5] max-[980px]:px-0 max-[980px]:w-10 max-[980px]:justify-center min-[981px]:inline-flex"
+								aria-label="Ir a notificaciones"
+							>
+								<Bell aria-hidden="true" focusable="false" className="h-4 w-4 text-[var(--primary)]" strokeWidth={1.8} />
+								<span className="max-[980px]:hidden">Notificaciones</span>
+							</button>
 							<button
 								type="button"
 								onClick={handleLogout}

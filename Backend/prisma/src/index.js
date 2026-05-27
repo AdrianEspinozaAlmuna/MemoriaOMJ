@@ -37,6 +37,7 @@ app.get("/api/health", async (req, res) => {
 });
 
 const PORT = process.env.PORT || 4000;
+const HOST = process.env.HOST || "0.0.0.0";
 
 if (require.main === module && process.env.VERCEL !== "1") {
   const server = http.createServer(app);
@@ -50,7 +51,7 @@ if (require.main === module && process.env.VERCEL !== "1") {
     process.exit(1);
   });
 
-  server.listen(PORT, "localhost", () => console.log(`Backend iniciado en http://localhost:${PORT}`));
+  server.listen(PORT, HOST, () => console.log(`Backend iniciado en http://${HOST}:${PORT}`));
 }
 
 module.exports = app;

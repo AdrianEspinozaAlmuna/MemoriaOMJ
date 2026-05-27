@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Bell, BellRing, ChevronRight, LoaderCircle, LogOut, UserRound, Menu, RefreshCw } from "lucide-react";
+import { Bell, BellRing, CalendarDays, ChevronRight, UserCheck, Home, LayoutDashboard, ListChecks, LoaderCircle, LogOut, Menu, RefreshCw, UserRound, Users } from "lucide-react";
 import { Link, NavLink } from "react-router-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
@@ -272,31 +272,53 @@ export default function Navbar() {
 	}
 
 	function getNotificationDisplayTitle(item) {
-		if (item?.type === "sistema") {
-			return "Notificación de sistema";
+		const activityTitle = String(item?.activityTitle || item?.activity?.title || item?.actividad?.titulo || "").trim();
+		const title = String(item?.title || "").trim();
+		const lowerTitle = title.toLowerCase();
+
+		if (item?.type === "sistema" && !activityTitle) {
+			return title || "Notificación de sistema";
 		}
-		// Para actividades
-		const title = item?.title || "";
-		if (title.toLowerCase().includes("rechaz")) {
-			return "Rechazo propuesta actividad";
+
+		if (lowerTitle.includes("rechaz")) {
+			return activityTitle ? `Rechazo de propuesta actividad "${activityTitle}"` : "Rechazo de propuesta actividad";
 		}
-		if (title.toLowerCase().includes("aprobad")) {
-			return "Aprobación de propuesta actividad";
+
+		if (lowerTitle.includes("aprobad")) {
+			return activityTitle ? `Aprobación de propuesta actividad "${activityTitle}"` : "Aprobación de propuesta actividad";
 		}
-		return title;
+
+		if (item?.type === "actividad" || item?.themeKey === "activity" || item?.themeKey === "activity-change") {
+			return activityTitle ? `${title || "Actividad"} "${activityTitle}"` : title || "Actividad";
+		}
+
+		return title || "Notificación";
 	}
 
 	function getNotificationDisplayDetail(item) {
-		if (item?.type === "sistema") {
-			return item?.title || "";
+		const activityTitle = String(item?.activityTitle || item?.activity?.title || item?.actividad?.titulo || "").trim();
+		const detail = String(item?.detail || "").trim();
+		const title = String(item?.title || "").trim();
+		const lowerTitle = title.toLowerCase();
+
+		if (lowerTitle.includes("rechaz") || lowerTitle.includes("aprobad")) {
+			if (activityTitle && detail) {
+				return `Actividad: "${activityTitle}". ${detail}`;
+			}
+			return activityTitle ? `Actividad: "${activityTitle}"` : detail || "";
 		}
-		// Para actividades, extraer el nombre de la actividad del título
-		const title = item?.title || "";
-		const colonIndex = title.indexOf(":");
-		if (colonIndex !== -1) {
-			return title.substring(colonIndex + 1).trim();
+
+		if (item?.type === "actividad" || item?.themeKey === "activity" || item?.themeKey === "activity-change") {
+			if (activityTitle && detail) {
+				return `Actividad: "${activityTitle}". ${detail}`;
+			}
+			if (activityTitle) {
+				return `Actividad: "${activityTitle}"`;
+			}
+			return detail;
 		}
-		return item?.detail || "";
+
+		return detail || title;
 	}
 
 	function getNotificationToneClass(item) {
@@ -304,9 +326,19 @@ export default function Navbar() {
 	}
 
 	function getNotificationSourceClass(item) {
-		return item?.type === "actividad"
-			? "bg-[#e8f7ec] text-[var(--primary)]"
-			: "bg-[#ffe8e8] text-[#d43c3c]";
+		const title = String(item?.title || "").toLowerCase();
+		const isReview = item?.themeKey === "review" || title.includes("aprobad") || title.includes("rechaz");
+		const isActivity = item?.type === "actividad" || item?.themeKey === "activity" || item?.themeKey === "activity-change";
+
+		if (isReview) {
+			return "bg-[#e8f7ec] text-[var(--primary)]";
+		}
+
+		if (isActivity) {
+			return "bg-[#e8f7ec] text-[var(--primary)]";
+		}
+
+		return "bg-[#ffe8e8] text-[#d43c3c]";
 	}
 
 	async function openNotificationItem(item) {
@@ -318,9 +350,19 @@ export default function Navbar() {
 
 	const navLinkClass = ({ isActive }) =>
 		[
-			"rounded-xl px-3.5 py-2 text-[0.92rem] font-semibold text-[#355447] [transition:background-color_150ms_ease,color_120ms_ease] hover:bg-[#def3e7] hover:text-[var(--primary-strong)] active:bg-[var(--primary-active)]",
+			"inline-flex items-center gap-1.5 rounded-sm px-3.5 py-2 text-[0.92rem] font-semibold leading-none text-[#355447] [transition:background-color_150ms_ease,color_120ms_ease] hover:bg-[#def3e7] hover:text-[var(--primary-strong)] active:bg-[var(--primary-active)]",
 			isActive ? "bg-[var(--primary-active)] !text-[var(--primary-strong)]" : ""
 		].join(" ");
+
+	function NavIcon({ name, className = "h-5 w-4.5 shrink-0" }) {
+		if (name === "home") return <Home aria-hidden="true" focusable="false" className={className} strokeWidth={1.9} />;
+		if (name === "calendar") return <CalendarDays aria-hidden="true" focusable="false" className={className} strokeWidth={1.9} />;
+		if (name === "activities") return <ListChecks aria-hidden="true" focusable="false" className={className} strokeWidth={1.9} />;
+		if (name === "attendance") return <UserCheck aria-hidden="true" focusable="false" className={className} strokeWidth={1.9} />;
+		if (name === "groups") return <Users aria-hidden="true" focusable="false" className={className} strokeWidth={1.9} />;
+		if (name === "admin") return <LayoutDashboard aria-hidden="true" focusable="false" className={className} strokeWidth={1.9} />;
+		return null;
+	}
 
 	return (
 		<header className="sticky top-0 z-50 bg-white backdrop-blur shadow-[0_8px_20px_-20px_rgba(6,40,24,0.55)]">
@@ -354,6 +396,7 @@ export default function Navbar() {
 							onClick={handleNavItemClick}
 							className={navLinkClass}
 						>
+							<NavIcon name="home" />
 							Inicio
 						</NavLink>
 					)}
@@ -364,6 +407,7 @@ export default function Navbar() {
 							onClick={handleNavItemClick}
 							className={navLinkClass}
 						>
+							<NavIcon name="admin" />
 							Panel admin
 						</NavLink>
 					)}
@@ -375,6 +419,7 @@ export default function Navbar() {
 								onClick={handleNavItemClick}
 								className={navLinkClass}
 							>
+								<NavIcon name="calendar" />
 								Calendario
 							</NavLink>
 							<NavLink
@@ -382,6 +427,7 @@ export default function Navbar() {
 								onClick={handleNavItemClick}
 								className={navLinkClass}
 							>
+								<NavIcon name="activities" />
 								Mis actividades
 							</NavLink>
 							<NavLink
@@ -389,6 +435,7 @@ export default function Navbar() {
 								onClick={handleNavItemClick}
 								className={navLinkClass}
 							>
+								<NavIcon name="attendance" />
 								Mis asistencias
 							</NavLink>
 							<NavLink
@@ -396,6 +443,7 @@ export default function Navbar() {
 								onClick={handleNavItemClick}
 								className={navLinkClass}
 							>
+								<NavIcon name="groups" />
 								Mis Grupos
 							</NavLink>
 						</>
@@ -471,7 +519,7 @@ export default function Navbar() {
 															<strong className="block text-[0.92rem] font-semibold leading-tight text-[#1f3328]">{getNotificationDisplayTitle(item)}</strong>
 															<span className={`inline-flex rounded-sm px-2 py-1 text-[0.66rem] font-bold uppercase tracking-[0.08em] ${getNotificationSourceClass(item)}`}>{item.source}</span>
 														</div>
-														<div className="block truncate  text-[0.9rem] leading-tight text-[var(--text)]">Actividad: "{getNotificationDisplayDetail(item)}"</div>
+														<div className="block truncate  text-[0.9rem] leading-tight text-[var(--text)]">{getNotificationDisplayDetail(item)}</div>
 													</div>
 													<span className="inline-flex shrink-0 rounded-sm bg-[var(--gray)] px-2 py-1 text-[0.72rem] font-semibold text-[#5f7a6a]">{item.date}</span>
 												</button>
@@ -494,11 +542,11 @@ export default function Navbar() {
 
 					{isAuthenticated && (
 						<div className="flex items-center gap-2 max-[1120px]:gap-1.5">
-							<div className="hidden min-[861px]:flex items-center gap-2 rounded-sm bg-white px-2.5 py-2 text-[0.88rem] font-semibold leading-none text-[var(--text)]">
+							<div className="hidden min-[861px]:flex items-center gap-2 rounded-sm bg-white px-2.5 py-2 text-[0.88rem] font-semibold leading-none text-[#6d7b75]">
 								<UserRound aria-hidden="true" focusable="false" className="h-5 w-5 text-[#2e4c3d]" strokeWidth={1.5} />
 								<span className="max-w-[12rem] min-w-0 overflow-hidden">
 									<span className="block truncate">{fullName}</span>
-									{mergedUser?.mail && <span className="block truncate text-[0.72rem] font-normal text-[#60716a]">{mergedUser.mail}</span>}
+									{mergedUser?.mail && <span className="block truncate text-[0.72rem] font-normal text-[#7f8b85]">{mergedUser.mail}</span>}
 								</span>
 							</div>
 							<button

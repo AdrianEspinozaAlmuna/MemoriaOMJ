@@ -3,7 +3,6 @@
 .env.local
 .env.*.local
 .env.production.local
-.env.example
 
 # Dependencies
 node_modules/
@@ -35,6 +34,7 @@ Backend/prisma/data/
 
 # Firebase service account
 Backend/config/serviceAccountKey.json
+Frontend/public/firebase-config.js
 
 # Uploaded files (activity type images)
 Backend/prisma/src/uploads/tipos-actividad/
