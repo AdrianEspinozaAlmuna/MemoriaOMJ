@@ -2,12 +2,14 @@ import React, { useState, useRef } from 'react';
 import { uploadImage } from '../services/firebase';
 
 /**
- * Componente reutilizable para subir imágenes a Firebase Storage
+ * Componente reutilizable para subir imágenes al backend
  * @param {Function} onImageUrlChange - Callback con la URL de la imagen subida
- * @param {string} path - Ruta en Storage donde guardar (default: "uploads/")
+ * @param {string} nombre - Nombre del tipo de actividad a guardar
+ * @param {string} descripcion - Descripción opcional del tipo de actividad
+ * @param {number|string} idTipo - Id opcional del tipo de actividad
  * @param {boolean} showPreview - Mostrar preview de la imagen (default: true)
  */
-export default function ImageUpload({ onImageUrlChange, path = "uploads/", showPreview = true }) {
+export default function ImageUpload({ onImageUrlChange, nombre = "", descripcion = "", idTipo = null, showPreview = true }) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
   const [preview, setPreview] = useState(null);
@@ -40,8 +42,8 @@ export default function ImageUpload({ onImageUrlChange, path = "uploads/", showP
         reader.readAsDataURL(file);
       }
 
-      // Subir a Firebase
-      const url = await uploadImage(file, path);
+      // Subir al backend del droplet
+      const url = await uploadImage(file, { nombre, descripcion, id_tipo: idTipo });
       
       // Llamar callback con URL
       if (onImageUrlChange) {

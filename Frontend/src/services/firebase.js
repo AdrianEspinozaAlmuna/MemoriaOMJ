@@ -1,17 +1,14 @@
-// Servicio de integración con Firebase (Storage + Messaging)
+// Servicio de integración con Firebase (solo Messaging)
 import api from "./api";
 import { initializeApp } from "firebase/app";
-import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
 
 let appInstance = null;
-let storageInstance = null;
 let messagingInstance = null;
 
 export function initFirebase(config) {
   if (!appInstance) {
     appInstance = initializeApp(config);
-    storageInstance = getStorage(appInstance);
     try {
       messagingInstance = getMessaging(appInstance);
     } catch (err) {
@@ -19,29 +16,28 @@ export function initFirebase(config) {
       messagingInstance = null;
     }
   }
-  return { app: appInstance, storage: storageInstance, messaging: messagingInstance };
+  return { app: appInstance, messaging: messagingInstance };
 }
 
-export async function uploadImage(file, path = "uploads/") {
-  if (!storageInstance) throw new Error("Firebase Storage no inicializado. Llama a initFirebase(config) primero.");
-  const fileRef = ref(storageInstance, `${path}${Date.now()}_${file.name}`);
-  const uploadTask = uploadBytesResumable(fileRef, file);
+export async function uploadImage(file, metadata = {}) {
+  if (!file) throw new Error("Archivo de imagen requerido");
 
-  return new Promise((resolve, reject) => {
-    uploadTask.on(
-      "state_changed",
-      () => {},
-      (error) => reject(error),
-      async () => {
-        try {
-          const url = await getDownloadURL(uploadTask.snapshot.ref);
-          resolve(url);
-        } catch (err) {
-          reject(err);
-        }
-      }
-    );
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const nombre = String(metadata.nombre || "").trim();
+  const descripcion = String(metadata.descripcion || "").trim();
+  const idTipo = metadata.id_tipo ?? metadata.idTipo ?? null;
+
+  if (nombre) formData.append("nombre", nombre);
+  if (descripcion) formData.append("descripcion", descripcion);
+  if (idTipo) formData.append("id_tipo", String(idTipo));
+
+  const response = await api.post("/imagenes/upload", formData, {
+    headers: { "Content-Type": "multipart/form-data" }
   });
+
+  return response.data?.url || response.data?.tipo?.imagen_url || null;
 }
 
 export async function requestNotificationPermissionAndGetToken(vapidKey) {

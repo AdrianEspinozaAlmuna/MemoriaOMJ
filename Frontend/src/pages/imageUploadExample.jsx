@@ -3,7 +3,7 @@ import ImageUpload from '../components/ImageUpload';
 
 /**
  * Ejemplo de uso del componente ImageUpload
- * Esta página muestra cómo integrar carga de imágenes en cualquier formulario
+ * Esta página muestra cómo integrar carga de imágenes en el backend
  */
 export default function ImageUploadExample() {
   const [imageUrl, setImageUrl] = useState(null);
@@ -27,7 +27,7 @@ export default function ImageUploadExample() {
       <div className="max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Ejemplo: Carga de Imágenes</h1>
         <p className="text-gray-600 mb-8">
-          Sube imágenes a Firebase Storage y recibe la URL para usarla en tu aplicación.
+          Sube imágenes al backend y recibe la URL pública para usarla en tu aplicación.
         </p>
 
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -35,7 +35,7 @@ export default function ImageUploadExample() {
           
           <ImageUpload
             onImageUrlChange={handleImageUrlChange}
-            path="ejemplos/"
+            nombre="ejemplos"
             showPreview={true}
           />
 
@@ -106,7 +106,9 @@ export default function MyComponent() {
               <p className="font-semibold text-gray-700 text-sm">Props del componente:</p>
               <ul className="text-sm text-gray-600 mt-2 space-y-1">
                 <li><strong>onImageUrlChange</strong>: Callback que recibe la URL cuando se sube</li>
-                <li><strong>path</strong>: Ruta en Firebase Storage (default: "uploads/")</li>
+                <li><strong>nombre</strong>: Nombre o tipo de imagen que se enviará al backend</li>
+                <li><strong>descripcion</strong>: Descripción opcional del registro</li>
+                <li><strong>idTipo</strong>: Id opcional si estás editando un tipo existente</li>
                 <li><strong>showPreview</strong>: Mostrar preview mientras se sube (default: true)</li>
               </ul>
             </div>
