@@ -4,7 +4,7 @@ import { Link, NavLink } from "react-router-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
 import api, { API_BASE_URL } from "../services/api";
-import { getMyNotifications, getNotificationPresentation, normalizeNotification } from "../services/notificationsService";
+import { getMyNotifications, getNotificationListDisplay, normalizeNotification } from "../services/notificationsService";
 import { requestNotificationPermissionAndGetToken } from "../services/firebase";
 
 const SOCKET_BASE_URL = (import.meta.env.VITE_SOCKET_URL || API_BASE_URL).replace(/\/api\/?$/, "");
@@ -272,11 +272,11 @@ export default function Navbar() {
 	}
 
 	function getNotificationDisplayTitle(item) {
-		return getNotificationPresentation(item).title;
+		return getNotificationListDisplay(item).title;
 	}
 
 	function getNotificationDisplayDetail(item) {
-		return getNotificationPresentation(item).detail;
+		return getNotificationListDisplay(item).detail;
 	}
 
 	function getNotificationToneClass(item) {

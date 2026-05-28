@@ -2,8 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { BellRing, LoaderCircle, Megaphone, RefreshCw, Send } from "lucide-react";
 import { io } from "socket.io-client";
 import Modal from "../components/Modal";
-import { createBroadcastNotification, getAdminNotifications } from "../services/notificationsService";
-import { getNotificationPresentation } from "../services/notificationsService";
+import { createBroadcastNotification, getAdminNotifications, getNotificationListDisplay } from "../services/notificationsService";
 import { API_BASE_URL } from "../services/api";
 
 const SOCKET_BASE_URL = (import.meta.env.VITE_SOCKET_URL || API_BASE_URL).replace(/\/api\/?$/, "");
@@ -42,10 +41,6 @@ function getHeaderLabel(item) {
 	if (item?.themeKey === "review") return "Aprobación / rechazo";
 	if (item?.type === "actividad" || item?.themeKey === "activity" || item?.themeKey === "activity-change") return "Actividad";
 	return "Sistema";
-}
-
-function getNotificationDisplay(item) {
-	return getNotificationPresentation(item);
 }
 
 function getHeaderLabelClass(item) {
@@ -332,8 +327,8 @@ export default function AdminNotifications() {
 											{getHeaderLabel(item)}
 										</span>
 									</div>
-									<h3 className="m-0 text-[1rem] font-semibold leading-tight text-[var(--text)]">{getNotificationDisplay(item).title}</h3>
-									<p className="m-0 whitespace-pre-line text-[0.92rem] leading-relaxed text-[var(--text-muted)]">{getNotificationDisplay(item).detail}</p>
+									<h3 className="m-0 text-[1rem] font-semibold leading-tight text-[var(--text)]">{getNotificationListDisplay(item).title}</h3>
+									<p className="m-0 whitespace-pre-line text-[0.92rem] leading-relaxed text-[var(--text-muted)]">{getNotificationListDisplay(item).detail}</p>
 								</div>
 
 								<div className="flex flex-col items-end gap-2 self-start max-[760px]:items-start lg:pt-1">

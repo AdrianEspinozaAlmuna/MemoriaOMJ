@@ -132,14 +132,15 @@ async function resolveExistingStorageBucket() {
 }
 
 function buildMessagePayload(notification = {}, data = {}) {
-  const payload = {
-    notification: {
-      title: notification.title || notification.titulo || "",
-      body: notification.body || notification.descripcion || ""
-    },
-    data: Object.keys(data).reduce((acc, k) => ({ ...acc, [k]: String(data[k]) }), {})
+  const mergedData = {
+    title: notification.title || notification.titulo || "",
+    body: notification.body || notification.descripcion || "",
+    ...data
   };
-  return payload;
+
+  return {
+    data: Object.keys(mergedData).reduce((acc, key) => ({ ...acc, [key]: String(mergedData[key]) }), {})
+  };
 }
 
 function normalizeMessagingResponse(response = {}) {
@@ -178,7 +179,6 @@ async function sendToTokens(tokens = [], notification = {}) {
   try {
     const response = await admin.messaging().sendEachForMulticast({
       tokens,
-      notification: payload.notification,
       data: payload.data
     });
     return normalizeMessagingResponse(response);

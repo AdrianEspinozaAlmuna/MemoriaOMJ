@@ -165,6 +165,24 @@ export function getNotificationPresentation(notification = {}) {
   };
 }
 
+export function getNotificationListDisplay(notification = {}) {
+  const title = String(notification.titulo ?? notification.title ?? "").trim();
+  const detail = String(notification.descripcion ?? notification.description ?? "").trim();
+  const type = String(notification.tipo ?? notification.type ?? "sistema").toLowerCase();
+
+  if (type === "sistema") {
+    return {
+      title: title || "Notificación de sistema",
+      detail: detail
+    };
+  }
+
+  return {
+    title: title || "Notificación",
+    detail
+  };
+}
+
 export async function getMyNotifications(params = {}) {
   const { data } = await api.get("/notifications", { params });
   return normalizeList(data);
