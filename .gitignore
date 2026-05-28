@@ -36,5 +36,6 @@ Backend/prisma/data/
 Backend/config/serviceAccountKey.json
 Frontend/public/firebase-config.js
 
+## Nota: para subir imágenes temporalmente, eliminar o comentar la línea siguiente.
 # Uploaded files (activity type images)
-Backend/prisma/src/uploads/tipos-actividad/
+# Backend/prisma/src/uploads/tipos-actividad/
