@@ -6,6 +6,39 @@ let initialized = false;
 let serviceAccountProjectId = null;
 let resolvedBucketName = null;
 
+function resolveServiceAccountPath(rawPath) {
+  const normalizedPath = String(rawPath || "").trim();
+  if (!normalizedPath) return null;
+
+  const candidatePaths = [];
+  if (path.isAbsolute(normalizedPath)) {
+    candidatePaths.push(normalizedPath);
+  } else {
+    candidatePaths.push(path.resolve(process.cwd(), normalizedPath));
+
+    const withoutLeadingDotSlash = normalizedPath.replace(/^\.\//, "");
+    if (withoutLeadingDotSlash !== normalizedPath) {
+      candidatePaths.push(path.resolve(process.cwd(), withoutLeadingDotSlash));
+    }
+
+    const withoutBackendPrefix = normalizedPath.replace(/^(\.\/)?Backend[\\/]/, "");
+    if (withoutBackendPrefix !== normalizedPath) {
+      candidatePaths.push(path.resolve(process.cwd(), withoutBackendPrefix));
+    }
+
+    candidatePaths.push(path.resolve(process.cwd(), path.basename(normalizedPath)));
+  }
+
+  const uniqueCandidatePaths = [...new Set(candidatePaths)];
+  for (const candidatePath of uniqueCandidatePaths) {
+    if (fs.existsSync(candidatePath)) {
+      return candidatePath;
+    }
+  }
+
+  return uniqueCandidatePaths[0] || null;
+}
+
 function initFirebaseAdmin() {
   if (initialized) return admin;
 
@@ -23,7 +56,7 @@ function initFirebaseAdmin() {
   if (!credential && process.env.FIREBASE_SERVICE_ACCOUNT_PATH) {
     try {
       const rawPath = String(process.env.FIREBASE_SERVICE_ACCOUNT_PATH || "").trim();
-      const resolvedPath = path.isAbsolute(rawPath) ? rawPath : path.resolve(process.cwd(), rawPath);
+      const resolvedPath = resolveServiceAccountPath(rawPath);
       if (!fs.existsSync(resolvedPath)) {
         console.error(`FIREBASE_SERVICE_ACCOUNT_PATH no existe: ${resolvedPath}`);
       } else {
