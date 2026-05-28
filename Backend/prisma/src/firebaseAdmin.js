@@ -43,6 +43,7 @@ function initFirebaseAdmin() {
   }
 
   const initOptions = { credential };
+  if (process.env.FIREBASE_PROJECT_ID) initOptions.projectId = String(process.env.FIREBASE_PROJECT_ID).trim();
   if (process.env.FIREBASE_STORAGE_BUCKET) initOptions.storageBucket = process.env.FIREBASE_STORAGE_BUCKET;
   admin.initializeApp(initOptions);
   initialized = true;
