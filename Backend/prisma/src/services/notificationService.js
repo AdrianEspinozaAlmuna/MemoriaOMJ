@@ -119,7 +119,7 @@ async function createNotificationRecord(db = prisma, payload = {}) {
 
     const row = Array.isArray(inserted) ? inserted[0] : inserted;
     if (row) {
-      void dispatchNotificationSideEffects(db, row);
+      await dispatchNotificationSideEffects(db, row);
     }
     return row || null;
   } catch (err) {
@@ -137,7 +137,7 @@ async function createNotificationRecord(db = prisma, payload = {}) {
         }
       });
 
-      void dispatchNotificationSideEffects(db, created);
+      await dispatchNotificationSideEffects(db, created);
       return created;
     } catch (err2) {
       throw err; // regresa el error original para logging upstream

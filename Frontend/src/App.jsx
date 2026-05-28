@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import Home from "./pages/home";
 import Login from "./pages/login";
@@ -23,12 +23,70 @@ import AdminRoom from "./pages/adminRoom";
 import AdminImagesManager from "./pages/adminImagesManager";
 import ActivityDetail from "./pages/activityDetail";
 import { AdminProtectedRoute, ParticipantProtectedRoute, PublicOnlyRoute } from "./components/RouteGuards";
+import { normalizeNotification } from "./services/notificationsService";
+import { onForegroundMessage } from "./services/firebase";
+
+function buildForegroundNotification(payload = {}) {
+  const title = String(payload?.notification?.title || payload?.data?.title || "Notificación").trim();
+  const body = String(payload?.notification?.body || payload?.data?.body || "").trim();
+  const activityId = payload?.data?.activityId ? Number(payload.data.activityId) : null;
+  const receiverId = payload?.data?.receiverId ? Number(payload.data.receiverId) : null;
+  const notificationId = payload?.data?.notificationId ? Number(payload.data.notificationId) : null;
+
+  return normalizeNotification({
+    id_notificacion: notificationId,
+    titulo: title,
+    descripcion: body,
+    tipo: String(payload?.data?.type || "sistema"),
+    id_actividad: Number.isInteger(activityId) ? activityId : null,
+    id_receptor: Number.isInteger(receiverId) ? receiverId : null
+  });
+}
 
 export default function App() {
+  const visibleForegroundNotificationIds = useRef(new Set());
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith("/admin");
   const isPublicRoute = ["/", "/login", "/register"].includes(location.pathname);
   const shellVariant = isPublicRoute ? "app-shell-public" : isAdminRoute ? "app-shell-admin" : "app-shell-user";
+
+  useEffect(() => {
+    if (typeof Notification === "undefined" || Notification.permission !== "granted") {
+      return undefined;
+    }
+
+    const unsubscribe = onForegroundMessage(payload => {
+      const notification = buildForegroundNotification(payload);
+      const notificationKey = String(notification.id || notification.id_notificacion || "");
+
+      if (notificationKey && visibleForegroundNotificationIds.current.has(notificationKey)) {
+        return;
+      }
+
+      if (notificationKey) {
+        visibleForegroundNotificationIds.current.add(notificationKey);
+      }
+
+      try {
+        new Notification(notification.title || "Notificación", {
+          body: notification.detail || notification.descripcion || "",
+          icon: "/icons/icon-192.png",
+          data: {
+            url: notification.activityId ? `/user/actividad/${notification.activityId}` : "/user/notificaciones"
+          }
+        });
+      } catch (_error) {
+        // Si el navegador no permite mostrarla, dejamos que socket/lista cubran la actualización.
+      }
+    });
+
+    return () => {
+      visibleForegroundNotificationIds.current.clear();
+      if (typeof unsubscribe === "function") {
+        unsubscribe();
+      }
+    };
+  }, []);
 
   return (
     <div className={`app-shell ${shellVariant}`}>

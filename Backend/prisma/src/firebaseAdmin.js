@@ -6,8 +6,17 @@ let initialized = false;
 let serviceAccountProjectId = null;
 let resolvedBucketName = null;
 
+function stripWrappedQuotes(value) {
+  const text = String(value || "").trim();
+  if ((text.startsWith("'") && text.endsWith("'")) || (text.startsWith('"') && text.endsWith('"'))) {
+    return text.slice(1, -1);
+  }
+
+  return text;
+}
+
 function resolveServiceAccountPath(rawPath) {
-  const normalizedPath = String(rawPath || "").trim();
+  const normalizedPath = stripWrappedQuotes(rawPath);
   if (!normalizedPath) return null;
 
   const candidatePaths = [];
@@ -45,7 +54,7 @@ function initFirebaseAdmin() {
   let credential = null;
   if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
     try {
-      const parsed = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+      const parsed = JSON.parse(stripWrappedQuotes(process.env.FIREBASE_SERVICE_ACCOUNT_JSON));
       serviceAccountProjectId = parsed.project_id || serviceAccountProjectId;
       credential = admin.credential.cert(parsed);
     } catch (err) {
@@ -55,7 +64,7 @@ function initFirebaseAdmin() {
 
   if (!credential && process.env.FIREBASE_SERVICE_ACCOUNT_PATH) {
     try {
-      const rawPath = String(process.env.FIREBASE_SERVICE_ACCOUNT_PATH || "").trim();
+      const rawPath = stripWrappedQuotes(process.env.FIREBASE_SERVICE_ACCOUNT_PATH);
       const resolvedPath = resolveServiceAccountPath(rawPath);
       if (!fs.existsSync(resolvedPath)) {
         console.error(`FIREBASE_SERVICE_ACCOUNT_PATH no existe: ${resolvedPath}`);
@@ -133,6 +142,30 @@ function buildMessagePayload(notification = {}, data = {}) {
   return payload;
 }
 
+function normalizeMessagingResponse(response = {}) {
+  if (Array.isArray(response?.responses)) {
+    return {
+      successCount: Number(response.successCount || 0),
+      failureCount: Number(response.failureCount || 0),
+      results: response.responses
+    };
+  }
+
+  if (Array.isArray(response?.results)) {
+    return {
+      successCount: Number(response.successCount || 0),
+      failureCount: Number(response.failureCount || 0),
+      results: response.results
+    };
+  }
+
+  return {
+    successCount: Number(response.successCount || 0),
+    failureCount: Number(response.failureCount || 0),
+    results: []
+  };
+}
+
 async function sendToTokens(tokens = [], notification = {}) {
   initFirebaseAdmin();
   if (!admin.apps || admin.apps.length === 0) {
@@ -143,8 +176,12 @@ async function sendToTokens(tokens = [], notification = {}) {
   }
   const payload = buildMessagePayload(notification, notification.data || {});
   try {
-    const response = await admin.messaging().sendToDevice(tokens, payload);
-    return response;
+    const response = await admin.messaging().sendEachForMulticast({
+      tokens,
+      notification: payload.notification,
+      data: payload.data
+    });
+    return normalizeMessagingResponse(response);
   } catch (err) {
     throw err;
   }
