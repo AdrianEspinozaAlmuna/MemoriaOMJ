@@ -15,10 +15,18 @@ if (firebaseConfig?.apiKey) {
   const messaging = firebase.messaging();
 
   messaging.onBackgroundMessage(function(payload) {
-    const title = payload.notification?.title || payload?.data?.title || 'Notificación';
+    const type = String(payload?.data?.type || 'sistema').toLowerCase();
+    const sourceTitle = String(payload.notification?.title || payload?.data?.title || '').trim();
+    const sourceBody = String(payload.notification?.body || payload?.data?.body || '').trim();
+    const title = type === 'sistema' ? 'Notificación de Sistema' : sourceTitle || 'Notificación';
+    const body = type === 'sistema'
+      ? [sourceTitle, sourceBody].filter(Boolean).join('\n')
+      : sourceBody;
     const options = {
-      body: payload.notification?.body || payload?.data?.body || '',
+      body,
       icon: payload.notification?.icon || '/icons/icon-192.png',
+      tag: String(payload?.data?.notificationId || payload?.data?.id_notificacion || payload?.data?.id || sourceTitle || 'notification'),
+      renotify: false,
       data: payload.data || {}
     };
 

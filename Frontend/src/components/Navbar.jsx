@@ -4,7 +4,7 @@ import { Link, NavLink } from "react-router-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
 import api, { API_BASE_URL } from "../services/api";
-import { getMyNotifications, normalizeNotification } from "../services/notificationsService";
+import { getMyNotifications, getNotificationPresentation, normalizeNotification } from "../services/notificationsService";
 import { requestNotificationPermissionAndGetToken } from "../services/firebase";
 
 const SOCKET_BASE_URL = (import.meta.env.VITE_SOCKET_URL || API_BASE_URL).replace(/\/api\/?$/, "");
@@ -272,53 +272,11 @@ export default function Navbar() {
 	}
 
 	function getNotificationDisplayTitle(item) {
-		const activityTitle = String(item?.activityTitle || item?.activity?.title || item?.actividad?.titulo || "").trim();
-		const title = String(item?.title || "").trim();
-		const lowerTitle = title.toLowerCase();
-
-		if (item?.type === "sistema" && !activityTitle) {
-			return title || "Notificación de sistema";
-		}
-
-		if (lowerTitle.includes("rechaz")) {
-			return activityTitle ? `Rechazo de propuesta actividad "${activityTitle}"` : "Rechazo de propuesta actividad";
-		}
-
-		if (lowerTitle.includes("aprobad")) {
-			return activityTitle ? `Aprobación de propuesta actividad "${activityTitle}"` : "Aprobación de propuesta actividad";
-		}
-
-		if (item?.type === "actividad" || item?.themeKey === "activity" || item?.themeKey === "activity-change") {
-			return activityTitle ? `${title || "Actividad"} "${activityTitle}"` : title || "Actividad";
-		}
-
-		return title || "Notificación";
+		return getNotificationPresentation(item).title;
 	}
 
 	function getNotificationDisplayDetail(item) {
-		const activityTitle = String(item?.activityTitle || item?.activity?.title || item?.actividad?.titulo || "").trim();
-		const detail = String(item?.detail || "").trim();
-		const title = String(item?.title || "").trim();
-		const lowerTitle = title.toLowerCase();
-
-		if (lowerTitle.includes("rechaz") || lowerTitle.includes("aprobad")) {
-			if (activityTitle && detail) {
-				return `Actividad: "${activityTitle}". ${detail}`;
-			}
-			return activityTitle ? `Actividad: "${activityTitle}"` : detail || "";
-		}
-
-		if (item?.type === "actividad" || item?.themeKey === "activity" || item?.themeKey === "activity-change") {
-			if (activityTitle && detail) {
-				return `Actividad: "${activityTitle}". ${detail}`;
-			}
-			if (activityTitle) {
-				return `Actividad: "${activityTitle}"`;
-			}
-			return detail;
-		}
-
-		return detail || title;
+		return getNotificationPresentation(item).detail;
 	}
 
 	function getNotificationToneClass(item) {
@@ -519,7 +477,7 @@ export default function Navbar() {
 															<strong className="block text-[0.92rem] font-semibold leading-tight text-[#1f3328]">{getNotificationDisplayTitle(item)}</strong>
 															<span className={`inline-flex rounded-sm px-2 py-1 text-[0.66rem] font-bold uppercase tracking-[0.08em] ${getNotificationSourceClass(item)}`}>{item.source}</span>
 														</div>
-														<div className="block truncate  text-[0.9rem] leading-tight text-[var(--text)]">{getNotificationDisplayDetail(item)}</div>
+														<div className="block whitespace-pre-line text-[0.9rem] leading-tight text-[var(--text)]">{getNotificationDisplayDetail(item)}</div>
 													</div>
 													<span className="inline-flex shrink-0 rounded-sm bg-[var(--gray)] px-2 py-1 text-[0.72rem] font-semibold text-[#5f7a6a]">{item.date}</span>
 												</button>

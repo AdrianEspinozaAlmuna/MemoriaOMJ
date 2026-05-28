@@ -147,6 +147,24 @@ function normalizeList(payload) {
   return normalized;
 }
 
+export function getNotificationPresentation(notification = {}) {
+  const title = String(notification.titulo ?? notification.title ?? "").trim();
+  const detail = String(notification.descripcion ?? notification.description ?? "").trim();
+  const type = String(notification.tipo ?? notification.type ?? "sistema").toLowerCase();
+
+  if (type === "sistema") {
+    return {
+      title: "Notificación de Sistema",
+      detail: [title, detail].filter(Boolean).join("\n") || title || detail
+    };
+  }
+
+  return {
+    title: title || "Notificación",
+    detail
+  };
+}
+
 export async function getMyNotifications(params = {}) {
   const { data } = await api.get("/notifications", { params });
   return normalizeList(data);

@@ -3,14 +3,16 @@ import { BellRing, LoaderCircle, Megaphone, RefreshCw, Send } from "lucide-react
 import { io } from "socket.io-client";
 import Modal from "../components/Modal";
 import { createBroadcastNotification, getAdminNotifications } from "../services/notificationsService";
+import { getNotificationPresentation } from "../services/notificationsService";
 import { API_BASE_URL } from "../services/api";
 
 const SOCKET_BASE_URL = (import.meta.env.VITE_SOCKET_URL || API_BASE_URL).replace(/\/api\/?$/, "");
 
 const filters = [
 	{ key: "all", label: "Todas" },
-	{ key: "activity-change", label: "Actividades" },
-	{ key: "general", label: "Sistema" }
+	{ key: "review", label: "Aprobación / rechazo" },
+	{ key: "activity-change", label: "Cambios de actividad" },
+	{ key: "general", label: "Generales" }
 ];
 
 function normalizeText(value) {
@@ -18,85 +20,74 @@ function normalizeText(value) {
 }
 
 function getActivityTitle(item) {
-	return normalizeText(item?.activityTitle || item?.activity?.title || item?.actividad?.titulo || "");
-}
+	const directTitle = normalizeText(item?.activity?.title || item?.actividad?.titulo || item?.activityTitle || "");
+	if (directTitle) return directTitle;
 
-function isReviewNotification(item) {
-	const title = normalizeText(item?.title).toLowerCase();
-	return item?.themeKey === "review" || title.includes("aprob") || title.includes("rechaz");
-}
+	const title = normalizeText(item?.title);
+	const detail = normalizeText(item?.detail);
+	const quotedMatch = detail.match(/"([^"]+)"/);
+	if (quotedMatch?.[1]) return normalizeText(quotedMatch[1]);
 
-function isActivityNotification(item) {
-	return item?.type === "actividad" || item?.type === "revision" || item?.themeKey === "activity" || item?.themeKey === "activity-change" || item?.themeKey === "review";
-}
+	const editMatch = detail.match(/actividad\s+(.+?)\s+(?:para\s+revisión|para\s+revision|para\s+revisi[oó]n|\.|,|$)/i);
+	if (editMatch?.[1]) return normalizeText(editMatch[1]);
 
-function isSystemNotification(item) {
-	return !isActivityNotification(item);
-}
+	const titleMatch = title.match(/actividad\s+(.+)$/i);
+	if (titleMatch?.[1]) return normalizeText(titleMatch[1]);
 
-function getThemeColorClass(item) {
-	if (isReviewNotification(item)) {
-		return "bg-[#e9f1ff] text-[#2f5fb3]";
- 	}
-
-	if (isActivityNotification(item)) {
-		return "bg-[#e8f7ec] text-[var(--primary)]";
- 	}
-
-	return "bg-[#ffe8e8] text-[#d43c3c]";
-}
-
-function getFilterButtonClass(key, active) {
-	const inactive = {
-		"activity-change": "border-[#93d5ab] bg-white text-[var(--primary)] hover:bg-[#f6fbf7]",
-		general: "border-[#ef9a8f] bg-white text-[#d43c3c] hover:bg-[#fff7f5]"
-	};
-
-	if (active) {
-		return {
-			"activity-change": "bg-[#f5fbf6] text-[var(--primary)] border-[var(--primary)] shadow-[0_8px_16px_-12px_rgba(5,166,61,0.22)]",
-			general: "bg-[#fff6f4] text-[#b53a2f] border-[red] shadow-[0_8px_16px_-12px_rgba(212,60,60,0.22)]"
-		}[key] || "bg-[#f4f7f5] text-[var(--text)] border-[#6e8474] shadow-[0_8px_16px_-12px_rgba(16,24,40,0.16)]";
-	}
-
-	return inactive[key] || "border border-[#d0ded5] bg-white text-[var(--text)] hover:bg-[#f6faf7]";
+	return "";
 }
 
 function getHeaderLabel(item) {
-	if (isActivityNotification(item)) return "Actividad";
-	if (item?.type === "sistema" || item?.themeKey === "general") return "Sistema";
+	if (item?.type === "sistema") return "Notificación de sistema";
+	if (item?.themeKey === "review") return "Aprobación / rechazo";
+	if (item?.type === "actividad" || item?.themeKey === "activity" || item?.themeKey === "activity-change") return "Actividad";
 	return "Sistema";
 }
 
+function getNotificationDisplay(item) {
+	return getNotificationPresentation(item);
+}
+
 function getHeaderLabelClass(item) {
-	if (isActivityNotification(item)) {
-		return "bg-[#e8f7ec] text-[var(--primary)]";
+	if (item?.themeKey === "review") {
+		return "bg-[#ffe8e8] text-[#d43c3c]";
 	}
 
-	return "bg-[#ffe8e8] text-[#d43c3c]";
+	if (item?.type === "sistema") {
+		return "bg-[#ffe8e8] text-[#d43c3c]";
+	}
+
+	return "bg-[#eef8f1] text-[var(--primary)]";
 }
 
 function pillClass(themeKey, read) {
-	return "bg-[#f2f4f7] text-[#64748b]";
+	if (themeKey === "review") {
+		return "bg-[#ffe8e8] text-[#d43c3c]";
+	}
+
+	if (themeKey === "activity-change") {
+		return "bg-[#e8f0ff] text-[#294b86]";
+	}
+
+	return "bg-[#eef8f1] text-[#2e5a45]";
 }
 
 function getSourceClass(item) {
-	if (isActivityNotification(item)) return "bg-[#e8f7ec] text-[var(--primary)]";
-	return "bg-[#ffe8e8] text-[#d43c3c]";
+	return item?.type === "actividad" ? "bg-[#e8f7ec] text-[var(--primary)]" : "bg-[#ffe8e8] text-[#d43c3c]";
 }
 
 function getDisplayTitle(item) {
+	if (item?.type === "sistema") return item?.title || "Notificación de sistema";
 	const activityTitle = getActivityTitle(item);
-	const title = normalizeText(item?.title);
-	const lowerTitle = title.toLowerCase();
-
-	if (isActivityNotification(item)) {
-		if (lowerTitle.includes("rechaz")) return activityTitle ? `Rechazo de propuesta actividad "${activityTitle}"` : "Rechazo de propuesta actividad";
-		if (lowerTitle.includes("aprobad")) return activityTitle ? `Aprobación de propuesta actividad "${activityTitle}"` : "Aprobación de propuesta actividad";
-		return activityTitle ? `${title || "Actividad"} "${activityTitle}"` : title || "Actividad";
+	const title = String(item.title || "").toLowerCase();
+	if (title.includes("edición") || title.includes("edicion")) {
+		if (title.includes("rechaz")) return activityTitle ? `Edición de actividad rechazada "${activityTitle}"` : "Edición de actividad rechazada";
+		if (title.includes("aprobad")) return activityTitle ? `Edición de actividad aprobada "${activityTitle}"` : "Edición de actividad aprobada";
+		return activityTitle ? `Edición de actividad "${activityTitle}"` : "Edición de actividad";
 	}
-
-	return title || "Notificación";
+	if (title.includes("rechaz")) return activityTitle ? `Rechazo propuesta actividad "${activityTitle}"` : "Rechazo propuesta actividad";
+	if (title.includes("aprobad")) return activityTitle ? `Aprobación de propuesta actividad "${activityTitle}"` : "Aprobación propuesta actividad";
+	return activityTitle ? `${item.title || "Notificación"} "${activityTitle}"` : item.title || "Notificación";
 }
 
 function getDisplayDetail(item) {
@@ -106,29 +97,36 @@ function getDisplayDetail(item) {
 	const lowerTitle = title.toLowerCase();
 	const lowerDetail = detail.toLowerCase();
 
-	if (isActivityNotification(item)) {
+	if (item?.themeKey === "review" || lowerTitle.includes("aprob") || lowerTitle.includes("rechaz")) {
+		if (activityTitle && !detail) {
+			return `Actividad: "${activityTitle}"`;
+		}
+
+		return detail ? `Razón: ${detail}` : "Razón no especificada.";
+	}
+
+	if (item?.type === "actividad" || item?.themeKey === "activity" || item?.themeKey === "activity-change") {
 		if (item?.themeKey === "activity-change") {
-			if (activityTitle && detail) return `Actividad: "${activityTitle}". ${detail}`;
-			return detail || (activityTitle ? `Actividad: "${activityTitle}"` : "Actividad actualizada.");
+			return detail || (activityTitle ? `Se actualizó "${activityTitle}".` : "Actividad actualizada.");
 		}
 
 		if (lowerTitle.includes("rechaz")) {
-			if (activityTitle && detail) return `Actividad: "${activityTitle}". ${detail}`;
-			return activityTitle ? `Actividad: "${activityTitle}".` : detail || "Se rechazó la actividad.";
+			return activityTitle ? `Se rechazó "${activityTitle}".` : detail || "Se rechazó la actividad.";
 		}
 
 		if (lowerTitle.includes("aprobad")) {
-			if (activityTitle && detail) return `Actividad: "${activityTitle}". ${detail}`;
-			return activityTitle ? `Actividad: "${activityTitle}".` : detail || "Se aprobó la actividad.";
+			return activityTitle ? `Se aprobó "${activityTitle}".` : detail || "Se aprobó la actividad.";
 		}
 
 		if (activityTitle && (lowerDetail.includes("revisi") || lowerDetail.includes("creó") || lowerDetail.includes("creo"))) {
 			return `Se creó "${activityTitle}" para revisión.`;
 		}
 
-		if (activityTitle && detail) return `Actividad: "${activityTitle}". ${detail}`;
-		if (activityTitle) return `Actividad: "${activityTitle}"`;
-		return detail || "Actividad actualizada.";
+		if (activityTitle) {
+			return `Actividad: "${activityTitle}"`;
+		}
+
+		return detail || (activityTitle ? `Actividad: "${activityTitle}"` : "Actividad actualizada.");
 	}
 
 	return detail || "";
@@ -151,15 +149,7 @@ export default function AdminNotifications() {
 			return notifications;
 		}
 
-		if (filter === "activity-change") {
-			return notifications.filter(item => isActivityNotification(item));
-		}
-
-		if (filter === "general") {
-			return notifications.filter(item => isSystemNotification(item));
-		}
-
-		return notifications;
+		return notifications.filter(item => item.themeKey === filter);
 	}, [filter, notifications]);
 
 	async function loadNotifications() {
@@ -288,6 +278,7 @@ export default function AdminNotifications() {
 					</button>
 					<button type="button" className="inline-flex items-center gap-2 rounded-sm border border-[var(--primary)] bg-[var(--primary)] px-3.5 py-2 text-[0.9rem] font-semibold text-white hover:bg-[var(--primary-strong)]" onClick={openModal}>
 						<Send className="h-4 w-4" strokeWidth={1.9} />
+						Publicar aviso
 					</button>
 				</div>
 			</header>
@@ -304,7 +295,7 @@ export default function AdminNotifications() {
 							<button
 								key={item.key}
 								type="button"
-								className={`rounded-sm border px-3 py-2 text-[0.84rem] font-semibold transition-all ${getFilterButtonClass(item.key, filter === item.key)}`}
+								className={`rounded-sm px-3 py-2 text-[0.84rem] font-semibold transition-colors ${filter === item.key ? "bg-[var(--primary)] text-white" : "border border-[#d0ded5] bg-white text-[var(--text)] hover:bg-[#f6faf7]"}`}
 								onClick={() => setFilter(item.key)}
 							>
 								{item.label}
@@ -341,14 +332,14 @@ export default function AdminNotifications() {
 											{getHeaderLabel(item)}
 										</span>
 									</div>
-									<h3 className="m-0 text-[1rem] font-semibold leading-tight text-[var(--text)]">{getDisplayTitle(item)}</h3>
-									<p className="m-0 text-[0.92rem] leading-relaxed text-[var(--text-muted)]">{getDisplayDetail(item)}</p>
+									<h3 className="m-0 text-[1rem] font-semibold leading-tight text-[var(--text)]">{getNotificationDisplay(item).title}</h3>
+									<p className="m-0 whitespace-pre-line text-[0.92rem] leading-relaxed text-[var(--text-muted)]">{getNotificationDisplay(item).detail}</p>
 								</div>
 
 								<div className="flex flex-col items-end gap-2 self-start max-[760px]:items-start lg:pt-1">
-									<span className={`inline-flex rounded-md px-2 py-1 text-[0.75rem] font-semibold ${pillClass(item.themeKey)}`}>{item.date}</span>
+									<span className="inline-flex rounded-md bg-[#eef8f1] px-2 py-1 text-[0.75rem] font-semibold text-[#2e5a45]">{item.date}</span>
 									{item.themeKey === "general" && (
-										<span className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-[0.72rem] font-semibold ${getThemeColorClass(item)}`}>
+										<span className="inline-flex items-center gap-1 rounded-md bg-[#edf1ff] px-2 py-1 text-[0.72rem] font-semibold text-[#39559a]">
 											<Megaphone className="h-3.5 w-3.5" strokeWidth={1.9} />
 											Aviso
 										</span>

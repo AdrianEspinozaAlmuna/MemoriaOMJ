@@ -23,21 +23,27 @@ import AdminRoom from "./pages/adminRoom";
 import AdminImagesManager from "./pages/adminImagesManager";
 import ActivityDetail from "./pages/activityDetail";
 import { AdminProtectedRoute, ParticipantProtectedRoute, PublicOnlyRoute } from "./components/RouteGuards";
-import { normalizeNotification } from "./services/notificationsService";
+import { getNotificationPresentation, normalizeNotification } from "./services/notificationsService";
 import { onForegroundMessage } from "./services/firebase";
 
 function buildForegroundNotification(payload = {}) {
-  const title = String(payload?.notification?.title || payload?.data?.title || "Notificación").trim();
+  const title = String(payload?.notification?.title || payload?.data?.title || "").trim();
   const body = String(payload?.notification?.body || payload?.data?.body || "").trim();
   const activityId = payload?.data?.activityId ? Number(payload.data.activityId) : null;
   const receiverId = payload?.data?.receiverId ? Number(payload.data.receiverId) : null;
   const notificationId = payload?.data?.notificationId ? Number(payload.data.notificationId) : null;
+  const type = String(payload?.data?.type || "sistema").toLowerCase();
+  const presentation = getNotificationPresentation({
+    titulo: title,
+    descripcion: body,
+    tipo: type
+  });
 
   return normalizeNotification({
     id_notificacion: notificationId,
-    titulo: title,
-    descripcion: body,
-    tipo: String(payload?.data?.type || "sistema"),
+    titulo: presentation.title,
+    descripcion: presentation.detail,
+    tipo: type,
     id_actividad: Number.isInteger(activityId) ? activityId : null,
     id_receptor: Number.isInteger(receiverId) ? receiverId : null
   });
@@ -68,9 +74,11 @@ export default function App() {
       }
 
       try {
-        new Notification(notification.title || "Notificación", {
+        new Notification(notification.title || "Notificación de Sistema", {
           body: notification.detail || notification.descripcion || "",
           icon: "/icons/icon-192.png",
+          tag: String(notification.id || notification.id_notificacion || notificationKey || "notification"),
+          renotify: false,
           data: {
             url: notification.activityId ? `/user/actividad/${notification.activityId}` : "/user/notificaciones"
           }

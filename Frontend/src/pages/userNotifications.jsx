@@ -2,13 +2,15 @@ import React, { useEffect, useMemo, useState } from "react";
 import { BellRing, LoaderCircle, RefreshCw } from "lucide-react";
 import { io } from "socket.io-client";
 import { getMyNotifications } from "../services/notificationsService";
+import { getNotificationPresentation } from "../services/notificationsService";
 import { API_BASE_URL } from "../services/api";
 
 const SOCKET_BASE_URL = (import.meta.env.VITE_SOCKET_URL || API_BASE_URL).replace(/\/api\/?$/, "");
 
 const filters = [
   { key: "all", label: "Todas" },
-  { key: "activity-change", label: "Actividad" },
+  { key: "review", label: "Aprobación / rechazo" },
+  { key: "activity-change", label: "Cambios de actividad" },
   { key: "general", label: "Sistema" }
 ];
 
@@ -17,65 +19,68 @@ function normalizeText(value) {
 }
 
 function getActivityTitle(item) {
-  return normalizeText(item?.activityTitle || item?.activity?.title || item?.actividad?.titulo || "");
-}
+  const directTitle = normalizeText(item?.activity?.title || item?.actividad?.titulo || item?.activityTitle || "");
+  if (directTitle) return directTitle;
 
-function isReviewNotification(item) {
-  const title = normalizeText(item?.title).toLowerCase();
-  return item?.themeKey === "review" || title.includes("aprob") || title.includes("rechaz");
-}
+  const title = normalizeText(item?.title);
+  const detail = normalizeText(item?.detail);
+  const quotedMatch = detail.match(/"([^"]+)"/);
+  if (quotedMatch?.[1]) return normalizeText(quotedMatch[1]);
 
-function isActivityNotification(item) {
-  return item?.type === "actividad" || item?.themeKey === "activity" || item?.themeKey === "activity-change" || item?.themeKey === "review";
-}
+  const editMatch = detail.match(/actividad\s+(.+?)\s+(?:para\s+revisión|para\s+revision|para\s+revisi[oó]n|\.|,|$)/i);
+  if (editMatch?.[1]) return normalizeText(editMatch[1]);
 
-function isSystemNotification(item) {
-  return !isActivityNotification(item);
-}
+  const titleMatch = title.match(/actividad\s+(.+)$/i);
+  if (titleMatch?.[1]) return normalizeText(titleMatch[1]);
 
-function badgeClass(themeKey) {
-  return "bg-[#f2f4f7] text-[#64748b]";
-}
-
-function getFilterButtonClass(key, active) {
-  const inactive = {
-    "activity-change": "border-[#93d5ab] bg-white text-[var(--primary)] hover:bg-[#f6fbf7]",
-    general: "border-[#ef9a8f] bg-white text-[#d43c3c] hover:bg-[#fff7f5]"
-  };
-
-  if (active) {
-    return {
-      "activity-change": "bg-[#f5fbf6] text-[var(--primary)] border-[var(--primary)] shadow-[0_8px_16px_-12px_rgba(5,166,61,0.22)]",
-      general: "bg-[#fff6f4] text-[#b53a2f] border-[red] shadow-[0_8px_16px_-12px_rgba(212,60,60,0.22)]"
-    }[key] || "bg-[#f4f7f5] text-[var(--text)] border-[#6e8474] shadow-[0_8px_16px_-12px_rgba(16,24,40,0.16)]";
-  }
-
-  return inactive[key] || "border border-[#d0ded5] bg-white text-[var(--text)] hover:bg-[#f6faf7]";
+  return "";
 }
 
 function getHeaderLabel(item) {
-  if (isActivityNotification(item)) return "Actividad";
-  if (item?.type === "sistema" || item?.themeKey === "general") return "Generales";
+  if (item?.type === "sistema") return "Notificación de sistema";
+  if (item?.themeKey === "review") return "Aprobación / rechazo";
+  if (item?.type === "actividad" || item?.themeKey === "activity" || item?.themeKey === "activity-change") return "Actividad";
   return "Sistema";
 }
 
+function getNotificationDisplay(item) {
+  return getNotificationPresentation(item);
+}
+
 function getHeaderLabelClass(item) {
-  if (isActivityNotification(item)) return "bg-[#e8f7ec] text-[var(--primary)]";
-  return "bg-[#ffe8e8] text-[#d43c3c]";
+  if (item?.themeKey === "review") {
+    return "bg-[#ffe8e8] text-[#d43c3c]";
+  }
+
+  if (item?.type === "sistema") {
+    return "bg-[#ffe8e8] text-[#d43c3c]";
+  }
+
+  return "bg-[#eef8f1] text-[var(--primary)]";
+}
+
+function badgeClass(themeKey) {
+  if (themeKey === "review") return "bg-[#ffe8e8] text-[#d43c3c]";
+  if (themeKey === "activity-change") return "bg-[#e8f0ff] text-[#294b86]";
+  return "bg-[#eef8f1] text-[#2e5a45]";
+}
+
+function getSourceClass(item) {
+  return item?.type === "actividad" ? "bg-[#e8f7ec] text-[var(--primary)]" : "bg-[#ffe8e8] text-[#d43c3c]";
 }
 
 function getDisplayTitle(item) {
+  if (item?.type === "sistema") return item?.title || "Notificación de sistema";
   const activityTitle = getActivityTitle(item);
-  const title = normalizeText(item?.title);
-  const lowerTitle = title.toLowerCase();
-
-  if (isActivityNotification(item)) {
-    if (lowerTitle.includes("rechaz")) return activityTitle ? `Rechazo de propuesta actividad "${activityTitle}"` : "Rechazo de propuesta actividad";
-    if (lowerTitle.includes("aprobad")) return activityTitle ? `Aprobación de propuesta actividad "${activityTitle}"` : "Aprobación de propuesta actividad";
-    return activityTitle ? `${title || "Actividad"} "${activityTitle}"` : title || "Actividad";
+  const title = String(item.title || "").toLowerCase();
+  if (title.includes("edición") || title.includes("edicion")) {
+    if (title.includes("rechaz")) return activityTitle ? `Edición de actividad rechazada "${activityTitle}"` : "Edición de actividad rechazada";
+    if (title.includes("aprobad")) return activityTitle ? `Edición de actividad aprobada "${activityTitle}"` : "Edición de actividad aprobada";
+    return activityTitle ? `Edición de actividad "${activityTitle}"` : "Edición de actividad";
   }
-
-  return title || "Notificación";
+  if (title.includes("rechaz")) return activityTitle ? `Rechazo propuesta actividad "${activityTitle}"` : "Rechazo propuesta actividad";
+  if (title.includes("aprobad")) return activityTitle ? `Aprobación de propuesta actividad "${activityTitle}"` : "Aprobación de propuesta actividad";
+  return activityTitle ? `${item.title || "Notificación"} "${activityTitle}"` : item.title || "Notificación";
 }
 
 function getDisplayDetail(item) {
@@ -85,29 +90,32 @@ function getDisplayDetail(item) {
   const lowerTitle = title.toLowerCase();
   const lowerDetail = detail.toLowerCase();
 
-  if (isActivityNotification(item)) {
+  if (item?.themeKey === "review" || lowerTitle.includes("aprob") || lowerTitle.includes("rechaz")) {
+    if (activityTitle && !detail) {
+      return `Actividad: "${activityTitle}"`;
+    }
+
+    return detail ? `Razón: ${detail}` : "Razón no especificada.";
+  }
+
+  if (item?.type === "actividad" || item?.themeKey === "activity" || item?.themeKey === "activity-change") {
     if (item?.themeKey === "activity-change") {
-      if (activityTitle && detail) return `Actividad: "${activityTitle}". ${detail}`;
-      return detail || (activityTitle ? `Actividad: "${activityTitle}"` : "Actividad actualizada.");
+      return detail || (activityTitle ? `Se actualizó "${activityTitle}".` : "Actividad actualizada.");
     }
 
     if (lowerTitle.includes("rechaz")) {
-      if (activityTitle && detail) return `Actividad: "${activityTitle}". ${detail}`;
-      return activityTitle ? `Actividad: "${activityTitle}".` : detail || "Se rechazó la actividad.";
+      return activityTitle ? `Se rechazó "${activityTitle}".` : detail || "Se rechazó la actividad.";
     }
 
     if (lowerTitle.includes("aprobad")) {
-      if (activityTitle && detail) return `Actividad: "${activityTitle}". ${detail}`;
-      return activityTitle ? `Actividad: "${activityTitle}".` : detail || "Se aprobó la actividad.";
+      return activityTitle ? `Se aprobó "${activityTitle}".` : detail || "Se aprobó la actividad.";
     }
 
     if (activityTitle && (lowerDetail.includes("revisi") || lowerDetail.includes("creó") || lowerDetail.includes("creo"))) {
       return `Se creó "${activityTitle}" para revisión.`;
     }
 
-    if (activityTitle && detail) return `Actividad: "${activityTitle}". ${detail}`;
-    if (activityTitle) return `Actividad: "${activityTitle}"`;
-    return detail || "Actividad actualizada.";
+    return detail || (activityTitle ? `Actividad: "${activityTitle}"` : "Actividad actualizada.");
   }
 
   return detail || "";
@@ -115,6 +123,7 @@ function getDisplayDetail(item) {
 
 export default function UserNotifications() {
   const [notifications, setNotifications] = useState([]);
+  // unread count UI removed per request
   const [filter, setFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -122,13 +131,7 @@ export default function UserNotifications() {
 
   const visibleNotifications = useMemo(() => {
     if (filter === "all") return notifications;
-    if (filter === "activity-change") {
-      return notifications.filter(item => isActivityNotification(item));
-    }
-    if (filter === "general") {
-      return notifications.filter(item => isSystemNotification(item));
-    }
-    return notifications;
+    return notifications.filter(item => item.themeKey === filter);
   }, [filter, notifications]);
 
   async function loadNotifications() {
@@ -212,14 +215,16 @@ export default function UserNotifications() {
           <p className="mt-2 text-[0.92rem] text-[var(--text-muted)]">Revisa aprobaciones, cambios en tus actividades y avisos generales desde la PWA.</p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
           <button type="button" className="inline-flex items-center gap-2 rounded-sm border border-[#cfded5] bg-white px-3.5 py-2 text-[0.9rem] font-semibold text-[var(--text)] hover:bg-[#f6faf7]" onClick={handleRefresh} disabled={refreshing}>
             {refreshing ? <LoaderCircle className="h-4 w-4 animate-spin" strokeWidth={1.9} /> : <RefreshCw className="h-4 w-4" strokeWidth={1.9} />}
             Actualizar
           </button>
         </div>
       </header>
+
       <section className="rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-6 shadow-sm">
+
         <div className="mb-4 flex items-center justify-between gap-3 max-[760px]:flex-col max-[760px]:items-start">
           <div>
             <h2 className="m-0 text-[1rem] font-semibold text-[var(--text)]">Bandeja personal</h2>
@@ -231,7 +236,7 @@ export default function UserNotifications() {
               <button
                 key={item.key}
                 type="button"
-                className={`rounded-md border px-3 py-2 text-[0.84rem] font-semibold transition-all ${getFilterButtonClass(item.key, filter === item.key)}`}
+                className={`rounded-md px-3 py-2 text-[0.84rem] font-semibold transition-colors ${filter === item.key ? "bg-[var(--primary)] text-white" : "border border-[#d0ded5] bg-white text-[var(--text)] hover:bg-[#f6faf7]"}`}
                 onClick={() => setFilter(item.key)}
               >
                 {item.label}
@@ -259,7 +264,7 @@ export default function UserNotifications() {
             {visibleNotifications.map(item => (
               <div
                 key={item.id}
-                className="grid gap-4 rounded-[14px] border border-[#d8e6dd] bg-white px-4 py-4 text-left shadow-[0_8px_18px_-20px_rgba(16,24,40,0.28)] lg:grid-cols-[auto_1fr_auto] lg:items-start"
+                className={`grid gap-4 rounded-[14px] border px-4 py-4 text-left shadow-[0_8px_18px_-20px_rgba(16,24,40,0.28)] lg:grid-cols-[auto_1fr_auto] lg:items-start border-[#d8e6dd] bg-white`}
               >
                 <div className="inline-flex h-11 w-11 items-center justify-center rounded-[12px] bg-white text-[var(--primary)] shadow-[0_6px_14px_-12px_rgba(16,24,40,0.35)]">
                   <BellRing className="h-4 w-4" strokeWidth={1.9} />
@@ -271,12 +276,12 @@ export default function UserNotifications() {
                       {getHeaderLabel(item)}
                     </span>
                   </div>
-                  <h3 className="m-0 text-[1rem] font-semibold leading-tight text-[var(--text)]">{getDisplayTitle(item)}</h3>
-                  <p className="m-0 text-[0.92rem] leading-relaxed text-[var(--text-muted)]">{getDisplayDetail(item)}</p>
+                  <h3 className="m-0 text-[1rem] font-semibold leading-tight text-[var(--text)]">{getNotificationDisplay(item).title}</h3>
+                  <p className="m-0 whitespace-pre-line text-[0.92rem] leading-relaxed text-[var(--text-muted)]">{getNotificationDisplay(item).detail}</p>
                 </div>
 
                 <div className="flex flex-col items-end gap-2 self-start max-[760px]:items-start lg:pt-1">
-                  <span className={`inline-flex rounded-md px-2 py-1 text-[0.75rem] font-semibold ${badgeClass(item.themeKey)}`}>{item.date}</span>
+                  <span className="inline-flex rounded-md bg-[#eef8f1] px-2 py-1 text-[0.75rem] font-semibold text-[#2e5a45]">{item.date}</span>
                 </div>
               </div>
             ))}
