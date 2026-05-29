@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Bell, BellRing, CalendarDays, ChevronRight, UserCheck, Home, LayoutDashboard, ListChecks, LoaderCircle, LogOut, Menu, RefreshCw, UserRound, Users } from "lucide-react";
+import { Bell, BellRing, CalendarDays, ChevronRight, UserCheck, Home, LayoutDashboard, ListChecks, LoaderCircle, LogOut, Menu, RefreshCw, UserRound, Users, X } from "lucide-react";
 import { Link, NavLink } from "react-router-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
@@ -241,7 +241,7 @@ export default function Navbar() {
 
 	useEffect(() => {
 		function handleResize() {
-			if (window.innerWidth > 860) {
+			if (window.innerWidth > 980) {
 				setMobileMenuOpen(false);
 			}
 		}
@@ -249,6 +249,17 @@ export default function Navbar() {
 		window.addEventListener("resize", handleResize);
 		return () => window.removeEventListener("resize", handleResize);
 	}, []);
+
+	useEffect(() => {
+		if (typeof document === "undefined") return undefined;
+
+		const previousOverflow = document.body.style.overflow;
+		document.body.style.overflow = mobileMenuOpen ? "hidden" : previousOverflow;
+
+		return () => {
+			document.body.style.overflow = previousOverflow;
+		};
+	}, [mobileMenuOpen]);
 
 	function handleLogout() {
 		localStorage.removeItem("token");
@@ -265,8 +276,7 @@ export default function Navbar() {
 
 	function openMobileMenu(event) {
 		if (typeof window !== "undefined") {
-			const buttonRect = event?.currentTarget?.getBoundingClientRect?.();
-			setMobileMenuTop(Number.isFinite(buttonRect?.bottom) ? Math.round(buttonRect.bottom + 8) : Math.round(window.scrollY || window.pageYOffset || 0));
+			setMobileMenuTop(0);
 		}
 
 		setMobileMenuOpen(previous => !previous);
@@ -332,7 +342,8 @@ export default function Navbar() {
 
 	const navLinkClass = ({ isActive }) =>
 		[
-			"inline-flex items-center gap-1.5 rounded-sm px-3.5 py-2 text-[0.92rem] font-semibold leading-none text-[#355447] [transition:background-color_150ms_ease,color_120ms_ease] hover:bg-[#def3e7] hover:text-[var(--primary-strong)] active:bg-[var(--primary-active)]",
+			"flex items-center gap-2 rounded-sm py-2 text-[0.92rem] font-semibold text-[#355447] [transition:background-color_150ms_ease,color_120ms_ease] hover:bg-[#edf2ef] hover:text-[#162a1e] focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_rgba(5,166,61,0.15)]",
+			"px-3",
 			isActive ? "bg-[var(--primary-active)] !text-[var(--primary-strong)]" : ""
 		].join(" ");
 
@@ -351,85 +362,121 @@ export default function Navbar() {
 
 		return (
 			<>
-				<button
-					type="button"
-					className="fixed inset-0 z-[40] hidden bg-[#10261a]/20 max-[860px]:block"
-					onClick={() => setMobileMenuOpen(false)}
-					aria-label="Cerrar menu de usuario"
-				/>
-				<div className="fixed left-0 right-0 z-[41] hidden max-[860px]:block" style={{ top: `${mobileMenuTop}px` }}>
-					<div className="mx-4 max-h-[calc(100dvh-1rem)] overflow-y-auto rounded-xl bg-white/95 p-2.5 shadow-[0_12px_24px_-18px_rgba(8,38,23,0.45)] backdrop-blur">
-						<div className="grid gap-2.5">
-							{isAuthenticated && rol === "participante" && <p className="text-[0.82rem] font-semibold text-[#6f8278]">Panel de usuario</p>}
-
-							<div className="grid gap-1" aria-label="Navegacion de usuario">
-								{isAuthenticated && rol === "participante" && (
-									<NavLink to="/user/dashboard" onClick={handleNavItemClick} className={navLinkClass}>
-										<NavIcon name="home" />
-										Inicio
-									</NavLink>
-								)}
-
-								{isAuthenticated && isAdmin && (
-									<NavLink to="/admin/dashboard" onClick={handleNavItemClick} className={navLinkClass}>
-										<NavIcon name="admin" />
-										Panel admin
-									</NavLink>
-								)}
-
-								{isAuthenticated && rol === "participante" && (
-									<>
-										<NavLink to="/user/calendario" onClick={handleNavItemClick} className={navLinkClass}>
-											<NavIcon name="calendar" />
-											Calendario
-										</NavLink>
-										<NavLink to="/user/mis-actividades" onClick={handleNavItemClick} className={navLinkClass}>
-											<NavIcon name="activities" />
-											Mis actividades
-										</NavLink>
-										<NavLink to="/user/asistencia" onClick={handleNavItemClick} className={navLinkClass}>
-											<NavIcon name="attendance" />
-											Mis asistencias
-										</NavLink>
-										<NavLink to="/user/grupos" onClick={handleNavItemClick} className={navLinkClass}>
-											<NavIcon name="groups" />
-											Mis Grupos
-										</NavLink>
-									</>
-								)}
-							</div>
-
-							{!isAuthenticated && (
-								<div className="grid gap-2 pt-1">
-									<NavLink to="/login" className="btn btn-ghost w-full" onClick={handleNavItemClick}>
-										Iniciar sesion
-									</NavLink>
-									<NavLink to="/register" className="btn btn-primary w-full" onClick={handleNavItemClick}>
-										Registrarse
-									</NavLink>
-								</div>
-							)}
+				{mobileMenuOpen && (
+					<button
+						type="button"
+						className="fixed inset-0 z-30 hidden bg-[#10261a]/20 max-[980px]:block"
+						style={{ top: mobileMenuTop, height: "100dvh" }}
+						onClick={() => setMobileMenuOpen(false)}
+						aria-label="Cerrar menu de usuario"
+					/>
+				)}
+				<aside
+					className={`${mobileMenuOpen ? "max-[980px]:translate-x-0" : "max-[980px]:-translate-x-[110%]"} border-r border-[#e0e5e2] bg-[white] px-3 pb-4 pt-3 min-[981px]:sticky min-[981px]:top-0 min-[981px]:h-screen min-[981px]:overflow-y-auto min-[981px]:flex min-[981px]:flex-col max-[980px]:fixed max-[980px]:left-0 max-[980px]:top-0 max-[980px]:z-[35] max-[980px]:w-[236px] max-[980px]:overflow-y-auto max-[980px]:overscroll-contain max-[980px]:pb-[calc(1rem+env(safe-area-inset-bottom))] max-[980px]:shadow-[0_16px_28px_-18px_rgba(10,27,16,0.5)] max-[980px]:transition-transform max-[980px]:duration-200`}
+					style={mobileMenuOpen ? { top: mobileMenuTop, height: "100dvh", maxHeight: "100dvh" } : undefined}
+				>
+					<div className="mb-3 flex items-center gap-2 px-2">
+						<img src="/iconOMJ.jpg" alt="OMJ" className="h-7 w-7 rounded-md border border-[#d8dfda]" />
+						<div className="min-w-0">
+							<p className="m-0 truncate text-[0.84rem] font-semibold text-[#455b50]">Oficina Municipal Juvenil Curicó</p>
+							<p className="m-0 text-[0.75rem] text-[#7a8881]">Acceso participante</p>
 						</div>
 					</div>
-				</div>
+
+					<nav className="grid gap-1" aria-label="Menu de usuario">
+						{isAuthenticated && rol === "participante" && (
+							<NavLink to="/user/dashboard" onClick={handleNavItemClick} className={navLinkClass}>
+								<span className="inline-flex h-5 w-5 shrink-0 items-center justify-center">
+									<NavIcon name="home" className="h-[18px] w-[18px] shrink-0" />
+								</span>
+								<span>Inicio</span>
+							</NavLink>
+						)}
+
+						{isAuthenticated && rol === "participante" && (
+							<>
+								<NavLink to="/user/calendario" onClick={handleNavItemClick} className={navLinkClass}>
+									<span className="inline-flex h-5 w-5 shrink-0 items-center justify-center">
+										<NavIcon name="calendar" className="h-[18px] w-[18px] shrink-0" />
+									</span>
+									<span>Calendario</span>
+								</NavLink>
+								<NavLink to="/user/mis-actividades" onClick={handleNavItemClick} className={navLinkClass}>
+									<span className="inline-flex h-5 w-5 shrink-0 items-center justify-center">
+										<NavIcon name="activities" className="h-[18px] w-[18px] shrink-0" />
+									</span>
+									<span>Mis actividades</span>
+								</NavLink>
+								<NavLink to="/user/asistencia" onClick={handleNavItemClick} className={navLinkClass}>
+									<span className="inline-flex h-5 w-5 shrink-0 items-center justify-center">
+										<NavIcon name="attendance" className="h-[18px] w-[18px] shrink-0" />
+									</span>
+									<span>Mis asistencias</span>
+								</NavLink>
+								<NavLink to="/user/grupos" onClick={handleNavItemClick} className={navLinkClass}>
+									<span className="inline-flex h-5 w-5 shrink-0 items-center justify-center">
+										<NavIcon name="groups" className="h-[18px] w-[18px] shrink-0" />
+									</span>
+									<span>Mis Grupos</span>
+								</NavLink>
+							</>
+						)}
+
+						{!isAuthenticated && (
+							<div className="mt-4 grid gap-2">
+								<NavLink to="/login" className="btn btn-ghost w-full" onClick={handleNavItemClick}>
+									Iniciar sesion
+								</NavLink>
+								<NavLink to="/register" className="btn btn-primary w-full" onClick={handleNavItemClick}>
+									Registrarse
+								</NavLink>
+							</div>
+						)}
+					</nav>
+
+					{isAuthenticated && (
+						<div className="mt-5 border-t border-[#e2e6e3] pt-3">
+							<p className="mb-2 px-2 text-[0.74rem] font-semibold uppercase tracking-[0.08em] text-[#829087]">Cuenta</p>
+
+							<div className="grid gap-2">
+								<div className="rounded-lg px-3 py-2.5 text-left text-[0.9rem] font-semibold text-[#2f463a] inline-flex items-center gap-2">
+									<span className="grid h-8 w-8 place-items-center rounded-full bg-[#eef8f2] text-[var(--primary-strong)]">
+										<UserRound aria-hidden="true" focusable="false" className="h-4 w-4" strokeWidth={2} />
+									</span>
+									<span className="grid min-w-0">
+										<span className="truncate">{fullName}</span>
+										{mergedUser?.mail && <span className="truncate text-[0.74rem] font-normal text-[#7a8881]">{mergedUser.mail}</span>}
+									</span>
+								</div>
+
+								<button
+									type="button"
+									onClick={handleLogout}
+									className="inline-flex w-full items-center rounded-sm border border-[var(--reject-hover)] bg-white py-2 text-left text-[0.84rem] font-semibold text-[var(--reject-hover)] hover:bg-[#ffefed] gap-2 px-2.5"
+								>
+									<LogOut aria-hidden="true" focusable="false" className="h-4 w-4" strokeWidth={2} />
+									<span>Cerrar sesion</span>
+								</button>
+							</div>
+						</div>
+					)}
+				</aside>
 			</>
 		);
 	}
 
 	return (
 		<header className="sticky top-0 z-50 bg-white backdrop-blur shadow-[0_8px_20px_-20px_rgba(6,40,24,0.55)]">
-			<nav className="mx-auto grid min-h-16 w-[min(98vw,1680px)] grid-cols-[auto_1fr_auto] items-center gap-x-8 px-4 sm:px-6 lg:gap-x-10 max-[1120px]:grid-cols-[auto_minmax(0,1fr)_auto] max-[860px]:min-h-[4.2rem] max-[860px]:w-full max-[860px]:grid-cols-[minmax(0,1fr)_auto] max-[860px]:gap-y-2 max-[860px]:py-2" ref={navRef}>
+			<nav className="mx-auto grid min-h-16 w-[min(98vw,1680px)] grid-cols-[auto_1fr_auto] items-center gap-x-8 px-4 sm:px-6 lg:gap-x-10 max-[1120px]:grid-cols-[auto_minmax(0,1fr)_auto] max-[980px]:min-h-[4.2rem] max-[980px]:w-full max-[980px]:grid-cols-[minmax(0,1fr)_auto] max-[980px]:gap-y-2 max-[980px]:py-2" ref={navRef}>
 				<div className="inline-flex items-center gap-2.5 justify-self-start min-[861px]:min-w-0">
 					<button
 						type="button"
-						className="hidden h-[2.15rem] w-[2.15rem] flex-col items-center justify-center gap-[0.22rem] rounded-lg bg-[#eef7f1] p-0 transition-colors duration-200 hover:bg-[#e2f4e9] max-[860px]:inline-flex"
+						className="inline-flex h-10 w-10 items-center justify-center rounded-md text-[var(--text)] hover:bg-[#eef7ef] min-[981px]:hidden"
 						onClick={openMobileMenu}
 						aria-expanded={mobileMenuOpen}
-						aria-label="Abrir menu"
+						aria-label={mobileMenuOpen ? "Cerrar menu de usuario" : "Abrir menu de usuario"}
 					>
-						<span className="block h-[2px] w-4 rounded-full bg-[#325444]" />
-						<span className="block h-[2px] w-4 rounded-full bg-[#325444]" />
-						<span className="block h-[2px] w-4 rounded-full bg-[#325444]" />
+						{mobileMenuOpen ? <X className="h-5 w-5" strokeWidth={1.9} /> : <Menu className="h-5 w-5" strokeWidth={1.9} />}
 					</button>
 
 					<Link to="/" className="inline-flex items-center gap-2.5 justify-self-start min-[861px]:min-w-0">
@@ -440,7 +487,7 @@ export default function Navbar() {
 
 				{renderMobileMenu()}
 
-				<div className="flex w-full flex-nowrap items-center justify-center gap-1.5 justify-self-center max-[1120px]:w-auto max-[1120px]:max-w-full max-[1120px]:min-w-0 max-[1120px]:justify-start max-[1120px]:overflow-x-auto max-[1120px]:pb-1 max-[860px]:hidden" aria-label="Navegacion de usuario">
+				<div className="flex w-full flex-nowrap items-center justify-center gap-1.5 justify-self-center max-[1120px]:w-auto max-[1120px]:max-w-full max-[1120px]:min-w-0 max-[1120px]:justify-start max-[1120px]:overflow-x-auto max-[1120px]:pb-1 max-[980px]:hidden" aria-label="Navegacion de usuario">
 					{isAuthenticated && rol === "participante" && (
 						<NavLink
 							to="/user/dashboard"
@@ -501,7 +548,7 @@ export default function Navbar() {
 					)}
 				</div>
 
-				<div className="relative z-50 flex items-center justify-self-end gap-5 max-[1120px]:gap-3 max-[860px]:col-start-2 max-[860px]:row-start-1 max-[860px]:gap-2">
+				<div className="relative z-50 flex items-center justify-self-end gap-5 max-[1120px]:gap-3 max-[980px]:col-start-2 max-[980px]:row-start-1 max-[980px]:gap-2">
                     
 
 					<div className="flex items-center gap-4 max-[1120px]:gap-1.5">
@@ -527,7 +574,7 @@ export default function Navbar() {
 							</button>
 
 								{notificationsOpen && (
-									<div className="absolute right-0 top-[calc(100%+0.4rem)] z-[21] flex max-h-[min(480px,calc(100dvh-1rem))] w-[min(400px,82vw)] flex-col overflow-hidden rounded-[14px] border border-[#d7e4dc] bg-[color:var(--nav-bg,white)] shadow-[0_18px_32px_-24px_rgba(11,38,24,0.38)] max-[860px]:top-[calc(100%+0.5rem)] max-[860px]:w-[min(320px,calc(100vw-1.4rem))] max-[860px]:max-h-[min(70dvh,420px)] max-[640px]:w-[min(300px,calc(100vw-1rem))]" role="dialog" aria-label="Notificaciones">
+									<div className="absolute right-0 top-[calc(100%+0.4rem)] z-[21] flex max-h-[min(480px,calc(100dvh-1rem))] w-[min(400px,82vw)] flex-col overflow-hidden rounded-[14px] border border-[#d7e4dc] bg-[color:var(--nav-bg,white)] shadow-[0_18px_32px_-24px_rgba(11,38,24,0.38)] max-[980px]:top-[calc(100%+0.5rem)] max-[980px]:w-[min(320px,calc(100vw-1.4rem))] max-[980px]:max-h-[min(70dvh,420px)] max-[640px]:w-[min(300px,calc(100vw-1rem))]" role="dialog" aria-label="Notificaciones">
 									<div className="border-b border-[#e1ebe4] bg-[var(--gray-soft)] px-4 py-3">
 										<p className="m-0 text-[0.78rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Centro de alertas</p>
 										<p className="mt-1 m-0 text-[0.92rem] font-semibold text-[#244235]">Últimas 3 notificaciones</p>
