@@ -9,9 +9,8 @@ const SOCKET_BASE_URL = (import.meta.env.VITE_SOCKET_URL || API_BASE_URL).replac
 
 const filters = [
 	{ key: "all", label: "Todas" },
-	{ key: "review", label: "Aprobación / rechazo" },
-	{ key: "activity-change", label: "Cambios de actividad" },
-	{ key: "general", label: "Generales" }
+	{ key: "activity", label: "Actividad" },
+	{ key: "general", label: "Sistema" }
 ];
 
 function normalizeText(value) {
@@ -37,18 +36,12 @@ function getActivityTitle(item) {
 }
 
 function getHeaderLabel(item) {
-	if (item?.type === "sistema") return "Notificación de sistema";
-	if (item?.themeKey === "review") return "Aprobación / rechazo";
-	if (item?.type === "actividad" || item?.themeKey === "activity" || item?.themeKey === "activity-change") return "Actividad";
-	return "Sistema";
+	if (item?.type === "sistema" || item?.themeKey === "general") return "Sistema";
+	return "Actividad";
 }
 
 function getHeaderLabelClass(item) {
-	if (item?.themeKey === "review") {
-		return "bg-[#ffe8e8] text-[#d43c3c]";
-	}
-
-	if (item?.type === "sistema") {
+	if (item?.type === "sistema" || item?.themeKey === "general") {
 		return "bg-[#ffe8e8] text-[#d43c3c]";
 	}
 
@@ -56,11 +49,11 @@ function getHeaderLabelClass(item) {
 }
 
 function pillClass(themeKey, read) {
-	if (themeKey === "review") {
+	if (themeKey === "general") {
 		return "bg-[#ffe8e8] text-[#d43c3c]";
 	}
 
-	if (themeKey === "activity-change") {
+	if (themeKey === "activity" || themeKey === "activity-change") {
 		return "bg-[#e8f0ff] text-[#294b86]";
 	}
 
@@ -68,20 +61,26 @@ function pillClass(themeKey, read) {
 }
 
 function getSourceClass(item) {
-	return item?.type === "actividad" ? "bg-[#e8f7ec] text-[var(--primary)]" : "bg-[#ffe8e8] text-[#d43c3c]";
+	return item?.type === "sistema" || item?.themeKey === "general"
+		? "bg-[#ffe8e8] text-[#d43c3c]"
+		: "bg-[#e8f7ec] text-[var(--primary)]";
+}
+
+function isActivityNotification(item) {
+	return ["actividad", "activity", "activity-change", "revision"].includes(String(item?.type || item?.themeKey || "").toLowerCase())
+		|| String(item?.title || "").toLowerCase().includes("actividad")
+		|| String(item?.detail || "").toLowerCase().includes("actividad");
 }
 
 function getDisplayTitle(item) {
-	if (item?.type === "sistema") return item?.title || "Notificación de sistema";
+	if (item?.type === "sistema" || item?.themeKey === "general") return item?.title || "Notificación de sistema";
 	const activityTitle = getActivityTitle(item);
 	const title = String(item.title || "").toLowerCase();
 	if (title.includes("edición") || title.includes("edicion")) {
-		if (title.includes("rechaz")) return activityTitle ? `Edición de actividad rechazada "${activityTitle}"` : "Edición de actividad rechazada";
-		if (title.includes("aprobad")) return activityTitle ? `Edición de actividad aprobada "${activityTitle}"` : "Edición de actividad aprobada";
 		return activityTitle ? `Edición de actividad "${activityTitle}"` : "Edición de actividad";
 	}
-	if (title.includes("rechaz")) return activityTitle ? `Rechazo propuesta actividad "${activityTitle}"` : "Rechazo propuesta actividad";
-	if (title.includes("aprobad")) return activityTitle ? `Aprobación de propuesta actividad "${activityTitle}"` : "Aprobación propuesta actividad";
+	if (title.includes("rechaz")) return activityTitle ? `Actividad rechazada "${activityTitle}"` : "Actividad rechazada";
+	if (title.includes("aprobad")) return activityTitle ? `Actividad aprobada "${activityTitle}"` : "Actividad aprobada";
 	return activityTitle ? `${item.title || "Notificación"} "${activityTitle}"` : item.title || "Notificación";
 }
 
@@ -92,7 +91,7 @@ function getDisplayDetail(item) {
 	const lowerTitle = title.toLowerCase();
 	const lowerDetail = detail.toLowerCase();
 
-	if (item?.themeKey === "review" || lowerTitle.includes("aprob") || lowerTitle.includes("rechaz")) {
+	if (lowerTitle.includes("aprob") || lowerTitle.includes("rechaz") || lowerTitle.includes("edición") || lowerTitle.includes("edicion")) {
 		if (activityTitle && !detail) {
 			return `Actividad: "${activityTitle}"`;
 		}
@@ -100,17 +99,9 @@ function getDisplayDetail(item) {
 		return detail ? `Razón: ${detail}` : "Razón no especificada.";
 	}
 
-	if (item?.type === "actividad" || item?.themeKey === "activity" || item?.themeKey === "activity-change") {
-		if (item?.themeKey === "activity-change") {
+	if (isActivityNotification(item)) {
+		if (item?.themeKey === "activity-change" || item?.themeKey === "review") {
 			return detail || (activityTitle ? `Se actualizó "${activityTitle}".` : "Actividad actualizada.");
-		}
-
-		if (lowerTitle.includes("rechaz")) {
-			return activityTitle ? `Se rechazó "${activityTitle}".` : detail || "Se rechazó la actividad.";
-		}
-
-		if (lowerTitle.includes("aprobad")) {
-			return activityTitle ? `Se aprobó "${activityTitle}".` : detail || "Se aprobó la actividad.";
 		}
 
 		if (activityTitle && (lowerDetail.includes("revisi") || lowerDetail.includes("creó") || lowerDetail.includes("creo"))) {
@@ -144,7 +135,13 @@ export default function AdminNotifications() {
 			return notifications;
 		}
 
-		return notifications.filter(item => item.themeKey === filter);
+		return notifications.filter(item => {
+			if (filter === "general") {
+				return item?.themeKey === "general" || item?.type === "sistema";
+			}
+
+			return isActivityNotification(item);
+		});
 	}, [filter, notifications]);
 
 	async function loadNotifications() {
@@ -263,7 +260,7 @@ export default function AdminNotifications() {
 				<div>
 					<p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Panel de administrador</p>
 					<h1 className="mt-2 text-[clamp(1.8rem,2.5vw,2.3rem)] font-bold text-[var(--text)]">Notificaciones</h1>
-					<p className="mt-2 text-[0.92rem] text-[var(--text-muted)]">Aprobaciones, cambios de actividad y avisos generales alimentados desde la BD.</p>
+					<p className="mt-2 text-[0.92rem] text-[var(--text-muted)]">Actividad y sistema alimentados desde la BD.</p>
 				</div>
 
 				<div className="flex flex-wrap items-center gap-2">

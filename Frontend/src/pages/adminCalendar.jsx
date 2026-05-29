@@ -95,11 +95,11 @@ export default function AdminCalendar() {
 						</select>
 					</label>
 					<div className="flex items-end justify-start gap-2 lg:justify-end">
-						<button type="button" className="inline-flex items-center gap-1.5 rounded-sm border border-[var(--primary)] bg-[var(--primary)] px-3.5 py-2 text-[0.84rem] font-semibold text-white transition-all hover:bg-[#0a7f3d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#05a63d]/30" onClick={goToPreviousMonth}>
+						<button type="button" className="inline-flex items-center gap-1.5 rounded-sm border border-[var(--primary)] bg-[white] px-3.5 py-2 text-[0.84rem] font-semibold text-[var(--primary)] transition-all hover:bg-[#0a7f3d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#05a63d]/30" onClick={goToPreviousMonth}>
 							<ChevronLeft className="h-4 w-4" strokeWidth={2} />
 							Mes anterior
 						</button>
-						<button type="button" className="inline-flex items-center gap-1.5 rounded-sm border border-[var(--primary)] bg-[var(--primary)] px-3.5 py-2 text-[0.84rem] font-semibold text-white transition-all hover:bg-[#0a7f3d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#05a63d]/30" onClick={goToNextMonth}>
+						<button type="button" className="inline-flex items-center gap-1.5 rounded-sm border border-[var(--primary)] bg-[white] px-3.5 py-2 text-[0.84rem] font-semibold text-[var(--primary)] transition-all hover:bg-[#0a7f3d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#05a63d]/30" onClick={goToNextMonth}>
 							Mes siguiente
 							<ChevronRight className="h-4 w-4" strokeWidth={2} />
 						</button>

@@ -42,7 +42,7 @@ const I = {
 
 // ─── BRAND MARK (shield + leaf) ────────────────────────────────────────────
 const BrandMark = ({ size = 32 }) => (
-  <svg viewBox="0 0 40 40" width={size} height={size} aria-label="Plataforma Juvenil Curicó">
+  <svg viewBox="0 0 40 40" width={size} height={size} aria-label="OMJ Curicó">
     <path d="M20 3 L34 7 V19 C34 28 28 34 20 37 C12 34 6 28 6 19 V7 Z"
           fill="var(--pjc-primary)" />
     <path d="M14 22 C14 16 19 12 26 12 C26 19 22 24 14 24 Z M14 24 C14 24 16 21 19 19"
@@ -63,10 +63,10 @@ const Eyebrow = ({ children }) => (
 // ──────────────────────────────────────────────────────────────────────────
 const Hero = ({ onInstallClick }) => {
   const stats = [
-    { v: '+1.200', l: 'jóvenes activos' },
-    { v: '+340', l: 'actividades / año' },
-    { v: '15', l: 'organizaciones' },
-    { v: '92%', l: 'tasa de asistencia' },
+    { v: 'Calendario', l: 'actividades y cupos' },
+    { v: 'Actividades', l: 'chat, asistencia y valoración' },
+    { v: 'Grupos', l: 'coordinación y roles' },
+    { v: 'Avisos', l: 'notificaciones y cambios' },
   ];
   return (
     <section className="relative bg-white overflow-hidden">
@@ -85,7 +85,7 @@ const Hero = ({ onInstallClick }) => {
               </span>
             </h1>
             <p className="mt-6 text-[17px] sm:text-[18px] leading-relaxed text-[var(--pjc-muted)] max-w-[560px]">
-              Inscríbete en talleres, deporte, cultura y voluntariado. Crea tus propias actividades, súmate a grupos y conecta con la red juvenil de la municipalidad — todo desde tu celular.
+              Revisa el calendario, inscríbete en actividades, sigue tus grupos y consulta notificaciones, asistencia y valoraciones desde el mismo sistema.
             </p>
             <div className="mt-8 flex flex-wrap gap-3 text-white">
               <Link to="/register" className="inline-flex items-center gap-2 px-5 py-3 bg-[var(--pjc-primary)] text-white rounded-sm font-medium hover:bg-[var(--pjc-primary-700)] transition shadow-[0_1px_0_rgba(0,0,0,0.06)]">
@@ -104,7 +104,7 @@ const Hero = ({ onInstallClick }) => {
                   <div key={i} className="w-7 h-7 rounded-full border-2 border-white" style={{background:c}}/>
                 ))}
               </div>
-              <span>Más de 1.200 jóvenes ya participan cada semana</span>
+              <span>Calendario, grupos y avisos en una sola cuenta</span>
             </div>
           </div>
 
@@ -229,30 +229,30 @@ const Features = () => {
     {
       icon: I.calendar,
       tag: 'Actividades',
-      title: 'Inscripción sin choques de horario',
-      body: 'Filtra por categoría, sala, día u organización. El sistema te avisa antes si una actividad se cruza con otra que ya tomaste.',
-      bullets: ['Calendario mensual y por sala', 'Cupos en tiempo real', 'Validación automática de horarios'],
+      title: 'Calendario y cupos siempre visibles',
+      body: 'Filtra por categoría, fecha o sala y abre el detalle de cada actividad para revisar la información disponible antes de inscribirte.',
+      bullets: ['Calendario mensual', 'Cupos actualizados', 'Detalle de actividad'],
     },
     {
       icon: I.users,
       tag: 'Grupos',
-      title: 'Grupos colaborativos para tus colectivos',
-      body: 'Tu junta de vecinos, club deportivo o agrupación cultural en un solo lugar. Coordinen, inviten y publiquen actividades juntos.',
-      bullets: ['Roles de coordinador y miembro', 'Actividades grupales', 'Aprobación municipal en línea'],
+      title: 'Grupos y colectivos en un mismo espacio',
+      body: 'Organiza o sigue grupos vinculados a las actividades, con roles definidos y acceso al seguimiento desde el panel correspondiente.',
+      bullets: ['Roles de coordinador y miembro', 'Actividades asociadas', 'Gestión centralizada'],
     },
     {
       icon: I.chat,
       tag: 'Chat',
-      title: 'Conversación directa con la OMJ',
-      body: 'Resuelve dudas sobre tu inscripción, propone una actividad o pide apoyo logístico desde un chat bidireccional, sin salir de la app.',
-      bullets: ['Hilos por actividad', 'Confirmaciones leídas', 'Notificaciones contextuales'],
+      title: 'Chat por actividad',
+      body: 'Cada actividad puede mostrar mensajes y seguimiento directo para coordinar dudas o información relacionada sin salir del detalle.',
+      bullets: ['Hilos por actividad', 'Mensajes en contexto', 'Seguimiento de avisos'],
     },
     {
       icon: I.star,
       tag: 'Asistencia & Ratings',
-      title: 'Reconocimiento por participación',
-      body: 'Acumula asistencias verificadas, califica actividades y desbloquea reconocimientos visibles en tu perfil cívico juvenil.',
-      bullets: ['Check-in con código', 'Ranking mensual', 'Calificaciones de 1 a 5 estrellas'],
+      title: 'Asistencia y valoración de actividades',
+      body: 'Revisa tu participación, marca asistencia cuando corresponda y deja una valoración desde el detalle de cada actividad.',
+      bullets: ['Registro de asistencia', 'Valoración de 1 a 5', 'Historial de participación'],
     },
   ];
   return (
@@ -267,7 +267,7 @@ const Features = () => {
           </div>
           <div className="lg:col-span-6 lg:col-start-7 self-end">
             <p className="text-[16px] leading-relaxed text-[var(--pjc-muted)]">
-              Diseñada con jóvenes de Curicó y validada con la OMJ. Cuatro herramientas que reemplazan formularios, grupos de WhatsApp y planillas para gestionar la vida juvenil de la comuna.
+              Diseñada para centralizar calendario, inscripción, grupos, notificaciones y seguimiento de actividades en un solo sistema.
             </p>
           </div>
         </div>
@@ -304,7 +304,7 @@ const Features = () => {
             </div>
             <div>
               <div className="text-[11px] tracking-[0.18em] font-semibold uppercase text-[var(--pjc-primary-300)]">Notificaciones contextuales</div>
-              <div className="mt-1 text-[16px] leading-snug text-zinc-100">Recordatorios 24 h antes, cambios de sala, aprobaciones y ranking semanal — solo lo que te importa.</div>
+              <div className="mt-1 text-[16px] leading-snug text-zinc-100">Avisos de aprobaciones, cambios de actividad y mensajes del sistema en tu bandeja.</div>
             </div>
           </div>
           <div className="bg-white border border-zinc-200 rounded-sm p-7 lg:p-8 flex items-center gap-5">
@@ -313,7 +313,7 @@ const Features = () => {
             </div>
             <div>
               <div className="text-[11px] tracking-[0.18em] font-semibold uppercase text-[var(--pjc-primary)]">Dashboard personal</div>
-              <div className="mt-1 text-[16px] leading-snug text-[var(--pjc-ink)]">Tu historial de participación, tasa de asistencia y reconocimientos siempre a la vista.</div>
+              <div className="mt-1 text-[16px] leading-snug text-[var(--pjc-ink)]">Tu historial de participación, calendario, grupos y notificaciones siempre a la vista.</div>
             </div>
           </div>
         </div>
@@ -327,11 +327,11 @@ const Features = () => {
 // ──────────────────────────────────────────────────────────────────────────
 const HowItWorks = () => {
   const steps = [
-    { n:'01', t:'Crea tu cuenta',   d:'Regístrate con tu RUT o correo. Verificamos que vivas o estudies en Curicó.', i: I.shield },
-    { n:'02', t:'Explora el calendario', d:'Filtra por categoría, fecha o sala. Ve cupos disponibles en tiempo real.', i: I.calendar },
-    { n:'03', t:'Inscríbete o propone', d:'Reserva tu cupo en un toque, o propone una actividad propia para aprobación.', i: I.spark },
-    { n:'04', t:'Asiste y conecta',  d:'Confirma asistencia con el código del coordinador. Conversa en grupos.', i: I.users },
-    { n:'05', t:'Acumula y crece',   d:'Califica, gana reconocimientos y revisa tu historial cívico juvenil.', i: I.award },
+    { n:'01', t:'Crea tu cuenta',   d:'Regístrate con correo o RUT y completa tu perfil según tu rol.', i: I.shield },
+    { n:'02', t:'Explora el calendario', d:'Revisa actividades disponibles, filtra por fecha o categoría y abre su detalle.', i: I.calendar },
+    { n:'03', t:'Inscríbete o propone', d:'Inscríbete a una actividad o crea una nueva si tu rol lo permite.', i: I.spark },
+    { n:'04', t:'Participa y da seguimiento',  d:'Consulta mensajes, asistencia y estado de la actividad desde su detalle.', i: I.users },
+    { n:'05', t:'Revisa tu historial',   d:'Vuelve a ver asistencias, valoraciones y notificaciones relacionadas con tu actividad.', i: I.award },
   ];
 
   return (
@@ -394,7 +394,7 @@ const FinalCTA = () => (
             <span className="text-[var(--pjc-primary-300)]">esperando.</span>
           </h2>
           <p className="mt-6 text-[17px] text-zinc-300 max-w-[520px]">
-            Crea tu cuenta gratuita en menos de un minuto. Si tu organización quiere publicar actividades, también puedes solicitar acceso aquí.
+            Crea tu cuenta gratuita en menos de un minuto. Desde ahí puedes revisar actividades, grupos, notificaciones y tu historial de participación.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link to="/register" className="inline-flex items-center gap-2 px-5 py-3 bg-[var(--pjc-primary)] text-white rounded-sm font-medium hover:bg-[var(--pjc-primary-700)] transition">
@@ -459,11 +459,11 @@ const Footer = () => (
           <div className="flex items-center gap-2.5">
             <BrandMark size={32}/>
             <span className="font-semibold text-[15px] tracking-tight text-[var(--pjc-ink)]">
-              Plataforma Juvenil <span className="text-[var(--pjc-primary)]">Curicó</span>
+               Oficina Municipal Juvenil <span className="text-[var(--pjc-primary)]">Curicó</span>
             </span>
           </div>
           <p className="mt-4 text-[13.5px] leading-relaxed text-[var(--pjc-muted)] max-w-[300px]">
-            Iniciativa de la Oficina Municipal de la Juventud, I. Municipalidad de Curicó. Construida con software libre y datos abiertos.
+            Iniciativa de la Oficina Municipal de la Juventud, I. Municipalidad de Curicó. Construida para centralizar la gestión de actividades juveniles.
           </p>
           <div className="mt-5 flex items-center gap-2">
             {[I.globe, I.send, I.phone].map((d, i) => (
@@ -475,8 +475,8 @@ const Footer = () => (
         </div>
 
         {[
-          ['Plataforma',['Cómo funciona','Características','Calendario público','Estado del servicio']],
-          ['Organizaciones',['Crear cuenta de grupo','Solicitar aprobación','Buenas prácticas','Soporte técnico']],
+          ['Plataforma',['Cómo funciona','Características','Calendario','Estado del servicio']],
+          ['Organizaciones',['Crear cuenta de grupo','Solicitar acceso','Gestión de actividades','Soporte técnico']],
           ['Municipalidad',['OMJ Curicó','Transparencia','Política de datos','Contacto']],
         ].map(([title, links], i) => (
           <div key={i} className="lg:col-span-2 lg:col-start-auto">
@@ -491,7 +491,7 @@ const Footer = () => (
 
         <div className="col-span-2 lg:col-span-2">
           <div className="text-[11px] tracking-[0.18em] uppercase font-semibold text-[var(--pjc-ink)]">Boletín</div>
-          <p className="mt-4 text-[12.5px] text-[var(--pjc-muted)]">Resumen mensual de actividades y becas para jóvenes de Curicó.</p>
+          <p className="mt-4 text-[12.5px] text-[var(--pjc-muted)]">Resumen mensual de actividades y avisos para jóvenes de Curicó.</p>
         </div>
       </div>
 
@@ -557,7 +557,7 @@ export default function Home() {
     }
 
     if (!installPrompt) {
-      setInstallHint("Edge no expuso el instalador en esta sesión. Si estás en InPrivate, abre la app en una ventana normal para instalarla.");
+      setInstallHint("El navegador no expuso el instalador en esta sesión. Si estás en una ventana privada, abre la app en una ventana normal para instalarla.");
       return;
     }
 

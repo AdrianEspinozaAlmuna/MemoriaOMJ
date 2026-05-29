@@ -40,7 +40,7 @@ function deriveNotificationTheme(notification = {}) {
   const tipo = String(notification.tipo ?? notification.type ?? "").toLowerCase();
 
   if (tipo === "revision" || tipo === "review") {
-    return { key: "activity-change", label: "Actividad" };
+    return { key: "activity", label: "Actividad" };
   }
 
   if (text.includes("edición") || text.includes("edicion") || text.includes("cambios solicitados") || text.includes("solicitó la edición") || text.includes("solicito la edicion")) {
@@ -89,7 +89,7 @@ function normalizeNotification(notification = {}) {
     titulo: title,
     detail: description,
     descripcion: description,
-    source: type === "actividad" ? "Actividad" : type === "revision" ? "Aprobación / rechazo" : "Sistema",
+    source: type === "actividad" || type === "revision" || type === "review" ? "Actividad" : "Sistema",
     type,
     tipo: type,
     themeKey: theme.key,

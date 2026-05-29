@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { CalendarDays, Clock3, ListChecks, MapPin, UserRound, RefreshCw } from "lucide-react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { CalendarDays, Clock3, ListChecks, LoaderCircle, MapPin, UserRound, RefreshCw } from "lucide-react";
 import Modal from "../components/Modal";
 import ActivityCard from "../components/ActivityCard";
 import LoadingState from "../components/LoadingState";
@@ -46,10 +46,12 @@ export default function AdminApprovals() {
 	const [rejecting, setRejecting] = useState(false);
 	const [rejectReason, setRejectReason] = useState("");
 	const [rejectError, setRejectError] = useState("");
+	const [reviewingAction, setReviewingAction] = useState("");
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState("");
 	const [actionMessage, setActionMessage] = useState("");
 	const [refreshing, setRefreshing] = useState(false);
+	const rejectTextareaRef = useRef(null);
 
 	async function loadPendingApprovals() {
 		setLoading(true);
@@ -103,6 +105,7 @@ export default function AdminApprovals() {
 		setRejecting(false);
 		setRejectReason("");
 		setRejectError("");
+		setReviewingAction("");
 	}
 
 	function closeItemModal() {
@@ -111,20 +114,29 @@ export default function AdminApprovals() {
 		setRejecting(false);
 		setRejectReason("");
 		setRejectError("");
+		setReviewingAction("");
 	}
 
 	async function handleApprove() {
 		if (!activeItem) return;
 
-		const response = await reviewActivity(activeItem.id, { action: "approve" });
-		if (!response.ok) {
-			setRejectError(response.message || "No se pudo aprobar la actividad.");
-			return;
-		}
+		setReviewingAction("approve");
+		setRejectError("");
 
-		setItems(previous => previous.filter(item => item.id !== activeItem.id));
-		setActionMessage("Actividad aprobada correctamente. Ya aparece en Actividades disponibles.");
-		closeItemModal();
+		try {
+			const response = await reviewActivity(activeItem.id, { action: "approve" });
+			if (!response.ok) {
+				setRejectError(response.message || "No se pudo aprobar la actividad.");
+				return;
+			}
+
+			setItems(previous => previous.filter(item => item.id !== activeItem.id));
+			setActionMessage("Actividad aprobada correctamente. Ya aparece en Actividades disponibles.");
+			window.dispatchEvent(new Event("admin:approvals-changed"));
+			closeItemModal();
+		} finally {
+			setReviewingAction("");
+		}
 	}
 
 	function beginReject() {
@@ -132,6 +144,17 @@ export default function AdminApprovals() {
 		setRejectReason("");
 		setRejectError("");
 	}
+
+	useEffect(() => {
+		if (!rejecting || !rejectTextareaRef.current) return undefined;
+
+		const timer = window.setTimeout(() => {
+			rejectTextareaRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+			rejectTextareaRef.current?.focus({ preventScroll: true });
+		}, 120);
+
+		return () => window.clearTimeout(timer);
+	}, [rejecting]);
 
 	async function confirmReject() {
 		if (!rejectReason.trim()) {
@@ -141,20 +164,28 @@ export default function AdminApprovals() {
 
 		if (!activeItem) return;
 
-		const response = await reviewActivity(activeItem.id, {
-			action: "reject",
-			reason: rejectReason.trim()
-		});
+		setReviewingAction("reject");
+		setRejectError("");
 
-		if (!response.ok) {
-			setRejectError(response.message || "No se pudo rechazar la actividad.");
-			return;
+		try {
+			const response = await reviewActivity(activeItem.id, {
+				action: "reject",
+				reason: rejectReason.trim()
+			});
+
+			if (!response.ok) {
+				setRejectError(response.message || "No se pudo rechazar la actividad.");
+				return;
+			}
+
+			setItems(previous => previous.filter(item => item.id !== activeItem.id));
+			setActionMessage("Actividad rechazada correctamente.");
+			window.dispatchEvent(new Event("admin:approvals-changed"));
+
+			closeItemModal();
+		} finally {
+			setReviewingAction("");
 		}
-
-		setItems(previous => previous.filter(item => item.id !== activeItem.id));
-		setActionMessage("Actividad rechazada correctamente.");
-
-		closeItemModal();
 	}
 
 	return (
@@ -228,26 +259,43 @@ export default function AdminApprovals() {
 							<>
 								<button
 									type="button"
-									className="inline-flex items-center justify-center rounded-[10px] bg-[var(--reject)] px-4 py-2.5 text-[0.92rem] font-semibold text-white hover:bg-[var(--reject-hover)]"
+									disabled={Boolean(reviewingAction)}
+									className="inline-flex items-center justify-center rounded-[10px] bg-[var(--reject)] px-4 py-2.5 text-[0.92rem] font-semibold text-white hover:bg-[var(--reject-hover)] disabled:cursor-not-allowed disabled:opacity-70"
 									onClick={beginReject}
 								>
 									Rechazar
 								</button>
 								<button
 									type="button"
-									className="inline-flex items-center justify-center rounded-[10px] border bg-[var(--primary)] px-4 py-2.5 text-[0.92rem] font-semibold text-white hover:bg-[var(--primary-strong)]"
+									disabled={Boolean(reviewingAction)}
+									className="inline-flex items-center justify-center rounded-[10px] border bg-[var(--primary)] px-4 py-2.5 text-[0.92rem] font-semibold text-white hover:bg-[var(--primary-strong)] disabled:cursor-not-allowed disabled:opacity-70"
 									onClick={handleApprove}
 								>
-									Aprobar
+									{reviewingAction === "approve" ? (
+										<>
+											<LoaderCircle className="mr-2 h-4 w-4 animate-spin" strokeWidth={1.9} />
+											Aprobando...
+										</>
+									) : (
+										"Aprobar"
+									)}
 								</button>
 							</>
 						) : (
 							<button
 								type="button"
-								className="inline-flex items-center justify-center rounded-[10px] border border-[#d16b5d] bg-[var(--reject)] hover:bg-[var(--reject-hover)] px-4 py-2.5 text-[0.92rem] font-semibold text-white transition-all duration-200"
+								disabled={Boolean(reviewingAction)}
+								className="inline-flex items-center justify-center rounded-[10px] border border-[#d16b5d] bg-[var(--reject)] hover:bg-[var(--reject-hover)] px-4 py-2.5 text-[0.92rem] font-semibold text-white transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-70"
 								onClick={confirmReject}
 							>
-								Guardar rechazo
+								{reviewingAction === "reject" ? (
+									<>
+										<LoaderCircle className="mr-2 h-4 w-4 animate-spin" strokeWidth={1.9} />
+										Rechazando...
+									</>
+								) : (
+									"Guardar rechazo"
+								)}
 							</button>
 						)}
 					</>
@@ -331,6 +379,7 @@ export default function AdminApprovals() {
 								</label>
 								<textarea
 									id="reject-reason"
+									ref={rejectTextareaRef}
 									className="min-h-28 w-full resize-y rounded-[10px] border border-[#d8c7c1] bg-white px-3 py-2.5 text-[0.92rem] outline-none transition-shadow duration-200 focus:border-[var(--reject-hover)]"
 									value={rejectReason}
 									onChange={event => {

@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
-import { CalendarDays, Clock3, Lock, MapPin, MessageCircle, MoreHorizontal, Send, User, Star } from "lucide-react";
+import { CalendarDays, Clock3, Lock, LoaderCircle, MapPin, MessageCircle, MoreHorizontal, Send, User, Star } from "lucide-react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import Modal from "../components/Modal";
 import { formatDateForChile } from "../utils/chileDate";
@@ -880,7 +880,14 @@ export default function ActivityDetail() {
 													disabled={attendanceBusy}
 													className="w-full rounded-sm border-2 border-[var(--primary)] bg-[var(--primary)] px-4 py-2.5 text-[0.88rem] font-semibold text-[white] transition-all hover:bg-[var(--primary-strong)] hover:border-[var(--primary-strong)] disabled:cursor-not-allowed disabled:border-[#dce6df] disabled:bg-[#f4f8f6] disabled:text-[#7d9084]"
 												>
-													{attendanceBusy ? "Registrando asistencia..." : "Marcar mi asistencia"}
+													{attendanceBusy ? (
+														<>
+															<LoaderCircle className="mr-2 inline-block h-4 w-4 animate-spin" strokeWidth={1.9} />
+															Registrando asistencia...
+														</>
+													) : (
+														"Marcar mi asistencia"
+													)}
 												</button>
 											)}
 										</>
@@ -907,7 +914,7 @@ export default function ActivityDetail() {
 													disabled={attendanceBusy || hasAttendanceRegistered}
 												className="w-full rounded-sm border-2 border-[var(--primary)] bg-[var(--primary)] px-4 py-2.5 text-[0.88rem] font-semibold text-[white] transition-all hover:bg-[var(--primary-strong)] hover:border-[var(--primary-strong)] disabled:cursor-not-allowed disabled:border-[#dce6df] disabled:bg-[#f4f8f6] disabled:text-[#7d9084]"
 											>
-												{hasAttendanceRegistered ? "Asistencia ya registrada" : attendanceBusy ? "Registrando asistencia..." : isActivityManager ? "Marcar mi asistencia" : "Marcar asistencia"}
+												{hasAttendanceRegistered ? "Asistencia ya registrada" : attendanceBusy ? <><LoaderCircle className="mr-2 inline-block h-4 w-4 animate-spin" strokeWidth={1.9} />Registrando asistencia...</> : isActivityManager ? "Marcar mi asistencia" : "Marcar asistencia"}
 											</button>
 										)}
 									</>

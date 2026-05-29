@@ -30,6 +30,7 @@ export default function Navbar() {
 	const [menuOpen, setMenuOpen] = useState(false);
 	const [notificationsOpen, setNotificationsOpen] = useState(false);
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+	const [mobileMenuTop, setMobileMenuTop] = useState(0);
 	const [profileUser, setProfileUser] = useState(null);
 	const [notificationItems, setNotificationItems] = useState([]);
 	const [recentNotificationIds, setRecentNotificationIds] = useState([]);
@@ -53,6 +54,7 @@ export default function Navbar() {
 	async function loadNotifications() {
 		try {
 			setNotificationsLoading(true);
+			setNotificationsError("");
 			const items = await getMyNotifications();
 			if (!isMountedRef.current) return;
 			setNotificationItems(items);
@@ -166,6 +168,18 @@ export default function Navbar() {
 	}, [isAuthenticated]);
 
 	useEffect(() => {
+		if (!isAuthenticated || !notificationsOpen) {
+			return undefined;
+		}
+
+		loadNotifications().catch(() => {
+			// Se mantiene el último estado visible si un reintento puntual falla.
+		});
+
+		return undefined;
+	}, [isAuthenticated, notificationsOpen]);
+
+	useEffect(() => {
 		if (!isAuthenticated) {
 			return undefined;
 		}
@@ -249,6 +263,15 @@ export default function Navbar() {
 		setMobileMenuOpen(false);
 	}
 
+	function openMobileMenu(event) {
+		if (typeof window !== "undefined") {
+			const buttonRect = event?.currentTarget?.getBoundingClientRect?.();
+			setMobileMenuTop(Number.isFinite(buttonRect?.bottom) ? Math.round(buttonRect.bottom + 8) : Math.round(window.scrollY || window.pageYOffset || 0));
+		}
+
+		setMobileMenuOpen(previous => !previous);
+	}
+
 	function getNotificationTypeLabel(item) {
 		return item?.themeLabel || item?.source || "Notificación";
 	}
@@ -285,7 +308,7 @@ export default function Navbar() {
 
 	function getNotificationSourceClass(item) {
 		const title = String(item?.title || "").toLowerCase();
-		const isReview = item?.themeKey === "review" || title.includes("aprobad") || title.includes("rechaz");
+		const isReview = title.includes("aprobad") || title.includes("rechaz");
 		const isActivity = item?.type === "actividad" || item?.themeKey === "activity" || item?.themeKey === "activity-change";
 
 		if (isReview) {
@@ -305,6 +328,7 @@ export default function Navbar() {
 	}
 
 	const isAdmin = String(rol || "").toLowerCase().includes("admin");
+	const showAdminToolbar = isAdmin && location.pathname !== "/";
 
 	const navLinkClass = ({ isActive }) =>
 		[
@@ -322,6 +346,76 @@ export default function Navbar() {
 		return null;
 	}
 
+	function renderMobileMenu() {
+		if (!mobileMenuOpen) return null;
+
+		return (
+			<>
+				<button
+					type="button"
+					className="fixed inset-0 z-[40] hidden bg-[#10261a]/20 max-[860px]:block"
+					onClick={() => setMobileMenuOpen(false)}
+					aria-label="Cerrar menu de usuario"
+				/>
+				<div className="fixed left-0 right-0 z-[41] hidden max-[860px]:block" style={{ top: `${mobileMenuTop}px` }}>
+					<div className="mx-4 max-h-[calc(100dvh-1rem)] overflow-y-auto rounded-xl bg-white/95 p-2.5 shadow-[0_12px_24px_-18px_rgba(8,38,23,0.45)] backdrop-blur">
+						<div className="grid gap-2.5">
+							{isAuthenticated && rol === "participante" && <p className="text-[0.82rem] font-semibold text-[#6f8278]">Panel de usuario</p>}
+
+							<div className="grid gap-1" aria-label="Navegacion de usuario">
+								{isAuthenticated && rol === "participante" && (
+									<NavLink to="/user/dashboard" onClick={handleNavItemClick} className={navLinkClass}>
+										<NavIcon name="home" />
+										Inicio
+									</NavLink>
+								)}
+
+								{isAuthenticated && isAdmin && (
+									<NavLink to="/admin/dashboard" onClick={handleNavItemClick} className={navLinkClass}>
+										<NavIcon name="admin" />
+										Panel admin
+									</NavLink>
+								)}
+
+								{isAuthenticated && rol === "participante" && (
+									<>
+										<NavLink to="/user/calendario" onClick={handleNavItemClick} className={navLinkClass}>
+											<NavIcon name="calendar" />
+											Calendario
+										</NavLink>
+										<NavLink to="/user/mis-actividades" onClick={handleNavItemClick} className={navLinkClass}>
+											<NavIcon name="activities" />
+											Mis actividades
+										</NavLink>
+										<NavLink to="/user/asistencia" onClick={handleNavItemClick} className={navLinkClass}>
+											<NavIcon name="attendance" />
+											Mis asistencias
+										</NavLink>
+										<NavLink to="/user/grupos" onClick={handleNavItemClick} className={navLinkClass}>
+											<NavIcon name="groups" />
+											Mis Grupos
+										</NavLink>
+									</>
+								)}
+							</div>
+
+							{!isAuthenticated && (
+								<div className="grid gap-2 pt-1">
+									<NavLink to="/login" className="btn btn-ghost w-full" onClick={handleNavItemClick}>
+										Iniciar sesion
+									</NavLink>
+									<NavLink to="/register" className="btn btn-primary w-full" onClick={handleNavItemClick}>
+										Registrarse
+									</NavLink>
+								</div>
+							)}
+						</div>
+					</div>
+				</div>
+			</>
+		);
+	}
+
 	return (
 		<header className="sticky top-0 z-50 bg-white backdrop-blur shadow-[0_8px_20px_-20px_rgba(6,40,24,0.55)]">
 			<nav className="mx-auto grid min-h-16 w-[min(98vw,1680px)] grid-cols-[auto_1fr_auto] items-center gap-x-8 px-4 sm:px-6 lg:gap-x-10 max-[1120px]:grid-cols-[auto_minmax(0,1fr)_auto] max-[860px]:min-h-[4.2rem] max-[860px]:w-full max-[860px]:grid-cols-[minmax(0,1fr)_auto] max-[860px]:gap-y-2 max-[860px]:py-2" ref={navRef}>
@@ -329,7 +423,7 @@ export default function Navbar() {
 					<button
 						type="button"
 						className="hidden h-[2.15rem] w-[2.15rem] flex-col items-center justify-center gap-[0.22rem] rounded-lg bg-[#eef7f1] p-0 transition-colors duration-200 hover:bg-[#e2f4e9] max-[860px]:inline-flex"
-						onClick={() => setMobileMenuOpen(previous => !previous)}
+						onClick={openMobileMenu}
 						aria-expanded={mobileMenuOpen}
 						aria-label="Abrir menu"
 					>
@@ -340,14 +434,13 @@ export default function Navbar() {
 
 					<Link to="/" className="inline-flex items-center gap-2.5 justify-self-start min-[861px]:min-w-0">
 						<img className="block h-8 w-8 min-w-8 rounded-sm object-cover shadow-[0_6px_14px_-10px_rgba(8,38,23,0.5)]" src="/iconOMJ.jpg" alt="Logo OMJ" />
-						<span className="font-semibold text-[15px] tracking-tight">Plataforma Juvenil Curico</span>
+						<span className="font-semibold text-[15px] tracking-tight"> Oficina Municipal Juvenil Curicó</span>
 					</Link>
 				</div>
 
-				<div className={`min-[861px]:contents ${mobileMenuOpen ? "max-[860px]:col-span-2 max-[860px]:grid max-[860px]:gap-2.5 max-[860px]:rounded-xl max-[860px]:bg-white/95 max-[860px]:p-2.5 max-[860px]:shadow-[0_12px_24px_-18px_rgba(8,38,23,0.45)]" : "max-[860px]:hidden"}`}>
-					{isAuthenticated && rol === "participante" && <p className="hidden text-[0.82rem] font-semibold text-[#6f8278] max-[860px]:block">Panel de usuario</p>}
+				{renderMobileMenu()}
 
-				<div className="flex w-full flex-nowrap items-center justify-center gap-1.5 justify-self-center max-[1120px]:w-auto max-[1120px]:max-w-full max-[1120px]:min-w-0 max-[1120px]:justify-start max-[1120px]:overflow-x-auto max-[1120px]:pb-1 max-[860px]:w-full max-[860px]:flex-col max-[860px]:items-stretch max-[860px]:gap-1 max-[860px]:overflow-visible max-[860px]:pb-0" aria-label="Navegacion de usuario">
+				<div className="flex w-full flex-nowrap items-center justify-center gap-1.5 justify-self-center max-[1120px]:w-auto max-[1120px]:max-w-full max-[1120px]:min-w-0 max-[1120px]:justify-start max-[1120px]:overflow-x-auto max-[1120px]:pb-1 max-[860px]:hidden" aria-label="Navegacion de usuario">
 					{isAuthenticated && rol === "participante" && (
 						<NavLink
 							to="/user/dashboard"
@@ -408,18 +501,6 @@ export default function Navbar() {
 					)}
 				</div>
 
-					{!isAuthenticated && (
-						<div className="hidden gap-2 max-[860px]:grid">
-							<NavLink to="/login" className="btn btn-ghost w-full" onClick={handleNavItemClick}>
-								Iniciar sesion
-							</NavLink>
-							<NavLink to="/register" className="btn btn-primary w-full" onClick={handleNavItemClick}>
-								Registrarse
-							</NavLink>
-						</div>
-					)}
-				</div>
-
 				<div className="relative z-50 flex items-center justify-self-end gap-5 max-[1120px]:gap-3 max-[860px]:col-start-2 max-[860px]:row-start-1 max-[860px]:gap-2">
                     
 
@@ -446,12 +527,12 @@ export default function Navbar() {
 							</button>
 
 								{notificationsOpen && (
-								<div className="absolute right-0 top-[calc(100%+0.4rem)] z-[21] w-[min(400px,82vw)] overflow-hidden rounded-[14px] border border-[#d7e4dc] bg-[color:var(--nav-bg,white)] shadow-[0_18px_32px_-24px_rgba(11,38,24,0.38)] max-[860px]:top-[calc(100%+0.5rem)] max-[860px]:w-[min(320px,calc(100vw-1.4rem))] max-[640px]:w-[min(300px,calc(100vw-1rem))]" role="dialog" aria-label="Notificaciones">
+									<div className="absolute right-0 top-[calc(100%+0.4rem)] z-[21] flex max-h-[min(480px,calc(100dvh-1rem))] w-[min(400px,82vw)] flex-col overflow-hidden rounded-[14px] border border-[#d7e4dc] bg-[color:var(--nav-bg,white)] shadow-[0_18px_32px_-24px_rgba(11,38,24,0.38)] max-[860px]:top-[calc(100%+0.5rem)] max-[860px]:w-[min(320px,calc(100vw-1.4rem))] max-[860px]:max-h-[min(70dvh,420px)] max-[640px]:w-[min(300px,calc(100vw-1rem))]" role="dialog" aria-label="Notificaciones">
 									<div className="border-b border-[#e1ebe4] bg-[var(--gray-soft)] px-4 py-3">
 										<p className="m-0 text-[0.78rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Centro de alertas</p>
 										<p className="mt-1 m-0 text-[0.92rem] font-semibold text-[#244235]">Últimas 3 notificaciones</p>
 									</div>
-									<div className="grid gap-0 bg-white">
+										<div className="grid min-h-0 flex-1 gap-0 overflow-y-auto bg-white">
 										{notificationsError ? (
 											<div className="px-4 py-4 text-[0.86rem] font-semibold text-[#a03d2e]">{notificationsError}</div>
 										) : notificationsLoading ? (
@@ -472,12 +553,14 @@ export default function Navbar() {
 															<span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-[#15b76d]" title="Notificación reciente" />
 														)}
 													</div>
-													<div className="min-w-0 space-y-1">
+													<div className="min-w-0 space-y-1 overflow-hidden">
 														<div className="flex flex-wrap items-center gap-2">
-															<strong className="block text-[0.92rem] font-semibold leading-tight text-[#1f3328]">{getNotificationDisplayTitle(item)}</strong>
+															<strong className="block max-w-full truncate text-[0.92rem] font-semibold leading-tight text-[#1f3328]">{getNotificationDisplayTitle(item)}</strong>
 															<span className={`inline-flex rounded-sm px-2 py-1 text-[0.66rem] font-bold uppercase tracking-[0.08em] ${getNotificationSourceClass(item)}`}>{item.source}</span>
 														</div>
-														<div className="block whitespace-pre-line text-[0.9rem] leading-tight text-[var(--text)]">{getNotificationDisplayDetail(item)}</div>
+														<div className="block overflow-hidden text-[0.9rem] leading-tight text-[var(--text)]" style={{ display: "-webkit-box", WebkitBoxOrient: "vertical", WebkitLineClamp: 3 }}>
+															{getNotificationDisplayDetail(item)}
+														</div>
 													</div>
 													<span className="inline-flex shrink-0 rounded-sm bg-[var(--gray)] px-2 py-1 text-[0.72rem] font-semibold text-[#5f7a6a]">{item.date}</span>
 												</button>
@@ -532,7 +615,7 @@ export default function Navbar() {
 					</div>
 				</div>
 			</nav>
-			{isAdmin && (
+			{showAdminToolbar && (
 				<div className="border-t border-b border-[#e7eee9] bg-white/95 py-2">
 					<div className="mx-auto w-[min(98vw,1680px)] flex items-center justify-between px-4 sm:px-6">
 						<div className="flex items-center gap-3">

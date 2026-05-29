@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { LoaderCircle } from "lucide-react";
 import { getActivityDetail, submitActivityEditRequest, submitActivityProposal } from "../services/userViewsService";
 import api from "../services/api";
 
@@ -36,6 +37,7 @@ export default function CreateActivity() {
   const [roomOptions, setRoomOptions] = useState([]);
   const [gruposDisponibles, setGruposDisponibles] = useState([]);
   const [tiposActividad, setTiposActividad] = useState([]);
+  const [loadingTiposActividad, setLoadingTiposActividad] = useState(true);
   const [loadingEditActivity, setLoadingEditActivity] = useState(isEditMode);
 
   function handleChange(event) {
@@ -229,6 +231,7 @@ export default function CreateActivity() {
     }
 
     async function loadTipos() {
+      setLoadingTiposActividad(true);
       try {
         const res = await api.get("/imagenes");
         if (!mounted) return;
@@ -243,6 +246,10 @@ export default function CreateActivity() {
       } catch (e) {
         console.error("Error cargando tipos de actividad:", e);
         setTiposActividad([]);
+      } finally {
+        if (mounted) {
+          setLoadingTiposActividad(false);
+        }
       }
     }
 
@@ -393,7 +400,14 @@ export default function CreateActivity() {
               <p className="m-0 mt-1 text-[0.8rem] text-[var(--text-muted)]">Selecciona la categoria que se asociara a esta actividad.</p>
             </div>
 
-            {tiposActividad.length === 0 ? (
+            {loadingTiposActividad ? (
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="flex min-h-[168px] items-center justify-center rounded-sm border border-dashed border-[#d8e6dd] bg-[var(--panel-bg)] px-4 text-[0.88rem] text-[var(--text-muted)] sm:col-span-2 lg:col-span-3">
+                  <LoaderCircle className="mr-2 h-4 w-4 animate-spin text-[var(--primary)]" strokeWidth={1.9} />
+                  Cargando tipos de actividad...
+                </div>
+              </div>
+            ) : tiposActividad.length === 0 ? (
               <p className="m-0 text-[0.82rem] text-[#8b2f22]">No hay tipos de actividad registrados en el catalogo.</p>
             ) : (
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -606,9 +620,18 @@ export default function CreateActivity() {
             <button
               type="submit"
               className="inline-flex items-center rounded-sm border border-[var(--primary)] bg-[var(--primary)] px-5 py-2.5 text-[0.9rem] font-semibold text-white transition-all hover:bg-[#0a7f3d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#05a63d]/30 disabled:cursor-not-allowed disabled:opacity-70"
-              disabled={isSubmitting || (isEditMode && loadingEditActivity)}
+              disabled={isSubmitting || (isEditMode && loadingEditActivity) || loadingTiposActividad}
             >
-              {isSubmitting ? "Enviando..." : isEditMode ? "Enviar edición a revisión" : "Enviar propuesta"}
+              {isSubmitting ? (
+                <>
+                  <LoaderCircle className="mr-2 h-4 w-4 animate-spin" strokeWidth={1.9} />
+                  Enviando...
+                </>
+              ) : isEditMode ? (
+                "Enviar edición a revisión"
+              ) : (
+                "Enviar propuesta"
+              )}
             </button>
 
             <Link

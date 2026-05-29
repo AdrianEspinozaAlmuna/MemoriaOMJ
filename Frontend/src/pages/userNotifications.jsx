@@ -8,8 +8,7 @@ const SOCKET_BASE_URL = (import.meta.env.VITE_SOCKET_URL || API_BASE_URL).replac
 
 const filters = [
   { key: "all", label: "Todas" },
-  { key: "review", label: "Aprobación / rechazo" },
-  { key: "activity-change", label: "Cambios de actividad" },
+  { key: "activity", label: "Actividad" },
   { key: "general", label: "Sistema" }
 ];
 
@@ -35,33 +34,22 @@ function getActivityTitle(item) {
   return "";
 }
 
-function getHeaderLabel(item) {
-  if (item?.type === "sistema") return "Notificación de sistema";
-  if (item?.themeKey === "review") return "Aprobación / rechazo";
-  if (item?.type === "actividad" || item?.themeKey === "activity" || item?.themeKey === "activity-change") return "Actividad";
-  return "Sistema";
-}
-
-function getHeaderLabelClass(item) {
-  if (item?.themeKey === "review") {
-    return "bg-[#ffe8e8] text-[#d43c3c]";
-  }
-
-  if (item?.type === "sistema") {
-    return "bg-[#ffe8e8] text-[#d43c3c]";
-  }
-
-  return "bg-[#eef8f1] text-[var(--primary)]";
-}
-
-function badgeClass(themeKey) {
-  if (themeKey === "review") return "bg-[#ffe8e8] text-[#d43c3c]";
-  if (themeKey === "activity-change") return "bg-[#e8f0ff] text-[#294b86]";
-  return "bg-[#eef8f1] text-[#2e5a45]";
+function getSourceLabel(item) {
+  return item?.type === "sistema" || item?.themeKey === "general" ? "Sistema" : "Actividad";
 }
 
 function getSourceClass(item) {
-  return item?.type === "actividad" ? "bg-[#e8f7ec] text-[var(--primary)]" : "bg-[#ffe8e8] text-[#d43c3c]";
+  return item?.type === "sistema" || item?.themeKey === "general"
+    ? "bg-[#ffe8e8] text-[#d43c3c]"
+    : "bg-[#eef8f1] text-[var(--primary)]";
+}
+
+function getHeaderLabel(item) {
+  return getSourceLabel(item);
+}
+
+function getHeaderLabelClass(item) {
+  return getSourceClass(item);
 }
 
 function getDisplayTitle(item) {
@@ -85,7 +73,7 @@ function getDisplayDetail(item) {
   const lowerTitle = title.toLowerCase();
   const lowerDetail = detail.toLowerCase();
 
-  if (item?.themeKey === "review" || lowerTitle.includes("aprob") || lowerTitle.includes("rechaz")) {
+  if (lowerTitle.includes("aprob") || lowerTitle.includes("rechaz")) {
     if (activityTitle && !detail) {
       return `Actividad: "${activityTitle}"`;
     }
@@ -259,7 +247,7 @@ export default function UserNotifications() {
             {visibleNotifications.map(item => (
               <div
                 key={item.id}
-                className={`grid gap-4 rounded-[14px] border px-4 py-4 text-left shadow-[0_8px_18px_-20px_rgba(16,24,40,0.28)] lg:grid-cols-[auto_1fr_auto] lg:items-start border-[#d8e6dd] bg-white`}
+              className="grid gap-4 rounded-[14px] border border-[#d8e6dd] bg-white px-4 py-4 text-left shadow-[0_8px_18px_-20px_rgba(16,24,40,0.28)] lg:grid-cols-[auto_1fr_auto] lg:items-start"
               >
                 <div className="inline-flex h-11 w-11 items-center justify-center rounded-[12px] bg-white text-[var(--primary)] shadow-[0_6px_14px_-12px_rgba(16,24,40,0.35)]">
                   <BellRing className="h-4 w-4" strokeWidth={1.9} />
@@ -267,15 +255,18 @@ export default function UserNotifications() {
 
                 <div className="min-w-0 space-y-3">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className={`inline-flex rounded-sm px-2 py-1 text-[0.7rem] font-bold uppercase tracking-[0.08em] ${getHeaderLabelClass(item)}`}>
+                  <span className={`inline-flex rounded-sm px-2 py-1 text-[0.7rem] font-bold uppercase tracking-[0.08em] ${getHeaderLabelClass(item)}`}>
                       {getHeaderLabel(item)}
                     </span>
                   </div>
-                    <h3 className="m-0 text-[1rem] font-semibold leading-tight text-[var(--text)]">{getNotificationListDisplay(item).title}</h3>
-                    <p className="m-0 whitespace-pre-line text-[0.92rem] leading-relaxed text-[var(--text-muted)]">{getNotificationListDisplay(item).detail}</p>
+                <h3 className="m-0 text-[1rem] font-semibold leading-tight text-[var(--text)]">{getNotificationListDisplay(item).title}</h3>
+                <p className="m-0 whitespace-pre-line text-[0.92rem] leading-relaxed text-[var(--text-muted)]">{getNotificationListDisplay(item).detail}</p>
                 </div>
 
                 <div className="flex flex-col items-end gap-2 self-start max-[760px]:items-start lg:pt-1">
+                <span className={`inline-flex rounded-sm px-2 py-1 text-[0.7rem] font-bold uppercase tracking-[0.08em] ${getSourceClass(item)}`}>
+                  {getSourceLabel(item)}
+                </span>
                   <span className="inline-flex rounded-md bg-[#eef8f1] px-2 py-1 text-[0.75rem] font-semibold text-[#2e5a45]">{item.date}</span>
                 </div>
               </div>

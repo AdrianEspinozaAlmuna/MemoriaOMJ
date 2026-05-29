@@ -75,6 +75,7 @@ export default function AdminLayout() {
 	const location = useLocation();
 	const navigate = useNavigate();
 	const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
+	const [mobileNavTop, setMobileNavTop] = React.useState(0);
 	const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
 	const [pendingApprovalsCount, setPendingApprovalsCount] = React.useState(0);
 
@@ -96,6 +97,24 @@ export default function AdminLayout() {
 	}, []);
 
 	React.useEffect(() => {
+		async function loadPendingCount() {
+			try {
+				const data = await getAdminActivities({ approved: false, estado: "pendiente" });
+				setPendingApprovalsCount(Array.isArray(data) ? data.length : 0);
+			} catch (error) {
+				console.error("Error cargando aprobaciones pendientes:", error);
+			}
+		}
+
+		function handleApprovalsChanged() {
+			loadPendingCount();
+		}
+
+		window.addEventListener("admin:approvals-changed", handleApprovalsChanged);
+		return () => window.removeEventListener("admin:approvals-changed", handleApprovalsChanged);
+	}, []);
+
+	React.useEffect(() => {
 		setMobileNavOpen(false);
 	}, [location.pathname]);
 
@@ -114,6 +133,17 @@ export default function AdminLayout() {
 		return () => window.removeEventListener("resize", handleResize);
 	}, []);
 
+	React.useEffect(() => {
+		if (typeof document === "undefined") return undefined;
+
+		const previousOverflow = document.body.style.overflow;
+		document.body.style.overflow = mobileNavOpen ? "hidden" : previousOverflow;
+
+		return () => {
+			document.body.style.overflow = previousOverflow;
+		};
+	}, [mobileNavOpen]);
+
 	function handleLogout() {
 		localStorage.removeItem("token");
 		setMobileNavOpen(false);
@@ -122,6 +152,13 @@ export default function AdminLayout() {
 
 	function closeMobileNav() {
 		setMobileNavOpen(false);
+	}
+
+	function openMobileNav() {
+		if (typeof window !== "undefined") {
+			setMobileNavTop(window.scrollY || window.pageYOffset || 0);
+		}
+		setMobileNavOpen(previous => !previous);
 	}
 
 	function toggleSidebar() {
@@ -151,9 +188,9 @@ export default function AdminLayout() {
 
 	return (
 		<div className={`grid min-h-screen bg-[var(--bg)] animate-[revealUp_0.7s_ease_both] max-[980px]:grid-cols-1 max-[980px]:relative ${sidebarCollapsed ? "grid-cols-[84px_minmax(0,1fr)]" : "grid-cols-[232px_minmax(0,1fr)]"}`}>
-			{mobileNavOpen && <button type="button" className="fixed inset-0 z-30 hidden bg-[#10261a]/20 max-[980px]:block" onClick={closeMobileNav} aria-label="Cerrar menu" />}
+			{mobileNavOpen && <button type="button" className="absolute inset-x-0 z-30 hidden bg-[#10261a]/20 max-[980px]:block" style={{ top: mobileNavTop, height: "100dvh" }} onClick={closeMobileNav} aria-label="Cerrar menu" />}
 
-			<aside className={`${mobileNavOpen ? "max-[980px]:translate-x-0" : "max-[980px]:-translate-x-[110%]"} border-r border-[#e0e5e2] bg-[white] px-3 pb-4 pt-3 min-[981px]:sticky min-[981px]:top-0 min-[981px]:h-screen min-[981px]:overflow-y-auto min-[981px]:flex min-[981px]:flex-col max-[980px]:fixed max-[980px]:left-0 max-[980px]:top-0 max-[980px]:z-[35] max-[980px]:h-screen max-[980px]:w-[236px] max-[980px]:overflow-y-auto max-[980px]:shadow-[0_16px_28px_-18px_rgba(10,27,16,0.5)] max-[980px]:transition-transform max-[980px]:duration-200 ${sidebarCollapsed ? "min-[981px]:w-[84px] min-[981px]:px-2" : "min-[981px]:w-[232px]"}`}>
+			<aside className={`${mobileNavOpen ? "max-[980px]:translate-x-0" : "max-[980px]:-translate-x-[110%]"} border-r border-[#e0e5e2] bg-[white] px-3 pb-4 pt-3 min-[981px]:sticky min-[981px]:top-0 min-[981px]:h-screen min-[981px]:overflow-y-auto min-[981px]:flex min-[981px]:flex-col max-[980px]:absolute max-[980px]:left-0 max-[980px]:z-[35] max-[980px]:w-[236px] max-[980px]:overflow-y-auto max-[980px]:overscroll-contain max-[980px]:pb-[calc(1rem+env(safe-area-inset-bottom))] max-[980px]:shadow-[0_16px_28px_-18px_rgba(10,27,16,0.5)] max-[980px]:transition-transform max-[980px]:duration-200 ${sidebarCollapsed ? "min-[981px]:w-[84px] min-[981px]:px-2" : "min-[981px]:w-[232px]"}`} style={mobileNavOpen ? { top: mobileNavTop, height: "100dvh", maxHeight: "100dvh" } : undefined}>
 				<div className={`mb-3 flex items-center gap-2 px-2 ${sidebarCollapsed ? "min-[981px]:justify-center" : ""}`}>
 					<img src="/iconOMJ.jpg" alt="OMJ" className="h-7 w-7 rounded-md border border-[#d8dfda]" />
 					<div className={`min-w-0 ${sidebarCollapsed ? "min-[981px]:hidden" : ""}`}>
@@ -220,7 +257,7 @@ export default function AdminLayout() {
 						<div className="flex min-w-0 items-center gap-3">
 							<button
 								type="button"
-								onClick={() => setMobileNavOpen(previous => !previous)}
+								onClick={openMobileNav}
 								className="inline-flex h-10 w-10 items-center justify-center rounded-md text-[var(--text)] hover:bg-[#eef7ef] min-[981px]:hidden"
 								aria-expanded={mobileNavOpen}
 								aria-label={mobileNavOpen ? "Cerrar menu de administracion" : "Abrir menu de administracion"}
@@ -232,7 +269,7 @@ export default function AdminLayout() {
 							</button>
 							<div className="inline-flex min-w-0 items-center gap-2 min-[981px]:hidden">
 								<img src="/iconOMJ.jpg" alt="OMJ" className="h-8 w-8 shrink-0 rounded-md border border-[#d8dfda]" />
-								<p className="m-0 truncate text-[1rem] font-semibold text-[var(--text)]">Plataforma Juvenil Curico</p>
+								<p className="m-0 truncate text-[1rem] font-semibold text-[var(--text)]">Oficina Municipal Juvenil Curicó</p>
 							</div>
 							<div className="min-w-0 max-[980px]:hidden">
 								<p className="m-0 text-[0.7rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Panel de administrador</p>

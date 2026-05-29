@@ -2,6 +2,7 @@ const { prisma } = require("../prisma/client");
 const { getUserIdFromToken } = require("../middleware/auth");
 const { emitActivityMessage, emitNotificationCreated } = require("../realtime");
 const {
+  createNotificationRecord,
   notifyAdminUsers,
   notifyActivityOwner,
   notifyActivityParticipants,
@@ -24,6 +25,39 @@ function emitNotificationBatch(notifications = []) {
     const options = Number.isInteger(targetUserId) && targetUserId > 0 ? { targetUserIds: [targetUserId] } : { broadcast: true };
     emitNotificationCreated(notification, options);
   }
+}
+
+function quoteActivityTitle(activityTitle) {
+  return `"${String(activityTitle || "").trim()}"`;
+}
+
+async function notifyActivityOwnerExplicit(db, idEmisor, activityId, payload = {}) {
+  const activity = await db.actividad.findUnique({
+    where: { id_actividad: Number(activityId) },
+    select: { id_encargado: true, titulo: true }
+  });
+
+  if (!activity?.id_encargado) {
+    return [];
+  }
+
+  const created = await createNotificationRecord(db, {
+    ...payload,
+    id_emisor: idEmisor,
+    id_receptor: activity.id_encargado,
+    id_actividad: activityId
+  });
+
+  if (!created) {
+    console.error("[reviewActivity] owner notification was not created", {
+      idEmisor,
+      idReceptor: activity.id_encargado,
+      idActividad: activityId,
+      titulo: payload?.titulo
+    });
+  }
+
+  return created ? [created] : [];
 }
 
 function buildActivityRevisionSnapshot(activity) {
@@ -146,7 +180,7 @@ function serializeActivity(activity, currentUserId = null) {
 
   const enrolledCount =
     activity._count?.actividad_participantes ??
-    activity.actividad_participantes?.filter(item => item.rol === "participante").length ??
+    activity.actividad_participantes?.length ??
     0;
 
   const tipoActividad = activity.tipo_actividad_rel || null;
@@ -229,9 +263,7 @@ async function listActivities(req, res) {
       tipo_actividad_rel: { select: { id_tipo: true, nombre: true, imagen_url: true } },
       _count: {
         select: {
-          actividad_participantes: {
-            where: { rol: "participante" }
-          }
+          actividad_participantes: true
         }
       }
     };
@@ -277,9 +309,7 @@ async function listAdminActivities(req, res) {
         tipo_actividad_rel: { select: { id_tipo: true, nombre: true, imagen_url: true } },
         _count: {
           select: {
-            actividad_participantes: {
-              where: { rol: "participante" }
-            }
+            actividad_participantes: true
           }
         }
       }
@@ -339,9 +369,7 @@ async function getActivityById(req, res) {
         },
         _count: {
           select: {
-            actividad_participantes: {
-              where: { rol: "participante" }
-            }
+            actividad_participantes: true
           }
         }
       }
@@ -405,7 +433,7 @@ async function getActivityById(req, res) {
     });
 
     const participants = [...participantsById.values()];
-    const enrolledCount = activity.actividad_participantes.filter(item => item.rol === "participante").length;
+    const enrolledCount = activity.actividad_participantes.length;
     base.enrolled = enrolledCount;
     base.inscritos = enrolledCount;
 
@@ -519,9 +547,7 @@ async function requestActivityEdit(req, res) {
         },
         _count: {
           select: {
-            actividad_participantes: {
-              where: { rol: "participante" }
-            }
+            actividad_participantes: true
           }
         }
       }
@@ -642,9 +668,7 @@ async function requestActivityEdit(req, res) {
         tipo_actividad_rel: { select: { id_tipo: true, nombre: true, imagen_url: true } },
         _count: {
           select: {
-            actividad_participantes: {
-              where: { rol: "participante" }
-            }
+            actividad_participantes: true
           }
         }
       }
@@ -658,9 +682,7 @@ async function requestActivityEdit(req, res) {
         id_actividad: idActividad
       });
 
-      if (adminNotifications?.[0]) {
-        emitNotificationCreated(adminNotifications[0], { broadcastAdmins: true });
-      }
+      emitNotificationBatch(adminNotifications);
     } catch (notificationError) {
       console.error("[activities] edit notification failed:", notificationError);
     }
@@ -816,9 +838,7 @@ async function createActivity(req, res) {
           tipo_actividad_rel: { select: { id_tipo: true, nombre: true, imagen_url: true } },
           _count: {
             select: {
-              actividad_participantes: {
-                where: { rol: "participante" }
-              }
+              actividad_participantes: true
             }
           }
         }
@@ -889,13 +909,11 @@ async function createActivity(req, res) {
       const adminNotifications = await notifyAdminUsers(prisma, idEncargado, {
         titulo: "Nueva propuesta de actividad",
         descripcion: `Se creó la actividad ${activityTitle} para revisión.`,
-        tipo: "revision",
+        tipo: "actividad",
         id_actividad: created.newActivity.id_actividad
       });
 
-      if (adminNotifications?.[0]) {
-        emitNotificationCreated(adminNotifications[0], { broadcastAdmins: true });
-      }
+      emitNotificationBatch(adminNotifications);
     } catch (notificationError) {
       console.error("[activities] admin notification failed:", notificationError);
     }
@@ -930,9 +948,7 @@ async function enrollInActivity(req, res) {
         max_participantes: true,
         _count: {
           select: {
-            actividad_participantes: {
-              where: { rol: "participante" }
-            }
+            actividad_participantes: true
           }
         }
       }
@@ -1067,7 +1083,7 @@ async function markMyAttendance(req, res) {
 
     const activity = await prisma.actividad.findUnique({
       where: { id_actividad: idActividad },
-      select: { id_actividad: true, estado: true }
+      select: { id_actividad: true, estado: true, id_encargado: true }
     });
 
     if (!activity) {
@@ -1088,8 +1104,11 @@ async function markMyAttendance(req, res) {
       select: { rol: true, asistio: true }
     });
 
-    if (!membership || membership.rol !== "participante") {
-      return res.status(403).json({ message: "Solo participantes inscritos pueden marcar asistencia" });
+    const isOwner = Number(activity?.id_encargado) === idUsuario;
+    const canMarkAttendance = membership && (membership.rol === "participante" || (membership.rol === "encargado" && isOwner));
+
+    if (!canMarkAttendance) {
+      return res.status(403).json({ message: "Solo participantes o el encargado pueden marcar asistencia" });
     }
 
     if (membership.asistio) {
@@ -1367,9 +1386,7 @@ async function reviewActivity(req, res) {
         usuario: { select: { id_usuario: true, nombre: true, apellido: true } },
         _count: {
           select: {
-            actividad_participantes: {
-              where: { rol: "participante" }
-            }
+            actividad_participantes: true
           }
         }
       }
@@ -1406,9 +1423,7 @@ async function reviewActivity(req, res) {
           tipo_actividad_rel: { select: { id_tipo: true, nombre: true, imagen_url: true } },
           _count: {
             select: {
-              actividad_participantes: {
-                where: { rol: "participante" }
-              }
+              actividad_participantes: true
             }
           }
         }
@@ -1432,9 +1447,7 @@ async function reviewActivity(req, res) {
             tipo_actividad_rel: { select: { id_tipo: true, nombre: true, imagen_url: true } },
             _count: {
               select: {
-                actividad_participantes: {
-                  where: { rol: "participante" }
-                }
+                actividad_participantes: true
               }
             }
           }
@@ -1450,36 +1463,55 @@ async function reviewActivity(req, res) {
     const ownerNotification = pendingRevision
       ? action === "approve"
         ? {
-            titulo: "Edición de actividad aprobada",
+            titulo: `Edición de actividad aprobada ${quoteActivityTitle(activityTitle)}`,
             descripcion: "Los cambios solicitados fueron publicados.",
-            tipo: "revision",
+            tipo: "actividad",
             id_actividad: idActividad
           }
         : {
-            titulo: "Edición de actividad rechazada",
+            titulo: `Edición de actividad rechazada ${quoteActivityTitle(activityTitle)}`,
             descripcion: reason || "Los cambios solicitados no fueron aprobados.",
-            tipo: "revision",
+            tipo: "actividad",
             id_actividad: idActividad
           }
       : action === "approve"
         ? {
-            titulo: "Aprobación de propuesta actividad",
+            titulo: `Aprobación propuesta actividad ${quoteActivityTitle(activityTitle)}`,
             descripcion: "La actividad quedó habilitada para publicarse.",
-            tipo: "revision",
+            tipo: "actividad",
             id_actividad: idActividad
           }
         : {
-            titulo: "Rechazo propuesta actividad",
+            titulo: `Rechazo propuesta actividad ${quoteActivityTitle(activityTitle)}`,
             descripcion: reason || "La actividad no fue aprobada por administración.",
-            tipo: "revision",
+            tipo: "actividad",
             id_actividad: idActividad
           };
 
     try {
-      const ownerNotifications = await notifyActivityOwner(prisma, idUsuario, idActividad, ownerNotification);
+      const ownerNotifications = await notifyActivityOwnerExplicit(prisma, idUsuario, idActividad, ownerNotification);
       emitNotificationBatch(ownerNotifications);
     } catch (notifError) {
       console.error("[reviewActivity] ownerNotification failed:", notifError);
+    }
+
+    if (action === "approve" || action === "reject") {
+      try {
+        emitNotificationCreated({
+          id: `approval-${idActividad}-${Date.now()}`,
+          id_notificacion: null,
+          type: "actividad",
+          tipo: "actividad",
+          title: ownerNotification.titulo,
+          titulo: ownerNotification.titulo,
+          detail: ownerNotification.descripcion,
+          descripcion: ownerNotification.descripcion,
+          activityId: idActividad,
+          id_actividad: idActividad
+        }, { broadcastAdmins: true });
+      } catch (_eventError) {
+        // noop: el alta persistida ya se intentó arriba
+      }
     }
 
     if (action === "approve" && pendingRevision) {
@@ -1536,9 +1568,7 @@ async function cancelActivity(req, res) {
         usuario: { select: { id_usuario: true, nombre: true, apellido: true } },
         _count: {
           select: {
-            actividad_participantes: {
-              where: { rol: "participante" }
-            }
+            actividad_participantes: true
           }
         }
       }
@@ -1572,9 +1602,7 @@ async function cancelActivity(req, res) {
         usuario: { select: { id_usuario: true, nombre: true, apellido: true } },
         _count: {
           select: {
-            actividad_participantes: {
-              where: { rol: "participante" }
-            }
+            actividad_participantes: true
           }
         }
       }

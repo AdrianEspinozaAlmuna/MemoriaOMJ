@@ -322,7 +322,7 @@ export default function AdminImagesManager() {
                       <button
                         type="button"
                         onClick={() => openEditModal(tipo)}
-                        className="inline-flex items-center gap-1 rounded-sm border border-[#d8e6dd] bg-white px-3 py-1.5 text-[0.78rem] font-semibold text-[#355447] transition-colors hover:bg-[#f5f9f7]"
+                        className="inline-flex items-center gap-1 rounded-sm border border-[var(--primary)] bg-white px-3 py-1.5 text-[0.78rem] font-semibold text-[var(--primary)] transition-colors hover:bg-[#f5f9f7]"
                       >
                         <Pencil className="h-3.5 w-3.5" />
                         Editar
@@ -381,6 +381,9 @@ export default function AdminImagesManager() {
 
           <div>
             <label className="mb-2 block text-[0.86rem] font-semibold text-[var(--text)]">Imagen</label>
+            <p className="mb-2 text-[0.8rem] text-[var(--text-muted)]">
+              {editingTipo ? "Puedes cambiar el nombre, la descripción o reemplazar la imagen actual." : "Carga la imagen principal del nuevo tipo de actividad."}
+            </p>
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
@@ -401,6 +404,12 @@ export default function AdminImagesManager() {
           {preview && (
             <div className="overflow-hidden rounded-sm border border-[#d8e6dd] bg-white">
               <img src={preview} alt="Vista previa" className="h-48 w-full object-cover" />
+            </div>
+          )}
+
+          {editingTipo && !selectedFile && editingTipo.imagen_url && (
+            <div className="rounded-sm border border-[#d8e6dd] bg-[#f8fbf9] px-3.5 py-2.5 text-[0.82rem] text-[var(--text-muted)]">
+              Se mantendra la imagen actual mientras no subas una nueva.
             </div>
           )}
 

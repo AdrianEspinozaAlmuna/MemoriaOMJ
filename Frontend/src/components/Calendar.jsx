@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, ChevronLeft, Clock3, ChevronRight, LayoutGrid, MapPin, Rows3, UserRound, Users } from "lucide-react";
+import { ArrowRight, ChevronLeft, Clock3, ChevronRight, LayoutGrid, MapPin, Rows3, Tags, UserRound, Users } from "lucide-react";
 import Modal from "./Modal";
 import { parseDateForChile } from "../utils/chileDate";
 import { resolveActivityImage } from "../services/activityImagesService";
@@ -107,6 +107,10 @@ function getActivityCreator(activity) {
   return activity.manager || activity.createdBy || activity.author || "OMJ Curico";
 }
 
+function getActivityTypeLabel(activity) {
+  return activity.tipo_actividad?.nombre || activity.type || activity.category || "Actividad";
+}
+
 function getActivityParticipants(activity) {
   const enrolled = activity.enrolled ?? activity.participants ?? activity.inscritos ?? null;
   const capacity = activity.capacity ?? activity.max_participantes ?? activity.capacidad ?? null;
@@ -127,6 +131,7 @@ function getActivityTimeRange(activity) {
 
 function CompactCalendarActivityCard({ activity, onClick, showPlace = true }) {
   const creator = getActivityCreator(activity);
+  const typeLabel = getActivityTypeLabel(activity);
   const participantsLabel = getActivityParticipants(activity);
   const imageSrc = resolveActivityImage(activity);
   return (
@@ -142,7 +147,7 @@ function CompactCalendarActivityCard({ activity, onClick, showPlace = true }) {
       <div className="flex-1 flex items-start gap-3">
         <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-[8px] border border-[#edf3ee] bg-[#f3f4f6] flex items-center justify-center text-[0.8rem] text-[#6c7f74]">
           {imageSrc ? (
-            <img src={imageSrc} alt={`Imagen ${activity.title}`} className="h-full w-full object-cover" />
+            <img src={imageSrc} alt={`Imagen ${activity.title}`} className="h-full w-full object-cover" loading="lazy" decoding="async" />
           ) : (
             <div className="font-semibold">OMJ</div>
           )}
@@ -158,6 +163,10 @@ function CompactCalendarActivityCard({ activity, onClick, showPlace = true }) {
           </p>
 
           <div className="mt-2 flex flex-wrap items-center gap-3 text-[0.8rem] text-[#3f5f52]">
+            <span className="inline-flex items-center gap-1 max-w-[22ch] truncate">
+              <Tags className="h-3.5 w-3.5 text-[var(--primary)]" strokeWidth={1.95} />
+              <span className="text-[var(--text)]">{typeLabel}</span>
+            </span>
             <span className="inline-flex items-center gap-1">
               <Clock3 className="h-3.5 w-3.5 text-[var(--primary)]" strokeWidth={1.95} />
               {getActivityTimeRange(activity)}
@@ -344,8 +353,11 @@ export default function Calendar({ activities, viewMode, monthDate, onActivityCl
               <div className="flex h-[78px] items-end overflow-hidden max-[640px]:h-[64px]">
                 {dayActivities.length > 0 ? (
                   <div className="w-full rounded-md border border-[#0f8f4e] bg-[linear-gradient(135deg,#12924f,#0f8f4e)] px-2.5 py-2 text-white overflow-hidden max-[640px]:px-2 max-[640px]:py-1.5">
-                    <p className="text-[0.76rem] font-bold leading-tight break-words max-[640px]:text-[0.66rem]">{dayActivities.length} actividades en el dia</p>
-                    <p className="mt-0.5 text-[0.7rem] font-semibold leading-tight text-white/85 max-[640px]:hidden">{enrolledCount} inscritas</p>
+                    <p className="text-[0.76rem] font-bold leading-tight break-words max-[1280px]:text-[0.66rem] max-[1280px]:whitespace-nowrap">
+                      <span className="max-[1280px]:hidden">{dayActivities.length} actividades en el dia</span>
+                      <span className="hidden max-[1280px]:inline">{dayActivities.length} act.</span>
+                    </p>
+                    <p className="mt-0.5 text-[0.7rem] font-semibold leading-tight text-white/85 max-[1280px]:hidden">{enrolledCount} inscritas</p>
                   </div>
                 ) : (
                   <div className="w-full" aria-hidden="true" />
@@ -384,7 +396,7 @@ export default function Calendar({ activities, viewMode, monthDate, onActivityCl
                 ×
               </button>
             </div>
-            <div className="mt-3 flex flex-wrap items-center gap-2">
+            <div className="mt-3 flex flex-wrap items-center gap-2 max-[640px]:mt-2">
               <button
                 type="button"
                 className="inline-flex cursor-pointer items-center gap-1.5 rounded-[10px] border border-[#cfe3d6] bg-white px-2.5 py-1.5 text-[0.78rem] font-semibold text-[var(--text)] transition-colors hover:bg-[#eef8f2]"
@@ -404,43 +416,44 @@ export default function Calendar({ activities, viewMode, monthDate, onActivityCl
             </div>
           </header>
 
-          <div className=" bg-[var(--surface)]  px-5 py-2.5">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="inline-flex gap-1 rounded-[10px] border border-[#e5e7eb] bg-[#f8faf9] p-1">
-                <button
-                  type="button"
-                  className={`inline-flex cursor-pointer items-center gap-1.5 rounded-[8px] px-3 py-1.5 text-[0.8rem] font-semibold transition-colors ${
-                    dayViewMode === "hora" ? "bg-[var(--primary)] text-white" : "text-[var(--text-muted)] hover:bg-white"
-                  }`}
-                  onClick={() => setDayViewMode("hora")}
-                >
-                  <Rows3 className="h-4 w-4" strokeWidth={2} />
-                  Por hora
-                </button>
-                <button
-                  type="button"
-                  className={`inline-flex cursor-pointer items-center gap-1.5 rounded-[8px] px-3 py-1.5 text-[0.8rem] font-semibold transition-colors ${
-                    dayViewMode === "sala" ? "bg-[var(--primary)] text-white" : "text-[var(--text-muted)] hover:bg-white"
-                  }`}
-                  onClick={() => setDayViewMode("sala")}
-                >
-                  <LayoutGrid className="h-4 w-4" strokeWidth={2} />
-                  Por sala
-                </button>
+          <div className="min-h-0 flex-1 overflow-y-auto bg-[var(--surface)] border border-[#e5e7eb] max-[640px]:max-h-[calc(100dvh-13rem)]">
+            <div className="sticky top-0 z-20 border-b border-[#e5e7eb] bg-[var(--surface)] px-5 py-2.5 shadow-[0_8px_16px_-16px_rgba(19,38,29,0.28)] max-[640px]:px-4 max-[640px]:py-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="inline-flex gap-1 rounded-[10px] border border-[#e5e7eb] bg-[#f8faf9] p-1 max-[640px]:w-full">
+                  <button
+                    type="button"
+                    className={`inline-flex cursor-pointer items-center gap-1.5 rounded-[8px] px-3 py-1.5 text-[0.8rem] font-semibold transition-colors max-[640px]:flex-1 max-[640px]:justify-center ${
+                      dayViewMode === "hora" ? "bg-[var(--primary)] text-white" : "text-[var(--text-muted)] hover:bg-white"
+                    }`}
+                    onClick={() => setDayViewMode("hora")}
+                  >
+                    <Rows3 className="h-4 w-4" strokeWidth={2} />
+                    Por hora
+                  </button>
+                  <button
+                    type="button"
+                    className={`inline-flex cursor-pointer items-center gap-1.5 rounded-[8px] px-3 py-1.5 text-[0.8rem] font-semibold transition-colors max-[640px]:flex-1 max-[640px]:justify-center ${
+                      dayViewMode === "sala" ? "bg-[var(--primary)] text-white" : "text-[var(--text-muted)] hover:bg-white"
+                    }`}
+                    onClick={() => setDayViewMode("sala")}
+                  >
+                    <LayoutGrid className="h-4 w-4" strokeWidth={2} />
+                    Por sala
+                  </button>
+                </div>
+                {createActivityPath ? (
+                  <Link
+                    to={createActivityPath}
+                    onClick={closeDayModal}
+                    className="inline-flex cursor-pointer items-center gap-1.5 rounded-[8px] border border-[var(--primary)] bg-[var(--primary)] px-3 py-1.5 text-[0.9rem] font-semibold !text-white transition-colors hover:border-[var(--primary-strong)] hover:bg-[var(--primary-strong)] max-[640px]:w-full max-[640px]:justify-center"
+                  >
+                    Proponer Actividad
+                  </Link>
+                ) : null}
               </div>
-              {createActivityPath ? (
-                <Link
-                  to={createActivityPath}
-                  onClick={closeDayModal}
-                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-[8px] border border-[var(--primary)] bg-[var(--primary)] px-3 py-1.5 text-[0.9rem] font-semibold !text-white transition-colors hover:border-[var(--primary-strong)] hover:bg-[var(--primary-strong)]"
-                >
-                  Proponer Actividad
-                </Link>
-              ) : null}
             </div>
-          </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto bg-[var(--surface)] border border-[#e5e7eb] px-5 py-4 max-[640px]:max-h-[calc(100dvh-13rem)]">
+            <div className="px-5 py-4 max-[640px]:px-4 max-[640px]:py-3">
             {selectedDayActivities.length === 0 ? (
               <div className="rounded-[10px] border border-dashed border-[#e5e7eb] bg-[#fbfcfb] p-4 text-[0.92rem] text-[var(--text-muted)]">
                 No hay actividades programadas para este dia.
@@ -503,6 +516,7 @@ export default function Calendar({ activities, viewMode, monthDate, onActivityCl
                 ))}
               </div>
             )}
+            </div>
           </div>
         </div>
       </Modal>

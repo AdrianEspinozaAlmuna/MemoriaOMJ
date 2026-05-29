@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { CalendarDays, CircleDot, MapPin, UserRound, Users, Clock3 } from "lucide-react";
+import { CalendarDays, CircleDot, MapPin, Tags, UserRound, Users, Clock3 } from "lucide-react";
 import { ArrowRight } from "lucide-react";
 import { formatDateForChile, parseDateForChile } from "../utils/chileDate";
 import { resolveActivityImage } from "../services/activityImagesService";
@@ -74,7 +74,7 @@ function CardBody({ activity, actionLabel, emphasizeEnrollment = false }) {
         <div className="h-40 w-full flex-shrink-0 overflow-hidden rounded-[10px] bg-[#f3f4f6] sm:h-28 sm:w-44">
           {imageSrc ? (
             // eslint-disable-next-line jsx-a11y/img-redundant-alt
-            <img src={imageSrc} alt={`Imagen ${activity.title}`} className="h-full w-full object-cover" />
+            <img src={imageSrc} alt={`Imagen ${activity.title}`} className="h-full w-full object-cover" loading="lazy" decoding="async" />
           ) : (
             <div className="h-full w-full flex items-center justify-center text-[0.82rem] text-[var(--text-muted)]">Imagen</div>
           )}
@@ -111,7 +111,10 @@ function CardBody({ activity, actionLabel, emphasizeEnrollment = false }) {
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                 {getTopLabel(activity) && (
                   <p className="m-0 inline-flex items-center gap-2">
-                    <span className="inline-flex rounded-sm bg-[#eef8f2] px-2 py-0.5 text-[0.75rem] font-semibold text-[#1f6e45]">{getTopLabel(activity)}</span>
+                    <span className="inline-flex items-center gap-1 text-[0.85rem] font-semibold text-[var(--text)]">
+                      <Tags className="h-3.5 w-3.5 text-[var(--primary)]" strokeWidth={1.95} />
+                      {getTopLabel(activity)}
+                    </span>
                   </p>
                 )}
                 <p className="m-0 inline-flex items-center gap-2">
