@@ -58,6 +58,7 @@ export default function AdminApprovals() {
 		setError("");
 		const data = await getAdminActivities({ approved: false, estado: "pendiente" });
 		setItems(Array.isArray(data) ? data : []);
+		setError(data?.error || "");
 		setLoading(false);
 	}
 
@@ -193,7 +194,7 @@ export default function AdminApprovals() {
 			<header className="flex items-start justify-between gap-4">
 				<div className="space-y-2">
 					<p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Panel de administrador</p>
-					<h1 className="m-0 text-[clamp(1.8rem,2.5vw,2.3rem)] font-bold text-[var(--text)]">Aprobacion de actividades</h1>
+					<h1 className="m-0 text-[clamp(1.8rem,2.5vw,2.3rem)] font-bold text-[var(--text)]">Aprobación de actividades</h1>
 					<p className="max-w-3xl text-[0.92rem] text-[var(--text-muted)]">Revisa y aprueba propuestas de actividades antes de publicarlas.</p>
 				</div>
 				<button

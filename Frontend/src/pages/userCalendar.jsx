@@ -12,6 +12,7 @@ function getMonthLabel(date) {
 export default function UserCalendar() {
   const [loading, setLoading] = useState(true);
   const [activities, setActivities] = useState([]);
+  const [loadError, setLoadError] = useState("");
   const [viewMode, setViewMode] = useState("mensual");
   const [monthDate, setMonthDate] = useState(() => {
     const now = new Date();
@@ -27,7 +28,8 @@ export default function UserCalendar() {
 
     getCalendarData().then(data => {
       if (!mounted) return;
-      setActivities(data);
+      setActivities(Array.isArray(data) ? data : []);
+      setLoadError(data?.error || "");
       setLoading(false);
     });
 
@@ -69,6 +71,11 @@ export default function UserCalendar() {
       </header>
 
       <section className="rounded-sm border border-[#d8e6dd] bg-[var(--panel-bg)] p-6 shadow-sm space-y-4">
+        {loadError && (
+          <div className="rounded-lg border border-[#f0d5cf] bg-[#fff4f2] px-4 py-3 text-[0.88rem] text-[#9f3b2d]">
+            {loadError}
+          </div>
+        )}
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#e0e9e2] pb-3">
           <strong className="text-[1rem] font-bold capitalize text-[var(--text)]">{monthLabel}</strong>
           <div className="flex items-center gap-2">

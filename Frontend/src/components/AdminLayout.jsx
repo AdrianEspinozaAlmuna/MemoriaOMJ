@@ -1,5 +1,5 @@
 import React from "react";
-import { ListCheck, BarChart3, Bell, CalendarDays, CheckCircle2, Circle, LayoutGrid, DoorOpen, Home, LogOut, Menu, PanelLeftClose, PanelLeftOpen, Plus, UserRound, Users, X } from "lucide-react";
+import { ListCheck, BarChart3, Bell, CalendarDays, CheckCircle2, Circle, LayoutGrid, DoorOpen, Home, LogOut, Menu, PanelLeftClose, PanelLeftOpen, Plus, Tags, UserRound, Users, X } from "lucide-react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { getAdminActivities } from "../services/userViewsService";
 
@@ -25,15 +25,28 @@ function getInitials(name = "") {
 		.join("") || "A";
 }
 
-const mainLinks = [
-	{ to: "/admin/dashboard", label: "Dashboard", icon: "home" },
-	{ to: "/admin/usuarios", label: "Usuarios", icon: "users" },
-	{ to: "/admin/aprobaciones", label: "Aprobaciones", icon: "check" },
-	{ to: "/admin/calendario", label: "Calendario", icon: "calendar" },
-	{ to: "/admin/actividades", label: "Actividades", icon: "list" },
-	{ to: "/admin/reportes", label: "Reportes", icon: "report" },
-	{ to: "/admin/imagenes", label: "Catalogo de Tipos", icon: "LayoutGrid" },
-	{ to: "/admin/salas", label: "Salas", icon: "rooms" }
+const sidebarSections = [
+	{
+		title: "Inicio",
+		items: [{ to: "/admin/dashboard", label: "Dashboard", icon: "home" }]
+	},
+	{
+		title: "Actividades",
+		items: [
+			{ to: "/admin/aprobaciones", label: "Aprobaciones", icon: "check" },
+			{ to: "/admin/calendario", label: "Calendario", icon: "calendar" },
+			{ to: "/admin/actividades", label: "Lista actividades", icon: "list" },
+			{ to: "/admin/reportes", label: "Reportes", icon: "report" }
+		]
+	},
+	{
+		title: "Gestión",
+		items: [
+			{ to: "/admin/usuarios", label: "Usuarios", icon: "users" },
+			{ to: "/admin/tipos-e-imagenes", label: "Tipos e Imágenes", icon: "tags" },
+			{ to: "/admin/salas", label: "Salas", icon: "rooms" }
+		]
+	}
 ];
 
 function SidebarIcon({ name, className = "h-[18px] w-[18px]" }) {
@@ -174,7 +187,7 @@ export default function AdminLayout() {
 		if (path.endsWith("/admin/actividades")) return "Actividades";
 		if (path.endsWith("/admin/reportes")) return "Reportes";
 		if (path.endsWith("/admin/notificaciones")) return "Notificaciones";
-		if (path.endsWith("/admin/imagenes")) return "Catalogo de tipos";
+		if (path.endsWith("/admin/imagenes")) return "Tipos e Imagenes";
 		if (path.endsWith("/admin/configuracion")) return "Salas";
 		return "Panel de administrador";
 	}
@@ -200,24 +213,33 @@ export default function AdminLayout() {
 				</div>
 
 
-				<nav className="grid gap-1" aria-label="Menu de administracion">
-					{mainLinks.map(link => (
-							<NavLink
-							key={link.to}
-							to={link.to}
-							onClick={closeMobileNav}
-							className={navLinkClass}
-						>
-							<span className="inline-flex h-5 w-5 shrink-0 items-center justify-center">
-								<SidebarIcon name={link.icon} className="h-[18px] w-[18px] shrink-0" />
-							</span>
-								<span className={sidebarCollapsed ? "min-[981px]:hidden" : ""}>{link.label}</span>
-								{link.to === "/admin/aprobaciones" && pendingApprovalsCount > 0 && (
-									<span className={`ml-auto inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#e03a3a] px-1 text-[0.66rem] font-bold leading-none text-white shadow-[0_8px_16px_-10px_rgba(224,58,58,0.8)] ${sidebarCollapsed ? "min-[981px]:hidden" : ""}`}>
-										{pendingApprovalsCount > 9 ? "9+" : pendingApprovalsCount}
-									</span>
-								)}
-						</NavLink>
+				<nav className="grid gap-6" aria-label="Menu de administracion">
+					{sidebarSections.map(section => (
+						<section key={section.title} className="grid gap-3">
+							<div className={`px-2 ${sidebarCollapsed ? "min-[981px]:hidden" : ""}`}>
+								<p className="m-0 text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-[#7c8a83]">{section.title}</p>
+							</div>
+							<div className="grid gap-1">
+								{section.items.map(link => (
+									<NavLink
+										key={link.to}
+										to={link.to}
+										onClick={closeMobileNav}
+										className={navLinkClass}
+									>
+										<span className="inline-flex h-5 w-5 shrink-0 items-center justify-center">
+											<SidebarIcon name={link.icon} className="h-[18px] w-[18px] shrink-0" />
+										</span>
+										<span className={sidebarCollapsed ? "min-[981px]:hidden" : ""}>{link.label}</span>
+										{link.to === "/admin/aprobaciones" && pendingApprovalsCount > 0 && (
+											<span className={`ml-auto inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#e03a3a] px-1 text-[0.66rem] font-bold leading-none text-white shadow-[0_8px_16px_-10px_rgba(224,58,58,0.8)] ${sidebarCollapsed ? "min-[981px]:hidden" : ""}`}>
+												{pendingApprovalsCount > 9 ? "9+" : pendingApprovalsCount}
+											</span>
+										)}
+									</NavLink>
+								))}
+							</div>
+						</section>
 					))}
 				</nav>
 
@@ -225,7 +247,7 @@ export default function AdminLayout() {
 					<p className="mb-2 px-2 text-[0.74rem] font-semibold uppercase tracking-[0.08em] text-[#829087]">Cuenta</p>
 
 					<div className={`grid gap-2 ${sidebarCollapsed ? "min-[981px]:place-items-center" : ""}`}>
-						<div className={`rounded-lg px-3 py-2.5 text-left text-[0.9rem] font-semibold text-[#2f463a] ${sidebarCollapsed ? "min-[981px]:grid min-[981px]:place-items-center min-[981px]:px-0 min-[981px]:text-center" : "inline-flex items-center gap-2"}`}>
+						<div className={`flex items-center rounded-lg px-3 py-2.5 text-[0.9rem] font-semibold text-[#2f463a] ${sidebarCollapsed ? "min-[981px]:grid min-[981px]:place-items-center min-[981px]:px-0 min-[981px]:text-center" : "gap-2"}`}>
 							<span className="grid h-8 w-8 place-items-center rounded-full bg-[#eef8f2] text-[var(--primary-strong)]">
 								{sidebarCollapsed ? (
 									<span className="text-[0.76rem] font-bold tracking-[0.03em]">{displayInitials}</span>
@@ -242,7 +264,7 @@ export default function AdminLayout() {
 						<button
 							type="button"
 							onClick={handleLogout}
-							className={`inline-flex w-full items-center rounded-sm border border-[var(--reject-hover)] bg-white py-2 text-left text-[0.84rem] font-semibold text-[var(--reject-hover)] hover:bg-[#ffefed] ${sidebarCollapsed ? "min-[981px]:justify-center min-[981px]:gap-0 min-[981px]:px-0" : "gap-2 px-2.5"}`}
+							className={`inline-flex w-full items-center justify-center rounded-sm border border-[var(--reject-hover)] bg-white py-2 text-center text-[0.84rem] font-semibold text-[var(--reject-hover)] hover:bg-[#ffefed] ${sidebarCollapsed ? "min-[981px]:gap-0 min-[981px]:px-0" : "gap-2 px-2.5"}`}
 						>
 							<LogOut aria-hidden="true" focusable="false" className="h-4 w-4" strokeWidth={2} />
 							<span className={sidebarCollapsed ? "min-[981px]:hidden" : ""}>Cerrar sesion</span>

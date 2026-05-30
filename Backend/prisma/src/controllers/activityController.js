@@ -525,6 +525,31 @@ async function requestActivityEdit(req, res) {
     return res.status(400).json({ message: "max_participantes invalido" });
   }
 
+  // Validación servidor: solo permitir creación para el día actual y horas futuras
+  try {
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const activityDateOnly = new Date(activityDate.getFullYear(), activityDate.getMonth(), activityDate.getDate());
+    if (activityDateOnly.getTime() !== todayStart.getTime()) {
+      return res.status(400).json({ message: "Solo se pueden crear actividades para el día de hoy." });
+    }
+
+    const startDateTimeLocal = new Date(
+      activityDate.getFullYear(),
+      activityDate.getMonth(),
+      activityDate.getDate(),
+      startTime.getUTCHours(),
+      startTime.getUTCMinutes()
+    );
+
+    if (startDateTimeLocal.getTime() < now.getTime()) {
+      return res.status(400).json({ message: "La hora de inicio no puede ser anterior a la hora actual." });
+    }
+  } catch (e) {
+    // si hay cualquier error en la comprobación, continuar con validación posterior (no permitir crear datos inválidos)
+    return res.status(400).json({ message: "Fecha u hora de actividad inválida" });
+  }
+
   if (!Number.isInteger(salaId) || salaId < 1) {
     return res.status(400).json({ message: "id_sala invalido" });
   }
@@ -1464,26 +1489,26 @@ async function reviewActivity(req, res) {
       ? action === "approve"
         ? {
             titulo: `Edición de actividad aprobada ${quoteActivityTitle(activityTitle)}`,
-            descripcion: "Los cambios solicitados fueron publicados.",
+            descripcion: `Los cambios solicitados de ${quoteActivityTitle(activityTitle)} fueron publicados.`,
             tipo: "actividad",
             id_actividad: idActividad
           }
         : {
             titulo: `Edición de actividad rechazada ${quoteActivityTitle(activityTitle)}`,
-            descripcion: reason || "Los cambios solicitados no fueron aprobados.",
+            descripcion: reason || `Los cambios solicitados de ${quoteActivityTitle(activityTitle)} no fueron aprobados.`,
             tipo: "actividad",
             id_actividad: idActividad
           }
       : action === "approve"
         ? {
             titulo: `Aprobación propuesta actividad ${quoteActivityTitle(activityTitle)}`,
-            descripcion: "La actividad quedó habilitada para publicarse.",
+            descripcion: `La actividad ${quoteActivityTitle(activityTitle)} quedó habilitada para publicarse.`,
             tipo: "actividad",
             id_actividad: idActividad
           }
         : {
             titulo: `Rechazo propuesta actividad ${quoteActivityTitle(activityTitle)}`,
-            descripcion: reason || "La actividad no fue aprobada por administración.",
+            descripcion: reason || `La actividad ${quoteActivityTitle(activityTitle)} no fue aprobada por administración.`,
             tipo: "actividad",
             id_actividad: idActividad
           };

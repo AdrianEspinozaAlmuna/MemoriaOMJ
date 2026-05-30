@@ -439,11 +439,11 @@ export default function Navbar() {
 							<p className="mb-2 px-2 text-[0.74rem] font-semibold uppercase tracking-[0.08em] text-[#829087]">Cuenta</p>
 
 							<div className="grid gap-2">
-								<div className="rounded-lg px-3 py-2.5 text-left text-[0.9rem] font-semibold text-[#2f463a] inline-flex items-center gap-2">
+								<div className="inline-flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-center text-[0.9rem] font-semibold text-[#2f463a]">
 									<span className="grid h-8 w-8 place-items-center rounded-full bg-[#eef8f2] text-[var(--primary-strong)]">
 										<UserRound aria-hidden="true" focusable="false" className="h-4 w-4" strokeWidth={2} />
 									</span>
-									<span className="grid min-w-0">
+									<span className="grid min-w-0 text-center">
 										<span className="truncate">{fullName}</span>
 										{mergedUser?.mail && <span className="truncate text-[0.74rem] font-normal text-[#7a8881]">{mergedUser.mail}</span>}
 									</span>
@@ -452,7 +452,7 @@ export default function Navbar() {
 								<button
 									type="button"
 									onClick={handleLogout}
-									className="inline-flex w-full items-center rounded-sm border border-[var(--reject-hover)] bg-white py-2 text-left text-[0.84rem] font-semibold text-[var(--reject-hover)] hover:bg-[#ffefed] gap-2 px-2.5"
+									className="inline-flex w-full items-center justify-center gap-2 rounded-sm border border-[var(--reject-hover)] bg-white py-2 text-center text-[0.84rem] font-semibold text-[var(--reject-hover)] hover:bg-[#ffefed] px-2.5"
 								>
 									<LogOut aria-hidden="true" focusable="false" className="h-4 w-4" strokeWidth={2} />
 									<span>Cerrar sesion</span>

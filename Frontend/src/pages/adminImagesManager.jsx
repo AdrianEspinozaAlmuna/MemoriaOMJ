@@ -244,10 +244,10 @@ export default function AdminImagesManager() {
   };
 
   return (
-    <section className="max-w-7xl mx-auto px-4 py-6 space-y-8">
+    <section className="animate-[revealUp_0.7s_ease_both] space-y-8">
       <header>
         <p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Panel de administrador</p>
-        <h1 className="mt-2 mb-0 text-[clamp(1.8rem,2.5vw,2.3rem)] font-bold text-[var(--text)]">Catalogo de tipos de actividad</h1>
+        <h1 className="mt-2 mb-0 text-[clamp(1.8rem,2.5vw,2.3rem)] font-bold text-[var(--text)]">Gestión de Tipos e Imágenes de actividad</h1>
         <p className="mt-2 text-[0.92rem] text-[var(--text-muted)]">
           Administra los tipos de actividad y su imagen principal de portada.
         </p>
@@ -304,15 +304,6 @@ export default function AdminImagesManager() {
                     <h3 className="m-0 text-[1rem] font-semibold text-[var(--text)]">{tipo.nombre}</h3>
                     <p className="m-0 mt-1 text-[0.82rem] text-[var(--text-muted)]">{tipo.descripcion || "Sin descripcion"}</p>
                   </div>
-
-                  <a
-                    href={tipo.imagen_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="truncate text-[0.78rem] font-medium text-[var(--primary)] hover:underline"
-                  >
-                    Ver imagen en Firebase
-                  </a>
 
                   <div className="flex items-center justify-between border-t border-[#edf2ef] pt-3">
                     <span className="text-[0.74rem] text-[var(--text-muted)]">

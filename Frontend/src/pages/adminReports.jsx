@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
 	Activity, BarChart3, CalendarDays, PieChart as PieChartIcon,
 	Star, TrendingUp, Users, Download, Filter, Clock,
@@ -33,7 +34,7 @@ function ChartTooltip({ active, payload, label, unit = "" }) {
 // ─────────────────────────────────────────
 function AttendanceChart({ data }) {
 	return (
-		<div className="h-[200px] w-full">
+		<div className="h-[170px] w-full">
 			<ResponsiveContainer width="100%" height="100%">
 				<AreaChart data={data} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
 					<defs>
@@ -183,6 +184,39 @@ function formatActivityStatus(value) {
 	};
 }
 
+const STATUS_FILTER_OPTIONS = [
+	{ value: "all", label: "Todos" },
+	{ value: "pendiente", label: "Pendiente" },
+	{ value: "programada", label: "Programada" },
+	{ value: "en_curso", label: "En curso" },
+	{ value: "finalizada", label: "Finalizada" },
+	{ value: "rechazada", label: "Rechazada" },
+	{ value: "cancelada", label: "Cancelada" }
+];
+
+function getActivityStateValue(activity) {
+	const value = activity?.state || activity?.status || activity?.estado || "";
+	return String(value).toLowerCase();
+}
+
+function matchesStateFilter(activity, filterValue) {
+	if (filterValue === "all") return true;
+	const stateValue = getActivityStateValue(activity);
+	if (filterValue === "finalizada") {
+		return stateValue.includes("final") || stateValue.includes("termin") || stateValue.includes("complet");
+	}
+	if (filterValue === "rechazada") {
+		return stateValue.includes("rech");
+	}
+	if (filterValue === "cancelada") {
+		return stateValue.includes("cancel");
+	}
+	if (filterValue === "pendiente") {
+		return stateValue.includes("pend") || stateValue.includes("revision");
+	}
+	return stateValue === filterValue || stateValue.includes(filterValue.replace("_", ""));
+}
+
 // ─────────────────────────────────────────
 // Filter pill button
 // ─────────────────────────────────────────
@@ -205,6 +239,7 @@ function FilterPill({ active, onClick, children }) {
 // Main component
 // ─────────────────────────────────────────
 export default function AdminReports() {
+	const navigate = useNavigate();
 	const [draftRange, setDraftRange]     = useState("");
 	const [draftStart, setDraftStart]     = useState("");
 	const [draftEnd, setDraftEnd]         = useState("");
@@ -212,6 +247,8 @@ export default function AdminReports() {
 	const [reportReady, setReportReady] = useState(false);
 	const [tableSearch, setTableSearch]   = useState("");
 	const [tableCategory, setTableCategory] = useState("Todas");
+	const [tableStatus, setTableStatus] = useState("all");
+	const [tablePage, setTablePage] = useState(1);
 	const [activities, setActivities] = useState([]);
 	const [loadingActivities, setLoadingActivities] = useState(false);
 	const [loadError, setLoadError] = useState(null);
@@ -237,6 +274,7 @@ export default function AdminReports() {
 		try {
 			const data = await getAdminActivities();
 			setActivities(Array.isArray(data) ? data : data || []);
+			setLoadError(data?.error || null);
 		} catch (err) {
 			setLoadError(err?.message || String(err));
 		} finally {
@@ -258,6 +296,7 @@ export default function AdminReports() {
 		}
 
 		setActiveFilters({ range: draftRange, start: draftStart, end: draftEnd });
+		setTablePage(1);
 		setReportReady(true);
 		fetchActivities();
 	}
@@ -285,64 +324,95 @@ export default function AdminReports() {
 			return activities.filter(r => { const d = parseDateYMD(r.date); return d && d >= start && d <= end; });
 	}, [activeFilters, activities, reportReady]);
 
+		const approvedRows = useMemo(() => {
+			return filteredRows.filter(r => Boolean(r.approved) || String(r.state || r.status || "").toLowerCase().includes("aprob") || String(r.estado || "").toLowerCase().includes("aprob"));
+		}, [filteredRows]);
+
+		const finalizedRows = useMemo(() => {
+			return approvedRows.filter(r => {
+				const statusValue = String(r.state || r.status || r.estado || "").toLowerCase();
+				return statusValue.includes("final") || statusValue.includes("termin") || statusValue.includes("complet");
+			});
+		}, [approvedRows]);
+
 	// ── KPI metrics ──
-	const totalActivities    = filteredRows.length;
-	const totalEnrolled      = filteredRows.reduce((s, r) => s + (r.enrolled || 0), 0);
-	const totalCapacity      = filteredRows.reduce((s, r) => s + (r.capacity || 0), 0);
+		const totalActivities    = approvedRows.length;
+		const totalEnrolled      = approvedRows.reduce((s, r) => s + Number(r.enrolled || 0), 0);
+		const totalCapacity      = approvedRows.reduce((s, r) => s + Number(r.capacity || r.max_participantes || 0), 0);
+		const avgFinalizedEnrolled = finalizedRows.length ? Math.round(finalizedRows.reduce((s, r) => s + Number(r.enrolled || 0), 0) / finalizedRows.length) : 0;
 	const avgEnrolled        = totalActivities ? Math.round(totalEnrolled / totalActivities) : 0;
-	const { occupancySum, occupancyCount } = filteredRows.reduce((acc, r) => {
+		const { occupancySum, occupancyCount } = approvedRows.reduce((acc, r) => {
 		const cap = Number(r.capacity || r.max_participantes || 0);
 		const enrolled = Number(r.enrolled || 0);
 		if (cap > 0) { acc.occupancySum += enrolled / cap; acc.occupancyCount += 1; }
 		return acc;
 	}, { occupancySum: 0, occupancyCount: 0 });
 	const avgOccupancy = occupancyCount ? Math.round((occupancySum / occupancyCount) * 100) : 0;
-	const percentHighOccupancy = totalActivities ? Math.round((filteredRows.filter(r => { const cap = Number(r.capacity || r.max_participantes || 0); return cap > 0 && (Number(r.enrolled || 0) / cap) >= 0.8; }).length / totalActivities) * 100) : 0;
-	const uniqueManagers     = new Set(filteredRows.map(r => r.manager)).size;
-	const uniqueRooms        = new Set(filteredRows.map(r => r.place || r.room || r.location)).size;
-	const avgDuration        = totalActivities ? Math.round(filteredRows.reduce((s, r) => {
+		const percentHighOccupancy = totalActivities ? Math.round((approvedRows.filter(r => { const cap = Number(r.capacity || r.max_participantes || 0); return cap > 0 && (Number(r.enrolled || 0) / cap) >= 0.8; }).length / totalActivities) * 100) : 0;
+		const uniqueManagers     = new Set(approvedRows.map(r => r.manager)).size;
+		const uniqueRooms        = new Set(approvedRows.map(r => r.place || r.room || r.location)).size;
+		const avgDuration        = totalActivities ? Math.round(approvedRows.reduce((s, r) => {
 		const { start, end } = getTimeFields(r);
 		if (!start || !end) return s;
 		const [sh, sm] = String(start).split(":").map(Number);
 		const [eh, em] = String(end).split(":").map(Number);
 		if (Number.isNaN(sh) || Number.isNaN(eh)) return s;
 		return s + Math.max(0, (eh * 60 + (em || 0)) - (sh * 60 + (sm || 0)));
-	}, 0) / totalActivities) : 0;
+		}, 0) / totalActivities) : 0;
 
-	// ── Chart data ──
+		// ── Chart data ──
+
 	const categoryData = useMemo(() => {
 		const map = {};
-		filteredRows.forEach(r => { map[r.category || r.type || 'Sin categoría'] = (map[r.category || r.type || 'Sin categoría'] || 0) + 1; });
+		approvedRows.forEach(r => { map[r.category || r.type || 'Sin categoría'] = (map[r.category || r.type || 'Sin categoría'] || 0) + 1; });
 		return Object.entries(map).map(([name, value]) => ({ name, value }));
-	}, [filteredRows]);
+	}, [approvedRows]);
 
 	const weeklyData = useMemo(() => {
 		const days = ["Lun","Mar","Mie","Jue","Vie","Sab","Dom"];
 		const map  = { Lun:0, Mar:0, Mie:0, Jue:0, Vie:0, Sab:0, Dom:0 };
-		filteredRows.forEach(r => { const d = parseDateYMD(r.date); if (!d) return; const index = d.getDay() === 0 ? 6 : d.getDay() - 1; map[days[index]] = (map[days[index]] || 0) + 1; });
+		approvedRows.forEach(r => { const d = parseDateYMD(r.date); if (!d) return; const index = d.getDay() === 0 ? 6 : d.getDay() - 1; map[days[index]] = (map[days[index]] || 0) + 1; });
 		return Object.entries(map).map(([day, value]) => ({ day, value }));
-	}, [filteredRows]);
+	}, [approvedRows]);
 
 	const monthlyData = useMemo(() => {
 		const months = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
 		const map = {};
-		filteredRows.forEach(r => { const d = parseDateYMD(r.date); if (!d) return; const k = months[d.getMonth()]; map[k] = (map[k] || 0) + (r.enrolled || 0); });
+		approvedRows.forEach(r => { const d = parseDateYMD(r.date); if (!d) return; const k = months[d.getMonth()]; map[k] = (map[k] || 0) + (r.enrolled || 0); });
 		return Object.entries(map).map(([month, value]) => ({ month, value }));
-	}, [filteredRows]);
+	}, [approvedRows]);
+
+	const finalizedRoomData = useMemo(() => {
+		const map = {};
+		finalizedRows.forEach(r => {
+			const roomName = r.place || r.room || r.location || "Sin sala";
+			map[roomName] = (map[roomName] || 0) + 1;
+		});
+
+		return Object.entries(map)
+			.sort(([, left], [, right]) => right - left)
+			.slice(0, 5)
+			.map(([name, value]) => ({ name, value }));
+	}, [finalizedRows]);
 
 	// ── Table filtering ──
-	const categories = ["Todas", ...Array.from(new Set(activities.map(r => r.category || r.type || 'Sin categoría')))] ;
+	const categories = ["Todas", ...Array.from(new Set(filteredRows.map(r => r.category || r.type || 'Sin categoría')))] ;
 	const tableRows = useMemo(() => {
 		return filteredRows.filter(r => {
 			const matchSearch = !tableSearch || r.title.toLowerCase().includes(tableSearch.toLowerCase()) || r.manager.toLowerCase().includes(tableSearch.toLowerCase());
-			const matchCat = tableCategory === "Todas" || r.category === tableCategory;
-			return matchSearch && matchCat;
+			const matchCat = tableCategory === "Todas" || (r.category || r.type || 'Sin categoría') === tableCategory;
+			const matchStatus = matchesStateFilter(r, tableStatus);
+			return matchSearch && matchCat && matchStatus;
 		});
-	}, [filteredRows, tableSearch, tableCategory]);
+	}, [filteredRows, tableSearch, tableCategory, tableStatus]);
+	const tablePageSize = 15;
+	const totalTablePages = Math.max(1, Math.ceil(tableRows.length / tablePageSize));
+	const safeTablePage = Math.min(tablePage, totalTablePages);
+	const paginatedTableRows = tableRows.slice((safeTablePage - 1) * tablePageSize, safeTablePage * tablePageSize);
 
 	const kpiCards = [
-		{ label: "Actividades",      value: `${totalActivities}`,   icon: Activity,    sub: "en el período" },
-		{ label: "Inscritos",        value: `${totalEnrolled}`,      icon: Users,       sub: `cap. total ${totalCapacity}` },
+		{ label: "Actividades",      value: `${totalActivities}`,   icon: Activity,    sub: "aprobadas en el período" },
+		{ label: "Inscritos",        value: `${avgFinalizedEnrolled}`, icon: Users,    sub: `promedio por actividad finalizada · cap. total ${totalCapacity}` },
 		{ label: "Ocupación media",  value: `${avgOccupancy}%`,      icon: TrendingUp,  sub: `${percentHighOccupancy}% con ≥80%` },
 		{ label: "Valoración media", value: "4.6 / 5",               icon: Star,        sub: "basado en reseñas" }
 	];
@@ -500,7 +570,7 @@ export default function AdminReports() {
 						</div>
 
 						{/* ── CHARTS ROW 1 ── */}
-						<div className="grid gap-4 xl:grid-cols-[2fr_1fr]">
+						<div className="grid gap-4 xl:grid-cols-[1fr_1fr_1fr]">
 							{/* Attendance trend */}
 							<article className="rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-5 shadow-sm">
 								<div className="mb-4 flex items-center justify-between gap-3">
@@ -514,6 +584,24 @@ export default function AdminReports() {
 									</span>
 								</div>
 								<AttendanceChart data={monthlyData} />
+							</article>
+
+							<article className="rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-5 shadow-sm">
+								<div className="mb-4 flex items-center gap-2">
+									<MapPin className="h-4 w-4 text-[var(--primary)]" strokeWidth={1.8} />
+									<h2 className="m-0 text-[0.95rem] font-semibold text-[var(--text)]">Salas en actividades finalizadas</h2>
+								</div>
+								<div className="h-[170px] w-full">
+									<ResponsiveContainer width="100%" height="100%">
+										<BarChart data={finalizedRoomData} layout="vertical" margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+											<CartesianGrid stroke="#edf4ef" strokeDasharray="3 3" horizontal={false} />
+											<XAxis type="number" allowDecimals={false} tick={{ fill: "#8aab98", fontSize: 11 }} tickLine={false} axisLine={false} />
+											<YAxis type="category" dataKey="name" width={84} tick={{ fill: "#8aab98", fontSize: 11 }} tickLine={false} axisLine={false} />
+											<Tooltip content={<ChartTooltip unit=" act." />} cursor={{ fill: "rgba(5,166,61,0.05)" }} />
+											<Bar dataKey="value" fill="#05a63d" radius={[0, 6, 6, 0]} maxBarSize={22} />
+										</BarChart>
+									</ResponsiveContainer>
+								</div>
 							</article>
 
 							{/* Status donut */}
@@ -551,24 +639,37 @@ export default function AdminReports() {
 							<div className="flex flex-col gap-3 border-b border-[#e4ede7] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
 								<div>
 									<h2 className="m-0 text-[0.95rem] font-semibold text-[var(--text)]">Detalle por actividad</h2>
-									<p className="m-0 mt-0.5 text-[0.78rem] text-[var(--text-muted)]">{tableRows.length} actividad{tableRows.length !== 1 ? "es" : ""} en el período seleccionado</p>
+									<p className="m-0 mt-0.5 text-[0.78rem] text-[var(--text-muted)]">
+										{tableRows.length} actividad{tableRows.length !== 1 ? "es" : ""} en el período seleccionado
+										{tableRows.length > 0 ? ` · página ${safeTablePage} de ${totalTablePages}` : ""}
+									</p>
 								</div>
 								<div className="flex flex-wrap items-center gap-2">
 									{/* Search */}
 									<input
 										type="text"
 										value={tableSearch}
-										onChange={e => setTableSearch(e.target.value)}
+										onChange={e => { setTableSearch(e.target.value); setTablePage(1); }}
 										placeholder="Buscar por nombre o encargado…"
-										className="rounded-lg border border-[#d8e6dd] px-3 py-1.5 text-[0.82rem] text-[var(--text)] bg-white outline-none focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]/20 w-[220px]"
+										className="rounded-sm border border-[#d8e6dd] px-3 py-1.5 text-[0.82rem] text-[var(--text)] bg-white outline-none focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]/20 w-[220px]"
 									/>
 									{/* Category filter */}
 									<select
 										value={tableCategory}
-										onChange={e => setTableCategory(e.target.value)}
-										className="rounded-lg border border-[#d8e6dd] px-2.5 py-1.5 text-[0.82rem] text-[var(--text)] bg-white outline-none focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]/20"
+										onChange={e => { setTableCategory(e.target.value); setTablePage(1); }}
+										className="rounded-sm border border-[#d8e6dd] px-2.5 py-1.5 text-[0.82rem] text-[var(--text)] bg-white outline-none focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]/20"
 									>
 										{categories.map(c => <option key={c} value={c}>{c}</option>)}
+									</select>
+									{/* Status filter */}
+									<select
+										value={tableStatus}
+										onChange={e => { setTableStatus(e.target.value); setTablePage(1); }}
+										className="rounded-sm border border-[#d8e6dd] px-2.5 py-1.5 text-[0.82rem] text-[var(--text)] bg-white outline-none focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]/20"
+									>
+										{STATUS_FILTER_OPTIONS.map(option => (
+											<option key={option.value} value={option.value}>{option.label}</option>
+										))}
 									</select>
 								</div>
 							</div>
@@ -590,13 +691,25 @@ export default function AdminReports() {
 													No hay actividades para el período y filtros seleccionados.
 												</td>
 											</tr>
-										) : tableRows.map(row => (
-											<tr key={row.id} className="bg-white transition-colors hover:bg-[#f8fbf9]">
-												<td className="px-4 py-3">
-													<p className="m-0 font-semibold text-[var(--text)] leading-snug">{row.title}</p>
+										) : paginatedTableRows.map(row => (
+												<tr
+													key={row.id}
+													role="link"
+													tabIndex={0}
+													className="group bg-white transition-colors hover:cursor-pointer hover:bg-[#eef8f2] focus:outline-none focus:bg-[#eef8f2]"
+													onClick={() => navigate(`/admin/actividad/${row.id}`)}
+													onKeyDown={event => {
+														if (event.key === "Enter" || event.key === " ") {
+															event.preventDefault();
+															navigate(`/admin/actividad/${row.id}`);
+														}
+													}}
+												>
+													<td className="px-4 py-3">
+														<p className="m-0 font-semibold text-[var(--text)] leading-snug transition-colors group-hover:text-[var(--primary)]">{row.title}</p>
 												</td>
 												<td className="px-4 py-3">
-													<CategoryTag name={row.category} />
+													<span className="text-[var(--text-muted)]">{row.category || row.type || "-"}</span>
 												</td>
 												<td className="px-4 py-3 text-[var(--text-muted)]">{row.manager}</td>
 												<td className="px-4 py-3 text-[var(--text-muted)]">{row.place || row.room || "-"}</td>
@@ -631,6 +744,32 @@ export default function AdminReports() {
 									</tbody>
 								</table>
 							</div>
+
+								{tableRows.length > tablePageSize && (
+									<div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#e4ede7] px-5 py-4">
+										<p className="m-0 text-[0.78rem] text-[var(--text-muted)]">
+											Mostrando {Math.min((safeTablePage - 1) * tablePageSize + 1, tableRows.length)}-{Math.min(safeTablePage * tablePageSize, tableRows.length)} de {tableRows.length}
+										</p>
+										<div className="flex items-center gap-2">
+											<button
+												type="button"
+												onClick={() => setTablePage(page => Math.max(1, page - 1))}
+												disabled={safeTablePage === 1}
+												className="rounded-sm border border-[#d8e6dd] bg-white px-3 py-1.5 text-[0.8rem] font-semibold text-[var(--text-muted)] transition-all hover:border-[var(--primary)] hover:text-[var(--primary)] disabled:cursor-not-allowed disabled:opacity-50"
+											>
+												Anterior
+											</button>
+											<button
+												type="button"
+												onClick={() => setTablePage(page => Math.min(totalTablePages, page + 1))}
+												disabled={safeTablePage === totalTablePages}
+												className="rounded-sm border border-[#d8e6dd] bg-white px-3 py-1.5 text-[0.8rem] font-semibold text-[var(--text-muted)] transition-all hover:border-[var(--primary)] hover:text-[var(--primary)] disabled:cursor-not-allowed disabled:opacity-50"
+											>
+												Siguiente
+											</button>
+										</div>
+									</div>
+								)}
 						</article>
 					</>
 				) : null}

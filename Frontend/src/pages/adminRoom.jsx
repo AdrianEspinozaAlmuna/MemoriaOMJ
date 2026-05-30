@@ -20,17 +20,15 @@ export default function AdminSettings() {
 				if (!mounted) return;
 				if (Array.isArray(res.data)) {
 					setRooms(res.data.map(s => ({ id: s.id_sala || s.id, name: s.nombre || s.name, capacity: s.capacidad || s.capacity || 0, enabled: (s.estado === "habilitada") || s.enabled || false })));
+					setError("");
 					return;
 				}
 			} catch (e) {
-				// fallback a datos locales si la llamada falla
+				if (mounted) {
+					setError(e?.response?.data?.message || e?.message || "No se pudieron cargar las salas.");
+				}
 			}
-			// fallback por defecto
-			setRooms([
-				{ id: 1, name: "Sala Norte", capacity: 30, enabled: true },
-				{ id: 2, name: "Sala Multiuso", capacity: 45, enabled: true },
-				{ id: 3, name: "Sala Taller 2", capacity: 20, enabled: false }
-			]);
+			setRooms([]);
 		}
 
 		loadRooms();
@@ -245,8 +243,8 @@ export default function AdminSettings() {
 		<section className="animate-[revealUp_0.7s_ease_both] space-y-8">
 			<header className="space-y-2">
 				<p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Panel de administrador</p>
-				<h1 className="m-0 text-[clamp(1.8rem,2.5vw,2.3rem)] font-bold text-[var(--text)]">Configuracion de salas</h1>
-				<p className="max-w-3xl text-[0.92rem] text-[var(--text-muted)]">Gestion simple para crear, habilitar o eliminar salas disponibles.</p>
+				<h1 className="m-0 text-[clamp(1.8rem,2.5vw,2.3rem)] font-bold text-[var(--text)]">Gestión de salas</h1>
+				<p className="max-w-3xl text-[0.92rem] text-[var(--text-muted)]">Administración simple para crear, habilitar o eliminar salas disponibles.</p>
 			</header>
 
 			<section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

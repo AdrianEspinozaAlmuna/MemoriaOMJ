@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { requestNotificationPermissionAndGetToken } from "../services/firebase";
+import Modal from "../components/Modal";
 
 // ─── ICONS (outline, 1.6 stroke — matches dashboard) ──────────────────────
 const Icon = ({ d, size = 20, stroke = 1.6, fill = 'none', className = '' }) => (
@@ -515,6 +516,8 @@ export default function Home() {
   const [installPrompt, setInstallPrompt] = useState(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [installHint, setInstallHint] = useState("");
+  const [installModalOpen, setInstallModalOpen] = useState(false);
+  const isIosDevice = typeof window !== "undefined" && /iPad|iPhone|iPod/.test(window.navigator.userAgent) && !window.MSStream;
 
   useEffect(() => {
     // Verificar si la app ya está instalada
@@ -550,7 +553,11 @@ export default function Home() {
     };
   }, []);
 
-  const handleInstallClick = async () => {
+  const handleInstallClick = () => {
+    setInstallModalOpen(true);
+  };
+
+  const handleNativeInstallClick = async () => {
     if (isInstalled) {
       setInstallHint("La app ya está instalada.");
       return;
@@ -567,6 +574,7 @@ export default function Home() {
     if (outcome === "accepted") {
       setInstallPrompt(null);
       setIsInstalled(true);
+      setInstallModalOpen(false);
       setInstallHint("La app se instaló correctamente.");
       // Intentar solicitar permisos de notificaciones push tras la instalación
       try {
@@ -625,6 +633,152 @@ export default function Home() {
           </div>
         )}
       </div>
+      // ─── INSTALL MODAL — rediseñado para coincidir con el estilo del landing ───
+// Usa los mismos tokens CSS (--pjc-*), rounded-sm, border zinc-200,
+// tipografía tracking-tight, y el sistema de cards del landing page.
+
+<Modal
+  isOpen={installModalOpen}
+  title="Instalar la app"
+  panelClassName="sm:max-w-[860px] rounded-sm border border-zinc-200 bg-white shadow-[0_24px_64px_-24px_rgba(31,51,40,0.22)] max-h-[calc(100dvh-1rem)] sm:max-h-[calc(100dvh-2rem)]"
+  headerClassName="border-b border-zinc-200 bg-white px-5 sm:px-8 pb-4 pt-5 sm:pt-7"
+  contentClassName="px-5 sm:px-8 pb-6 pt-6 overflow-y-auto"
+  footerClassName="border-t border-zinc-200 bg-white px-5 sm:px-8 pb-5 pt-4"
+  closeButtonClassName="border-zinc-200 bg-white text-[var(--pjc-ink)] hover:bg-[var(--pjc-bg)]"
+  onClose={() => setInstallModalOpen(false)}
+  footer={
+    <button
+      type="button"
+      onClick={() => setInstallModalOpen(false)}
+      className="inline-flex items-center justify-center rounded-sm border border-zinc-200 bg-white px-5 py-2.5 text-sm font-semibold text-[var(--pjc-ink)] hover:bg-[var(--pjc-bg)] transition"
+    >
+      Cerrar
+    </button>
+  }
+>
+  <div className="space-y-6">
+
+    {/* ── HERO BANNER ─────────────────────────────────────────────────── */}
+    <div className="relative overflow-hidden rounded-sm border border-zinc-200 bg-[var(--pjc-ink)] px-6 py-7 sm:px-8 sm:py-8">
+      {/* dot pattern (idéntico al hero del landing) */}
+      <div
+        aria-hidden
+        className="absolute inset-0 opacity-[0.06] pointer-events-none"
+        style={{
+          backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)',
+          backgroundSize: '22px 22px',
+        }}
+      />
+      {/* BrandMark de fondo */}
+      <div aria-hidden className="absolute -right-8 -top-8 opacity-10 pointer-events-none">
+        <BrandMark size={180} />
+      </div>
+
+      <div className="relative">
+        <div className="inline-flex items-center gap-1.5 rounded-full border border-[var(--pjc-primary)]/30 bg-[var(--pjc-primary)]/15 px-3 py-1 text-[11px] font-semibold tracking-[0.16em] uppercase text-[var(--pjc-primary-300)]">
+          <Icon d={I.download} size={11} />
+          PWA · Instalación gratuita
+        </div>
+        <h3 className="mt-4 text-[1.45rem] sm:text-[1.8rem] font-semibold leading-[1.1] tracking-[-0.022em] text-white">
+          Lleva OMJ Curicó<br className="hidden sm:block" /> a tu pantalla de inicio.
+        </h3>
+        <p className="mt-2.5 max-w-[54ch] text-[0.93rem] leading-relaxed text-zinc-300">
+          Revisa actividades, recibe avisos y vuelve al calendario más rápido.
+          Sin tienda de apps, sin pasos extra.
+        </p>
+      </div>
+    </div>
+
+    {/* ── DOS COLUMNAS: Android / iPhone ──────────────────────────────── */}
+    <div className="grid gap-4 sm:grid-cols-2">
+
+      {/* Android */}
+      <section className="group flex flex-col rounded-sm border border-zinc-200 bg-white p-5 sm:p-6 transition">
+        <div className="flex items-start gap-3.5">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-sm border border-[var(--pjc-primary-200)] bg-[var(--pjc-primary-50)] text-[var(--pjc-primary)]">
+            <Icon d={I.download} size={19} />
+          </div>
+          <div className="min-w-0">
+            <div className="text-[11px] font-semibold tracking-[0.16em] uppercase text-[var(--pjc-primary)]">
+              Android &amp; navegadores
+            </div>
+            <h4 className="mt-1 text-[1rem] font-semibold tracking-tight text-[var(--pjc-ink)]">
+              Instalación automática
+            </h4>
+          </div>
+        </div>
+
+        <p className="mt-3.5 text-[0.88rem] leading-relaxed text-[var(--pjc-muted)]">
+          Si tu navegador soporta instalación, el sistema iniciará el instalador nativo de la PWA directamente.
+        </p>
+
+        <div className="mt-auto pt-5">
+          <button
+            type="button"
+            onClick={handleNativeInstallClick}
+            disabled={!installPrompt || isInstalled}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-sm bg-[var(--pjc-primary)] px-4 py-3 text-sm font-semibold text-white shadow-[0_8px_20px_-12px_rgba(5,166,61,0.8)] transition hover:bg-[var(--pjc-primary-700)] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Icon d={I.download} size={17} />
+            {isInstalled ? "Ya instalada" : "Descargar / instalar"}
+          </button>
+          {!installPrompt && !isInstalled && (
+            <p className="mt-3 text-[0.8rem] leading-relaxed text-[var(--pjc-muted)]">
+              Si el botón está deshabilitado, abre la página en una ventana normal de navegador y vuelve a intentarlo.
+            </p>
+          )}
+        </div>
+      </section>
+
+      {/* iPhone */}
+      <section className="group flex flex-col rounded-sm border border-zinc-200 bg-white p-5 sm:p-6 hover:border-zinc-300 transition">
+        <div className="flex items-start gap-3.5">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-sm border border-zinc-200 bg-[var(--pjc-bg)] text-[var(--pjc-ink)]">
+            <Icon d={I.phone} size={19} />
+          </div>
+          <div className="min-w-0">
+            <div className="text-[11px] font-semibold tracking-[0.16em] uppercase text-[var(--pjc-muted)]">
+              iPhone · Safari
+            </div>
+            <h4 className="mt-1 text-[1rem] font-semibold tracking-tight text-[var(--pjc-ink)]">
+              Instalación manual
+            </h4>
+          </div>
+        </div>
+
+        <p className="mt-3.5 text-[0.88rem] leading-relaxed text-[var(--pjc-muted)]">
+          En iPhone la instalación es manual desde Safari, pero queda como una app nativa en tu pantalla de inicio.
+        </p>
+
+        <ol className="mt-4 space-y-2.5 border-t border-zinc-100 pt-4">
+          {[
+            'Abre esta web en Safari.',
+            'Presiona el botón de compartir.',
+            <>Elige <span className="font-semibold text-[var(--pjc-ink)]">Agregar a pantalla de inicio</span>.</>,
+            <>Confirma con <span className="font-semibold text-[var(--pjc-ink)]">Agregar</span>.</>,
+          ].map((step, i) => (
+            <li key={i} className="flex items-start gap-2.5 text-[0.87rem] leading-relaxed text-[var(--pjc-muted)]">
+              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--pjc-primary)] text-[10px] font-semibold text-white">
+                {i + 1}
+              </span>
+              <span>{step}</span>
+            </li>
+          ))}
+        </ol>
+
+        {isIosDevice && (
+          <div className="mt-4 flex items-center gap-2.5 rounded-sm border border-zinc-200 bg-[var(--pjc-bg)] px-4 py-3">
+            <Icon d={I.check} size={15} stroke={2} className="shrink-0 text-[var(--pjc-primary)]" />
+            <p className="text-[0.82rem] text-[var(--pjc-muted)]">
+              Estás en iPhone — este es el método correcto para instalarla.
+            </p>
+          </div>
+        )}
+      </section>
+
+    </div>
+  </div>
+</Modal>
       <Features/>
       <HowItWorks/>
       <FinalCTA/>

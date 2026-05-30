@@ -164,6 +164,7 @@ export default function MyActivities() {
   const [loading, setLoading] = useState(true);
   const [created, setCreated] = useState([]);
   const [completed, setCompleted] = useState([]);
+  const [loadError, setLoadError] = useState("");
   const [createdPage, setCreatedPage] = useState(1);
   const [completedPage, setCompletedPage] = useState(1);
   const [createdFilter, setCreatedFilter] = useState("all");
@@ -181,6 +182,7 @@ export default function MyActivities() {
 
       setCreated(createdIncoming);
       setCompleted(completedIncoming);
+      setLoadError(activitiesData?.error || "");
       setLoading(false);
     });
 
@@ -263,6 +265,12 @@ export default function MyActivities() {
           <p className="mt-2 text-[1rem] text-[var(--text-muted)]">Gestiona tus solicitudes de actividades, las creadas y las finalizadas.</p>
         </div>
       </header>
+
+      {loadError && (
+        <section className="rounded-xl border border-[#f0d5cf] bg-[#fff4f2] px-4 py-3 text-[0.9rem] text-[#9f3b2d] shadow-sm">
+          {loadError}
+        </section>
+      )}
 
       <section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-bg)] p-5 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4">

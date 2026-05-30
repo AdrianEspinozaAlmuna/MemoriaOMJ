@@ -10,6 +10,7 @@ function getMonthLabel(date) {
 
 export default function AdminCalendar() {
 	const [activities, setActivities] = useState([]);
+	const [loadError, setLoadError] = useState("");
 	const [monthDate, setMonthDate] = useState(() => {
 		const now = new Date();
 		return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -22,7 +23,8 @@ export default function AdminCalendar() {
 		let mounted = true;
 		getCalendarData().then(data => {
 			if (!mounted) return;
-			setActivities(data);
+			setActivities(Array.isArray(data) ? data : []);
+			setLoadError(data?.error || "");
 		});
 		return () => {
 			mounted = false;
@@ -71,6 +73,11 @@ export default function AdminCalendar() {
 			</header>
 
 			<section className="rounded-xl border border-[var(--panel-border)] bg-[var(--panel-bg)] p-6 shadow-[0_8px_20px_-18px_rgba(16,24,40,0.22)] space-y-5">
+				{loadError && (
+					<div className="rounded-lg border border-[#f0d5cf] bg-[#fff4f2] px-4 py-3 text-[0.88rem] text-[#9f3b2d]">
+						{loadError}
+					</div>
+				)}
 				<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
 					<label className="grid gap-2">
 						<span className="inline-flex items-center gap-1.5 text-[0.8rem] font-semibold text-[var(--text)]">

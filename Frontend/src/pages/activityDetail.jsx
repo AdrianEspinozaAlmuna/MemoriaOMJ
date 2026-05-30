@@ -28,51 +28,6 @@ function getTokenUserId(user) {
 	return Number.isInteger(parsed) ? parsed : null;
 }
 
-const fallbackParticipants = [
-	{ id: "usr-01", name: "Camila Torres", age: 18, status: "Confirmado" },
-	{ id: "usr-02", name: "Diego Perez", age: 20, status: "Confirmado" },
-	{ id: "usr-03", name: "Valentina Rojas", age: 19, status: "Lista de espera" },
-	{ id: "usr-04", name: "Martin Fuentes", age: 22, status: "Confirmado" },
-	{ id: "usr-05", name: "Antonia Mella", age: 17, status: "Confirmado" }
-];
-
-const fallbackActivity = {
-	title: "Laboratorio de Podcast Juvenil",
-	date: "2026-04-18",
-	hora_inicio: "17:00",
-	hora_termino: "19:00",
-	place: "Sala Multimedia OMJ",
-	manager: "Sofia Munoz",
-	id_encargado: 104,
-	capacity: 30,
-	enrolled: 26,
-	description:
-		"Sesion practica para crear un podcast desde cero: idea, guion, grabacion y edicion basica. Incluye dinamica grupal y cierre con presentacion de episodios piloto.",
-	requirements: ["Notebook o celular para notas", "Puntualidad", "Participacion activa"],
-	chat_bidireccional: true,
-	aprobado: true,
-	status: "programada",
-	participants: fallbackParticipants,
-	messages: [
-		{ id: "msg-01", author: "Sofia", role: "encargado", text: "Recuerden llegar 10 minutos antes para organizar equipos.", time: "16:20" },
-		{ id: "msg-02", author: "Pedro", role: "participante", text: "Perfecto, yo llevo audifonos para la prueba.", time: "16:28" },
-		{ id: "msg-03", author: "Camila", role: "participante", text: "Yo tambien llevo notebook para editar.", time: "16:31" },
-		{ id: "msg-04", author: "Diego", role: "participante", text: "Tenemos que llevar notebook o basta con celular?", time: "16:34" }
-	]
-};
-
-const ratingsData = {
-	average: 4.6,
-	total: 38,
-	distribution: [
-		{ stars: 5, count: 25 },
-		{ stars: 4, count: 9 },
-		{ stars: 3, count: 3 },
-		{ stars: 2, count: 1 },
-		{ stars: 1, count: 0 }
-	]
-};
-
 function formatDate(value) {
 	return formatDateForChile(value, {
 		weekday: "long",
@@ -89,30 +44,30 @@ function normalizeActivity(rawActivity = {}) {
 
 	return {
 		id: rawActivity.id ?? rawActivity.id_actividad ?? null,
-		title: rawActivity.title || rawActivity.titulo || fallbackActivity.title,
-		date: rawActivity.date || rawActivity.fecha || fallbackActivity.date,
-		hora_inicio: rawActivity.hora_inicio || rawActivity.time || fallbackActivity.hora_inicio,
-		hora_termino: rawActivity.hora_termino || fallbackActivity.hora_termino,
-		place: rawActivity.place || rawActivity.lugar || fallbackActivity.place,
-		id_sala: rawActivity.id_sala || fallbackActivity.id_sala || null,
-		manager: rawActivity.manager || fallbackActivity.manager,
-		id_encargado: rawActivity.id_encargado || fallbackActivity.id_encargado,
-		capacity: Number(rawActivity.capacity ?? rawActivity.max_participantes ?? fallbackActivity.capacity),
-		enrolled: Number(rawActivity.enrolled ?? rawActivity.inscritos ?? fallbackActivity.enrolled),
-		description: rawActivity.description || rawActivity.descripcion || fallbackActivity.description,
-		requirements: Array.isArray(rawActivity.requirements) ? rawActivity.requirements : fallbackActivity.requirements,
-		chat_bidireccional: rawActivity.chat_bidireccional ?? fallbackActivity.chat_bidireccional,
-		aprobado: rawActivity.aprobado ?? rawActivity.approved ?? fallbackActivity.aprobado,
-		status: rawActivity.estado || rawActivity.status || fallbackActivity.status,
+		title: rawActivity.title || rawActivity.titulo || "",
+		date: rawActivity.date || rawActivity.fecha || null,
+		hora_inicio: rawActivity.hora_inicio || rawActivity.time || null,
+		hora_termino: rawActivity.hora_termino || null,
+		place: rawActivity.place || rawActivity.lugar || "",
+		id_sala: rawActivity.id_sala || null,
+		manager: rawActivity.manager || null,
+		id_encargado: rawActivity.id_encargado || null,
+		capacity: Number(rawActivity.capacity ?? rawActivity.max_participantes ?? 0),
+		enrolled: Number(rawActivity.enrolled ?? rawActivity.inscritos ?? 0),
+		description: rawActivity.description || rawActivity.descripcion || "",
+		requirements: Array.isArray(rawActivity.requirements) ? rawActivity.requirements : [],
+		chat_bidireccional: rawActivity.chat_bidireccional ?? false,
+		aprobado: rawActivity.aprobado ?? rawActivity.approved ?? false,
+		status: rawActivity.estado || rawActivity.status || "",
 		revision_pendiente: Boolean(rawActivity.revision_pendiente),
 		tipo_actividad: rawActivity.tipo_actividad || rawActivity.tipo_actividad_rel || null,
-		ratings: hasRatings ? rawActivity.ratings : ratingsData,
+		ratings: hasRatings && rawActivity.ratings ? rawActivity.ratings : { average: 0, total: 0, distribution: [] },
 		participants: hasParticipants && Array.isArray(rawActivity.participants)
 			? rawActivity.participants
-			: fallbackActivity.participants,
+			: [],
 		messages: hasMessages && Array.isArray(rawActivity.messages)
 			? rawActivity.messages
-			: fallbackActivity.messages
+			: []
 	};
 }
 
@@ -272,7 +227,7 @@ export default function ActivityDetail() {
 	}
 
 	const statusBadge = useMemo(() => getActivityStatusMeta(activity?.status), [activity?.status]);
-	const ratings = activity?.ratings || ratingsData;
+	const ratings = activity?.ratings || { average: 0, total: 0, distribution: [] };
 	const ratingsTotal = Array.isArray(ratings.distribution)
 		? ratings.distribution.reduce((acc, item) => acc + Number(item.count || 0), 0)
 		: 0;

@@ -35,6 +35,7 @@ export default function CreateActivity() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState({ type: "", title: "", message: "", hint: "" });
   const [roomOptions, setRoomOptions] = useState([]);
+  const [roomLoadError, setRoomLoadError] = useState("");
   const [gruposDisponibles, setGruposDisponibles] = useState([]);
   const [tiposActividad, setTiposActividad] = useState([]);
   const [loadingTiposActividad, setLoadingTiposActividad] = useState(true);
@@ -73,6 +74,32 @@ export default function CreateActivity() {
         hint: "Revisa titulo, descripcion, fecha y bloque horario."
       });
       return;
+    }
+
+    // Validación: solo permitir crear actividades para el día actual
+    if (!isEditMode) {
+      const now = new Date();
+      const todayStr = now.toISOString().slice(0, 10);
+      if (form.date !== todayStr) {
+        setFeedback({
+          type: "error",
+          title: "Fecha inválida",
+          message: "Solo puedes crear actividades para el día de hoy.",
+          hint: "Elige la fecha de hoy para registrar la actividad."
+        });
+        return;
+      }
+
+      const selectedStart = new Date(`${form.date}T${form.hora_inicio}:00`);
+      if (selectedStart.getTime() < now.getTime()) {
+        setFeedback({
+          type: "error",
+          title: "Hora inválida",
+          message: "La hora de inicio no puede ser anterior a la hora actual.",
+          hint: "Elige una hora igual o posterior al momento actual."
+        });
+        return;
+      }
     }
 
     if (!form.id_tipo_actividad) {
@@ -211,23 +238,25 @@ export default function CreateActivity() {
         const res = await api.get("/salas");
         if (!mounted) return;
         if (Array.isArray(res.data) && res.data.length > 0) {
-          const opts = res.data.map(s => ({ id: s.id_sala || s.id, name: s.nombre || s.name, capacity: Number(s.capacidad ?? s.capacity ?? 0) }));
+          const rawRooms = res.data;
+          const opts = (isEditMode ? rawRooms : rawRooms.filter(s => String(s.estado || s.status || "").toLowerCase() === "habilitada"))
+            .map(s => ({
+              id: s.id_sala || s.id,
+              name: s.nombre || s.name,
+              capacity: Number(s.capacidad ?? s.capacity ?? 0)
+            }));
           setRoomOptions(opts);
-          setForm(previous => ({ ...previous, room: String(opts[0].id) }));
+          setForm(previous => ({ ...previous, room: opts.length > 0 ? String(opts[0].id) : "" }));
+          setRoomLoadError("");
           return;
         }
       } catch (e) {
-        // ignore and fallback
+        if (mounted) {
+          setRoomLoadError(e?.response?.data?.message || e?.message || "No se pudieron cargar las salas disponibles.");
+        }
       }
-      setRoomOptions([
-        { id: "1", name: "Sala Multimedia OMJ", capacity: 20 },
-        { id: "2", name: "Auditorio OMJ", capacity: 80 },
-        { id: "3", name: "Sala Taller 1", capacity: 25 },
-        { id: "4", name: "Sala Taller 2", capacity: 25 },
-        { id: "5", name: "Gimnasio Municipal", capacity: 60 },
-        { id: "6", name: "Casa de la Cultura", capacity: 40 }
-      ]);
-      setForm(previous => ({ ...previous, room: "1" }));
+      setRoomOptions([]);
+      setForm(previous => ({ ...previous, room: "" }));
     }
 
     async function loadTipos() {
@@ -324,6 +353,9 @@ export default function CreateActivity() {
   }, [editActivityId, isEditMode]);
 
   const tipoSeleccionado = tiposActividad.find(tipo => String(tipo.id_tipo) === String(form.id_tipo_actividad));
+  const now = new Date();
+  const todayStr = now.toISOString().slice(0, 10);
+  const nowTimeStr = now.toTimeString().slice(0, 5);
   const backLink = isEditMode
     ? `${isAdminRoute ? "/admin/actividad" : "/user/actividad"}/${editActivityId}`
     : isAdminRoute
@@ -454,13 +486,18 @@ export default function CreateActivity() {
               <label htmlFor="room" className="text-[0.88rem] font-semibold text-[var(--text)]">
                 Sala / lugar
               </label>
+              {roomLoadError && (
+                <p className="m-0 text-[0.82rem] text-[#8b2f22]">{roomLoadError}</p>
+              )}
               <select
                 id="room"
                 name="room"
                 className="rounded-sm border border-[#d8e6dd] bg-[var(--panel-bg)] px-3.5 py-2.5 text-[0.92rem] text-[var(--text)] outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[#05a63d]/20 hover:cursor-pointer"
                 value={form.room}
                 onChange={handleChange}
+                disabled={roomOptions.length === 0}
               >
+                  <option value="">{roomOptions.length === 0 ? "No hay salas disponibles" : "Selecciona una sala"}</option>
                 {roomOptions.map(room => (
                   <option key={room.id} value={String(room.id)}>
                     {room.name}
@@ -481,6 +518,8 @@ export default function CreateActivity() {
                 value={form.date}
                 onChange={handleChange}
                 required
+                min={!isEditMode ? todayStr : undefined}
+                max={!isEditMode ? todayStr : undefined}
               />
             </div>
 
@@ -496,6 +535,7 @@ export default function CreateActivity() {
                 value={form.hora_inicio}
                 onChange={handleChange}
                 required
+                min={!isEditMode && form.date === todayStr ? nowTimeStr : undefined}
               />
             </div>
 
@@ -511,6 +551,7 @@ export default function CreateActivity() {
                 value={form.hora_termino}
                 onChange={handleChange}
                 required
+                min={!isEditMode && form.date === todayStr ? nowTimeStr : undefined}
               />
             </div>
           </div>

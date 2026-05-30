@@ -6,18 +6,6 @@ import LoadingState from "../components/LoadingState";
 import { getDashboardData } from "../services/userViewsService";
 import { parseDateForChile } from "../utils/chileDate";
 
-function pickDemoImage(activity) {
-  const pics = [
-    "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1508700929628-666bc8bd84ea?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1200&q=80",
-    "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=1200&q=80"
-  ];
-  if (!activity) return pics[0];
-  const idx = (activity.title?.length || 1) % pics.length;
-  return pics[idx];
-}
-
 const quickActions = [
   {
     label: "Agenda al dia",
@@ -75,6 +63,7 @@ function QuickActionIcon({ name }) {
 export default function UserDashboard() {
   const [loading, setLoading] = useState(true);
   const [upcomingActivities, setUpcomingActivities] = useState([]);
+  const [loadError, setLoadError] = useState("");
 
   const nextFiveUpcoming = useMemo(() => {
     return [...(upcomingActivities || [])]
@@ -97,8 +86,8 @@ export default function UserDashboard() {
     getDashboardData().then(data => {
       if (!mounted) return;
       const incoming = Array.isArray(data.upcomingActivities) ? data.upcomingActivities.slice() : [];
-      const withImages = incoming.map(a => ({ ...a, image: a.image || pickDemoImage(a) }));
-      setUpcomingActivities(withImages);
+      setUpcomingActivities(incoming);
+      setLoadError(data?.error || "");
       setLoading(false);
     });
 
@@ -148,6 +137,11 @@ export default function UserDashboard() {
         {/* Próximas Actividades */}
         <article className="rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-6 shadow-sm">
           <h2 className="m-0 mb-4 text-[1rem] font-semibold text-[var(--text)]">Próximas actividades</h2>
+          {loadError && (
+            <div className="mb-4 rounded-lg border border-[#f0d5cf] bg-[#fff4f2] px-4 py-3 text-[0.88rem] text-[#9f3b2d]">
+              {loadError}
+            </div>
+          )}
           {!loading && nextFiveUpcoming.length > 0 && (
             <p className="mb-4 mt-[-0.35rem] text-[0.82rem] font-semibold text-[#177945]">Las tarjetas marcadas como "Ya inscrito" corresponden a tus inscripciones activas.</p>
           )}

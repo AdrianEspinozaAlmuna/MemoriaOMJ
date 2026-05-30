@@ -49,7 +49,7 @@ export default function AdminDashboard() {
 	const [stats, setStats] = useState([
 		{ label: "Total Usuarios", value: "—" },
 		{ label: "Actividades Activas", value: "—" },
-		{ label: "Aprobadas Recientes", value: "—" },
+		{ label: "Aprobaciones pendientes", value: "—" },
 		{ label: "Asistencia Promedio", value: "—" }
 	]);
 	const [upcomingActivities, setUpcomingActivities] = useState([]);
@@ -83,7 +83,7 @@ export default function AdminDashboard() {
 				const statsArray = [
 					{ label: "Total Usuarios", value: statsRes.totalUsers ?? "—" },
 					{ label: "Actividades Activas", value: statsRes.activeActivities ?? "—" },
-					{ label: "Aprobadas Recientes", value: statsRes.recentApprovals ?? "—" },
+					{ label: "Aprobaciones pendientes", value: statsRes.recentApprovals ?? "—" },
 					{ label: "Asistencia Promedio", value: statsRes.averageAttendance ?? "—" }
 				];
 				setStats(statsArray);

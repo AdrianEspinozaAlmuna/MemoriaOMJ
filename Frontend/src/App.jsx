@@ -131,7 +131,7 @@ export default function App() {
               <Route path="crear-actividad" element={<CreateActivity />} />
               <Route path="reportes" element={<AdminReports />} />
               <Route path="notificaciones" element={<AdminNotifications />} />
-              <Route path="imagenes" element={<AdminImagesManager />} />
+              <Route path="tipos-e-imagenes" element={<AdminImagesManager />} />
               <Route path="salas" element={<AdminRoom />} />
             </Route>
           </Route>

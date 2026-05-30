@@ -28,6 +28,7 @@ export default function AdminActivities() {
 			);
 
 			setAllActivities(available);
+			setError(activities?.error || "");
 			setLoading(false);
 		}
 

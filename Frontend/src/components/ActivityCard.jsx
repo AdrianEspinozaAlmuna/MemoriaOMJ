@@ -16,13 +16,13 @@ function formatDate(dateValue) {
 
 function formatTime(activity) {
   if (activity.time) return activity.time;
-  if (!activity.date) return "Hora por confirmar";
+  if (!activity.date) return "";
 
   const parsedDate = parseDateForChile(activity.date);
-  if (!parsedDate) return "Hora por confirmar";
+  if (!parsedDate) return "";
 
   const hasExplicitTime = parsedDate.getHours() !== 0 || parsedDate.getMinutes() !== 0;
-  if (!hasExplicitTime) return "Hora por confirmar";
+  if (!hasExplicitTime) return "";
 
   return parsedDate.toLocaleTimeString("es-CL", {
     hour: "2-digit",
@@ -43,25 +43,23 @@ function formatTimeRange(activity) {
 }
 
 function getCreator(activity) {
-  return activity.manager || activity.createdBy || activity.author || "OMJ Curicó";
+  return activity.manager || activity.createdBy || activity.author || "";
 }
 
 function getDescription(activity) {
-  if (activity.description) return activity.description;
-
-  return "Encuentro organizado por la OMJ.";
+  return activity.description || "";
 }
 
 function getTopLabel(activity) {
   if (activity.category) return activity.category;
   if (activity.type) return activity.type;
-  return "Actividad";
+  return "";
 }
 
 function CardBody({ activity, actionLabel, emphasizeEnrollment = false }) {
   const creator = getCreator(activity);
   const description = getDescription(activity);
-  const placeLabel = activity.place || "Lugar por confirmar";
+  const placeLabel = activity.place || "";
   const enrolled = activity.enrolled ?? activity.participants ?? activity.inscritos ?? null;
   const capacity = activity.capacity ?? activity.max_participantes ?? activity.capacidad ?? null;
   const imageSrc = resolveActivityImage(activity);
@@ -92,10 +90,12 @@ function CardBody({ activity, actionLabel, emphasizeEnrollment = false }) {
                   </span>
                 )}
               </div>
-              <p className="m-0 inline-flex items-center gap-2 text-[0.85rem] text-[var(--text-muted)]">
-                <UserRound className="h-3 w-3 text-[var(--primary)]" strokeWidth={1.9} />
-                {creator}
-              </p>
+              {creator && (
+                <p className="m-0 inline-flex items-center gap-2 text-[0.85rem] text-[var(--text-muted)]">
+                  <UserRound className="h-3 w-3 text-[var(--primary)]" strokeWidth={1.9} />
+                  {creator}
+                </p>
+              )}
             </div>
 
             <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-sm px-3 py-1 text-[0.72rem] font-semibold ${getActivityStatusClass(activity)}`}>
@@ -104,7 +104,7 @@ function CardBody({ activity, actionLabel, emphasizeEnrollment = false }) {
             </span>
           </div>
 
-          <p className="mt-1 mb-0 text-[0.9rem] leading-relaxed text-[var(--text-muted)]">{description}</p>
+          {description && <p className="mt-1 mb-0 text-[0.9rem] leading-relaxed text-[var(--text-muted)]">{description}</p>}
 
           <div className="mt-3 border-t border-[#e8f0ea] pt-3">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[0.85rem] font-medium text-[var(--text)] max-[760px]:text-[0.82rem]">
@@ -121,14 +121,18 @@ function CardBody({ activity, actionLabel, emphasizeEnrollment = false }) {
                   <CalendarDays className="h-4 w-4 text-[var(--primary)]" />
                   {formatDate(activity.date)}
                 </p>
-                <p className="m-0 inline-flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-[var(--primary)]" />
-                  {placeLabel}
-                </p>
-                <p className="m-0 inline-flex items-center gap-2">
-                  <Clock3 className="h-4 w-4 text-[var(--primary)]" />
-                  {formatTimeRange(activity)}
-                </p>
+                {placeLabel && (
+                  <p className="m-0 inline-flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-[var(--primary)]" />
+                    {placeLabel}
+                  </p>
+                )}
+                {formatTimeRange(activity) && (
+                  <p className="m-0 inline-flex items-center gap-2">
+                    <Clock3 className="h-4 w-4 text-[var(--primary)]" />
+                    {formatTimeRange(activity)}
+                  </p>
+                )}
                 {(enrolled !== null || capacity !== null) && (
                   <p className="m-0 inline-flex items-center gap-2">
                     <Users className="h-4 w-4 text-[var(--primary)]" />

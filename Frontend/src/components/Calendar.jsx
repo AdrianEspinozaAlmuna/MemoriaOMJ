@@ -4,21 +4,7 @@ import { ArrowRight, ChevronLeft, Clock3, ChevronRight, LayoutGrid, MapPin, Rows
 import Modal from "./Modal";
 import { parseDateForChile } from "../utils/chileDate";
 import { resolveActivityImage } from "../services/activityImagesService";
-import { getActivityStatusClass, getActivityStatusLabel } from "../utils/activityStatus";
-
-// Demo images fallback (used when activity has no image)
-const DEMO_PICS = [
-  "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1508700929628-666bc8bd84ea?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=1200&q=80"
-];
-
-function pickDemoImage(activity) {
-  if (!activity) return DEMO_PICS[0];
-  const i = (activity.title?.length || 1) % DEMO_PICS.length;
-  return DEMO_PICS[i];
-}
+import { getActivityStatusClass, getActivityStatusIcon, getActivityStatusLabel, getActivityStatusTextClass } from "../utils/activityStatus";
 
 function formatDateKey(date) {
   const year = date.getFullYear();
@@ -48,17 +34,17 @@ function isToday(date) {
 
 function extractTimeLabel(activity) {
   if (activity.time) return activity.time;
-  if (!activity.date) return "Sin hora";
+  if (!activity.date) return "";
 
   if (typeof activity.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(activity.date)) {
-    return "Sin hora";
+    return "";
   }
 
   const parsedDate = parseDateForChile(activity.date);
-  if (!parsedDate) return "Sin hora";
+  if (!parsedDate) return "";
 
   const hasExplicitTime = parsedDate.getHours() !== 0 || parsedDate.getMinutes() !== 0;
-  if (!hasExplicitTime) return "Sin hora";
+  if (!hasExplicitTime) return "";
 
   return parsedDate.toLocaleTimeString("es-CL", {
     hour: "2-digit",
@@ -80,7 +66,7 @@ function getTimeSortValue(activity) {
 function getGroupHourLabel(activity) {
   const timeLabel = extractTimeLabel(activity);
   const match = timeLabel.match(/(\d{1,2}:\d{2})/);
-  return match ? match[1] : "Sin hora";
+  return match ? match[1] : "";
 }
 
 function formatLongDate(date) {
@@ -104,11 +90,11 @@ function getActivityStatus(activity) {
 }
 
 function getActivityCreator(activity) {
-  return activity.manager || activity.createdBy || activity.author || "OMJ Curico";
+  return activity.manager || activity.createdBy || activity.author || "";
 }
 
 function getActivityTypeLabel(activity) {
-  return activity.tipo_actividad?.nombre || activity.type || activity.category || "Actividad";
+  return activity.tipo_actividad?.nombre || activity.type || activity.category || "";
 }
 
 function getActivityParticipants(activity) {
@@ -134,55 +120,64 @@ function CompactCalendarActivityCard({ activity, onClick, showPlace = true }) {
   const typeLabel = getActivityTypeLabel(activity);
   const participantsLabel = getActivityParticipants(activity);
   const imageSrc = resolveActivityImage(activity);
+  const timeRange = getActivityTimeRange(activity);
+  const StatusIcon = getActivityStatusIcon(activity);
+  const statusTextClass = getActivityStatusTextClass(activity);
   return (
     <button
       type="button"
       className="group relative flex w-full items-stretch gap-4 rounded-[10px] border border-[#e8f0ea] bg-white p-3 text-left shadow-sm transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-[0.6px] hover:border-[var(--primary-soft)] hover:cursor-pointer hover:shadow-[0_12px_22px_-18px_rgba(8,38,22,0.32)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#05a63d]/20"
       onClick={() => onClick(activity)}
     >
-      <span className={`absolute right-3 top-3 rounded-sm border px-2 py-0.5 text-[0.7rem] font-semibold ${getActivityStatusClass(activity)}`}>
-        {getActivityStatus(activity)}
+      <span className={`absolute right-3 top-3 inline-flex items-center gap-1 rounded-sm border px-2 py-0.5 text-[0.7rem] font-semibold ${getActivityStatusClass(activity)}`}>
+        <StatusIcon aria-hidden="true" focusable="false" className={`h-3.5 w-3.5 shrink-0 ${statusTextClass}`} strokeWidth={2.2} />
+        <span>{getActivityStatus(activity)}</span>
       </span>
 
       <div className="flex-1 flex items-start gap-3">
         <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-[8px] border border-[#edf3ee] bg-[#f3f4f6] flex items-center justify-center text-[0.8rem] text-[#6c7f74]">
           {imageSrc ? (
             <img src={imageSrc} alt={`Imagen ${activity.title}`} className="h-full w-full object-cover" loading="lazy" decoding="async" />
-          ) : (
-            <div className="font-semibold">OMJ</div>
-          )}
+          ) : null}
         </div>
 
         <div className="min-w-0 flex-1 flex flex-col justify-start">
           <strong className="block truncate text-[0.975rem] font-semibold text-[#173126] transition-colors duration-200 group-hover:text-[#0f5131]">
-            {activity.title}
+            {activity.title || ""}
           </strong>
-          <p className="mt-1 text-[0.78rem] text-[#4f6f5f] inline-flex items-center gap-1">
-            <UserRound className="h-3.5 w-3.5 text-[var(--primary)]" strokeWidth={2} />
-            {creator}
-          </p>
+
+          {creator && (
+            <p className="mt-1 text-[0.78rem] text-[#4f6f5f] inline-flex items-center gap-1">
+              <UserRound className="h-3.5 w-3.5 text-[var(--primary)]" strokeWidth={2} />
+              {creator}
+            </p>
+          )}
 
           <div className="mt-2 flex flex-wrap items-center gap-3 text-[0.8rem] text-[#3f5f52]">
-            <span className="inline-flex items-center gap-1 max-w-[22ch] truncate">
-              <Tags className="h-3.5 w-3.5 text-[var(--primary)]" strokeWidth={1.95} />
-              <span className="text-[var(--text)]">{typeLabel}</span>
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <Clock3 className="h-3.5 w-3.5 text-[var(--primary)]" strokeWidth={1.95} />
-              {getActivityTimeRange(activity)}
-            </span>
-            {showPlace && activity.place ? (
-              <span className="inline-flex items-center gap-1 max-w-[28ch] truncate">
-                <MapPin className="h-3.5 w-3.5 text-[var(--primary)]" strokeWidth={1.95} />
-                {activity.place}
+            {typeLabel && (
+              <span className="inline-flex items-center gap-1 max-w-[22ch] truncate">
+                <Tags className="h-3.5 w-3.5 text-[var(--primary)]" strokeWidth={1.95} />
+                <span className="text-[var(--text)]">{typeLabel}</span>
               </span>
-            ) : null}
-            {participantsLabel ? (
+            )}
+            {timeRange && (
               <span className="inline-flex items-center gap-1">
-                <Users className="h-3.5 w-3.5 text-[var(--primary)]" strokeWidth={1.95} />
+                <Clock3 className="h-3.5 w-3.5 text-[var(--primary)]" strokeWidth={1.9} />
+                {timeRange}
+              </span>
+            )}
+            {showPlace && activity.place && (
+              <span className="inline-flex items-center gap-1 max-w-[22ch] truncate">
+                <MapPin className="h-3.5 w-3.5 text-[var(--primary)]" strokeWidth={1.9} />
+                <span className="truncate">{activity.place}</span>
+              </span>
+            )}
+            {participantsLabel && (
+              <span className="inline-flex items-center gap-1">
+                <Users className="h-3.5 w-3.5 text-[var(--primary)]" strokeWidth={1.9} />
                 {participantsLabel}
               </span>
-            ) : null}
+            )}
           </div>
         </div>
       </div>
