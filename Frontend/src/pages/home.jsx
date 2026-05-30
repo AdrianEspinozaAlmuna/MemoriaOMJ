@@ -633,9 +633,6 @@ export default function Home() {
           </div>
         )}
       </div>
-      // ─── INSTALL MODAL — rediseñado para coincidir con el estilo del landing ───
-// Usa los mismos tokens CSS (--pjc-*), rounded-sm, border zinc-200,
-// tipografía tracking-tight, y el sistema de cards del landing page.
 
 <Modal
   isOpen={installModalOpen}

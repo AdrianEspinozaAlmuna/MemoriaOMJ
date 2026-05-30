@@ -229,6 +229,10 @@ export default function Register() {
                   text="Al menos una mayúscula"
                 />
                 <PasswordRequirement
+                  met={getPasswordStrength(formValues.registerPassword).hasLowerCase}
+                  text="Al menos una minúscula"
+                />
+                <PasswordRequirement
                   met={getPasswordStrength(formValues.registerPassword).hasNumber}
                   text="Al menos un número"
                 />
