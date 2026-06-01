@@ -32,7 +32,8 @@ export default function AdminUsers() {
 		email: "",
 		phone: "",
 		password: "",
-		confirmPassword: ""
+		confirmPassword: "",
+		role: "participante"
 	});
 
 	// Cargar usuarios de la BD al montar el componente
@@ -146,7 +147,8 @@ export default function AdminUsers() {
 			email: user.mail,
 			phone: user.telefono || "",
 			password: "",
-			confirmPassword: ""
+			confirmPassword: "",
+			role: user.rol || "participante"
 		});
 		setIsEditModalOpen(true);
 	}
@@ -237,7 +239,7 @@ export default function AdminUsers() {
 		if (requirePassword) {
 			const passwordError = validateStrongPassword(formValues.password);
 			if (passwordError) return passwordError;
-			if (formValues.confirmPassword !== formValues.password) return "Las contrasenas no coinciden.";
+			if (formValues.confirmPassword !== formValues.password) return "Las contraseñas no coinciden.";
 		}
 
 		return "";
@@ -294,7 +296,8 @@ export default function AdminUsers() {
 				nombre: formValues.fullName.trim(),
 				apellido: formValues.lastName.trim(),
 				mail: formValues.email.trim().toLowerCase(),
-				telefono: formValues.phone.trim()
+				telefono: formValues.phone.trim(),
+				rol: formValues.role
 			};
 			await api.patch(`/users/${editingUser.id}`, payload);
 			setUsers(previous => previous.map(user => {
@@ -333,12 +336,12 @@ export default function AdminUsers() {
 			<header className="flex items-center justify-between gap-3 max-[760px]:flex-col max-[760px]:items-start">
 				<div>
 					<p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Panel de administrador</p>
-					<h1 className="mt-2 text-[clamp(1.8rem,2.5vw,2.3rem)] font-bold text-[var(--text)]">Gestion de usuarios</h1>
+					<h1 className="mt-2 text-[clamp(1.8rem,2.5vw,2.3rem)] font-bold text-[var(--text)]">Gestión de usuarios</h1>
 					<p className="mt-2 text-[0.92rem] text-[var(--text-muted)]">Administra los usuarios registrados en la plataforma.</p>
 				</div>
 				<button type="button" className="inline-flex items-center gap-2 rounded-sm border border-[var(--primary)] bg-[var(--primary)] px-3.5 py-2 text-[0.9rem] font-semibold text-white hover:bg-[#0a7f3d]" onClick={openModal}>
 					<UserRoundPlus aria-hidden="true" focusable="false" className="h-4 w-4" strokeWidth={1.9} />
-					Agregar Usuario
+					Agregar Administrador
 				</button>
 			</header>
 
@@ -506,26 +509,23 @@ export default function AdminUsers() {
 						</div>
 
 						<div className="grid gap-1.5">
-							<label className="text-[0.82rem] font-semibold text-[#2f4438]" htmlFor="admin-password">Contrasena</label>
+							<label className="text-[0.82rem] font-semibold text-[#2f4438]" htmlFor="admin-password">Contraseña</label>
 							<input id="admin-password" name="password" className="w-full rounded-[10px] border border-[#d4dae2] bg-[var(--surface)] px-3 py-2.5 text-[0.9rem] text-[var(--text)] outline-none transition-shadow duration-200 placeholder:text-[var(--text-muted)] focus:border-[var(--primary)] focus:bg-[#fbfefc] focus:shadow-[0_0_0_3px_rgba(5,166,61,0.11)]" type="password" placeholder="Minimo 10 caracteres" value={formValues.password} onChange={handleFieldChange} autoComplete="new-password" minLength={10} />
-							<p className="m-0 text-[0.76rem] text-[var(--text-muted)]">{getPasswordHelpText()}</p>
 						</div>
 						<div className="grid gap-1.5">
-							<label className="text-[0.82rem] font-semibold text-[#2f4438]" htmlFor="admin-confirmPassword">Confirmar contrasena</label>
-							<input id="admin-confirmPassword" name="confirmPassword" className="w-full rounded-[10px] border border-[#d4dae2] bg-[var(--surface)] px-3 py-2.5 text-[0.9rem] text-[var(--text)] outline-none transition-shadow duration-200 placeholder:text-[var(--text-muted)] focus:border-[var(--primary)] focus:bg-[#fbfefc] focus:shadow-[0_0_0_3px_rgba(5,166,61,0.11)]" type="password" placeholder="Repite la contrasena" value={formValues.confirmPassword} onChange={handleFieldChange} autoComplete="new-password" minLength={10} />
+							<label className="text-[0.82rem] font-semibold text-[#2f4438]" htmlFor="admin-confirmPassword">Confirmar contraseña</label>
+							<input id="admin-confirmPassword" name="confirmPassword" className="w-full rounded-[10px] border border-[#d4dae2] bg-[var(--surface)] px-3 py-2.5 text-[0.9rem] text-[var(--text)] outline-none transition-shadow duration-200 placeholder:text-[var(--text-muted)] focus:border-[var(--primary)] focus:bg-[#fbfefc] focus:shadow-[0_0_0_3px_rgba(5,166,61,0.11)]" type="password" placeholder="Repite la contraseña" value={formValues.confirmPassword} onChange={handleFieldChange} autoComplete="new-password" minLength={10} />
+						</div>
+						<div className="sm:col-span-2">
+							<p className="m-0 text-[0.76rem] text-[var(--text-muted)]">{getPasswordHelpText()}</p>
 						</div>
 					</div>
 
-					<div className="grid gap-3 sm:grid-cols-2">
+					<div className="grid gap-3">
 						<div className="rounded-[12px] border border-[#dce7df] bg-[#f8fbf9] px-4 py-3">
 							<p className="m-0 text-[0.78rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Rol asignado</p>
 							<p className="mt-1 text-[0.9rem] font-semibold text-[var(--text)]">Administrador</p>
 							<p className="mt-1 text-[0.82rem] text-[var(--text-muted)]">El usuario quedará habilitado desde el momento de creación.</p>
-						</div>
-						<div className="rounded-[12px] border border-[#dce7df] bg-[#f8fbf9] px-4 py-3">
-							<p className="m-0 text-[0.78rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Acceso inicial</p>
-							<p className="mt-1 text-[0.9rem] font-semibold text-[var(--text)]">Credenciales temporales</p>
-							<p className="mt-1 text-[0.82rem] text-[var(--text-muted)]">Recomienda cambiar la contrasena en el primer ingreso.</p>
 						</div>
 					</div>
 
@@ -603,8 +603,16 @@ export default function AdminUsers() {
 						</div>
 						<div className="rounded-[12px] border border-[#dce7df] bg-[#f8fbf9] px-4 py-3">
 							<p className="m-0 text-[0.78rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Rol</p>
-							<p className="mt-1 text-[0.9rem] font-semibold text-[var(--text)]">{formatRoleLabel(editingUser?.rol)}</p>
-							<p className="mt-1 text-[0.82rem] text-[var(--text-muted)]">El rol no se modifica desde este modal.</p>
+					<select
+						name="role"
+						value={formValues.role}
+						onChange={handleFieldChange}
+						className="mt-2 w-full rounded-[10px] border border-[#d4dae2] bg-white px-3 py-2 text-[0.9rem] text-[var(--text)] outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[#05a63d]/20"
+					>
+						<option value="participante">Participante</option>
+						<option value="admin">Admin</option>
+					</select>
+					<p className="mt-1 text-[0.82rem] text-[var(--text-muted)]">Cambia el rol entre admin y participante desde aquí.</p>
 						</div>
 					</div>
 

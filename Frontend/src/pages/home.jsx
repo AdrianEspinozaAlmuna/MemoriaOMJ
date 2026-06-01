@@ -626,13 +626,6 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white text-[var(--pjc-ink)]">
       <Hero onInstallClick={handleInstallClick}/>
-      <div className="mx-auto max-w-[1200px] px-4 sm:px-6 -mt-8">
-        {installHint && (
-          <div className="rounded-sm border border-[#d8e6dd] bg-[#f7fcf9] px-4 py-3 text-[0.9rem] text-[var(--pjc-muted)] shadow-sm">
-            {installHint}
-          </div>
-        )}
-      </div>
 
 <Modal
   isOpen={installModalOpen}
@@ -654,6 +647,11 @@ export default function Home() {
   }
 >
   <div className="space-y-6">
+    {(installHint || isInstalled) && (
+      <div className="rounded-sm border border-[#d8e6dd] bg-[#f7fcf9] px-4 py-3 text-[0.9rem] text-[var(--pjc-muted)] shadow-sm">
+        {isInstalled ? "La app ya está instalada en este dispositivo." : installHint}
+      </div>
+    )}
 
     {/* ── HERO BANNER ─────────────────────────────────────────────────── */}
     <div className="relative overflow-hidden rounded-sm border border-zinc-200 bg-[var(--pjc-ink)] px-6 py-7 sm:px-8 sm:py-8">

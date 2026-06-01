@@ -105,8 +105,12 @@ async function loginUser(req, res) {
       }
     });
 
-    if (!user || !user.estado || !user.password_hash) {
+    if (!user || !user.password_hash) {
       return res.status(401).json({ message: "Credenciales inválidas" });
+    }
+
+    if (!user.estado) {
+      return res.status(403).json({ message: "Usuario deshabilitado" });
     }
 
     const passwordMatches = await bcrypt.compare(password, user.password_hash);

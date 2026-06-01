@@ -279,7 +279,7 @@ export default function AdminSettings() {
 
 			<section className="rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-6 shadow-sm">
 				<div className="mb-4 flex items-baseline justify-between gap-3 max-[760px]:flex-col max-[760px]:items-start">
-					<h2 className="m-0 text-[1rem] font-semibold text-[var(--text)]">Gestion de salas</h2>
+					<h2 className="m-0 text-[1rem] font-semibold text-[var(--text)]">Salas</h2>
 					<div className="flex items-center gap-3 max-[760px]:flex-wrap">
 						<p className="m-0 text-[0.9rem] text-[var(--text-muted)]">Mostrando {filteredRooms.length} salas</p>
 						<button type="button" className="inline-flex items-center gap-2 rounded-sm border border-[var(--primary)] bg-[var(--primary)] px-3.5 py-2 text-[0.9rem] font-semibold text-white hover:bg-[#0a7f3d]" onClick={openCreateModal}>
