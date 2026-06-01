@@ -439,11 +439,12 @@ export default function Navbar() {
 							<p className="mb-2 px-2 text-[0.74rem] font-semibold uppercase tracking-[0.08em] text-[#829087]">Cuenta</p>
 
 							<div className="grid gap-2">
-							<div className="inline-flex w-full items-center justify-start gap-2 rounded-lg px-3 py-2.5 text-left text-[0.9rem] font-semibold text-[#2f463a]">
-								<span className="grid h-8 w-8 place-items-center rounded-full bg-[#eef8f2] text-[var(--primary-strong)]">
-									<UserRound aria-hidden="true" focusable="false" className="h-4 w-4" strokeWidth={2} />
-								</span>
-								<span className="grid min-w-0 text-left">
+								<div className="inline-flex w-full items-center justify-start gap-2 rounded-lg px-3 py-2.5 text-left text-[0.9rem] font-semibold text-[#2f463a]">
+									<span className="grid h-8 w-8 place-items-center rounded-full bg-[#eef8f2] text-[var(--primary-strong)]">
+										<UserRound aria-hidden="true" focusable="false" className="h-4 w-4" strokeWidth={2} />
+									</span>
+									<span className="grid min-w-0 text-left">
+										<span className="truncate text-[0.86rem] font-semibold text-[#2f463a]">{fullName}</span>
 										{mergedUser?.mail && <span className="truncate text-[0.74rem] font-normal text-[#7a8881]">{mergedUser.mail}</span>}
 									</span>
 								</div>
@@ -458,6 +459,7 @@ export default function Navbar() {
 								</button>
 							</div>
 						</div>
+
 					)}
 				</aside>
 			</>

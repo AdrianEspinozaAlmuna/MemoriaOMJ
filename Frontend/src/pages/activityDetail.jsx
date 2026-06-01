@@ -76,7 +76,7 @@ export default function ActivityDetail() {
 	const location = useLocation();
 	const navigate = useNavigate();
 	const user = decodeToken(localStorage.getItem("token"));
-	const role = user?.rol || "participante";
+	const role = String(user?.rol || "participante").toLowerCase();
 	const currentUserId = getTokenUserId(user);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState("");
@@ -239,6 +239,9 @@ export default function ActivityDetail() {
 	const currentParticipant = useMemo(() => participants.find(item => Number(item.id) === Number(currentUserId)) || null, [participants, currentUserId]);
 	const currentUserRating = Number(currentParticipant?.valoracion);
 	const hasExistingRating = Number.isInteger(currentUserRating) && currentUserRating >= 1 && currentUserRating <= 5;
+	const hasAttendanceRegistered = Boolean(currentParticipant?.asistio);
+	const canManageMarkAttendance = isInProgress && !hasAttendanceRegistered && role === "encargado" && isActivityManager;
+	const canMarkOwnAttendance = isInProgress && !hasAttendanceRegistered && (isEnrolled || canManageMarkAttendance);
 	const canCancelActivity = canManageActivity && !isFinished && !isCanceled;
 	const canEditActivity = canManageActivity && !isFinished && !isCanceled && !isInProgress && !activity?.revision_pendiente;
 	const canSendChat = Boolean(activity?.chat_bidireccional) || canManageActivity;
@@ -246,8 +249,6 @@ export default function ActivityDetail() {
 	const canRateInActivity = isFinished && role === "participante" && !canManageActivity;
 	const freeSpots = useMemo(() => Math.max((activity?.capacity ?? 0) - enrolledCount, 0), [enrolledCount, activity?.capacity]);
 	const canCancelEnrollment = isEnrolled && !isInProgress;
-	const hasAttendanceRegistered = Boolean(currentParticipant?.asistio);
-	const canMarkOwnAttendance = isInProgress && !hasAttendanceRegistered && (isEnrolled || canManageActivity);
 	const backTo = location.pathname.startsWith("/admin") ? "/admin/actividades" : "/user/mis-actividades";
 	const editTo = `${location.pathname.startsWith("/admin") ? "/admin/crear-actividad" : "/user/crear-actividad"}?edit=${activity?.id || activityId}`;
 
@@ -818,8 +819,7 @@ export default function ActivityDetail() {
 											>
 												{activity.revision_pendiente ? "Edición en revisión" : "Editar actividad"}
 											</button>
-											<button type="button" className="w-full rounded-sm border border-[var(--reject)] bg-[#fff3ef] px-4 py-2.5 text-[0.88rem] font-semibold text-[var(--reject)] transition-all hover:bg-[#ffe9e2]">Enviar notificación</button>
-											{canCancelActivity && (
+													{canCancelActivity && (
 												<button
 													type="button"
 													onClick={openCancelModal}
@@ -828,7 +828,7 @@ export default function ActivityDetail() {
 													Cancelar actividad
 												</button>
 											)}
-											{isInProgress && !hasAttendanceRegistered && (
+											{canManageMarkAttendance && (
 												<button
 													type="button"
 													onClick={handleMarkAttendance}
