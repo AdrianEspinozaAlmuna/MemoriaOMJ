@@ -647,12 +647,6 @@ export default function Home() {
   }
 >
   <div className="space-y-6">
-    {(installHint || isInstalled) && (
-      <div className="rounded-sm border border-[#d8e6dd] bg-[#f7fcf9] px-4 py-3 text-[0.9rem] text-[var(--pjc-muted)] shadow-sm">
-        {isInstalled ? "La app ya está instalada en este dispositivo." : installHint}
-      </div>
-    )}
-
     {/* ── HERO BANNER ─────────────────────────────────────────────────── */}
     <div className="relative overflow-hidden rounded-sm border border-zinc-200 bg-[var(--pjc-ink)] px-6 py-7 sm:px-8 sm:py-8">
       {/* dot pattern (idéntico al hero del landing) */}
@@ -717,6 +711,16 @@ export default function Home() {
             <Icon d={I.download} size={17} />
             {isInstalled ? "Ya instalada" : "Descargar / instalar"}
           </button>
+          {installHint && !isInstalled && (
+            <div className="mt-4 rounded-2xl border border-[#2f855a] bg-[#ecfdf5] p-4 text-sm text-[#1f4338] shadow-[0_12px_32px_-18px_rgba(45,128,72,0.75)]">
+              <div className="flex items-start gap-2 font-semibold">
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#2f855a]/10 text-[#2f855a]">
+                  <Icon d={I.download} size={14} />
+                </span>
+                <span>{installHint}</span>
+              </div>
+            </div>
+          )}
           {!installPrompt && !isInstalled && (
             <p className="mt-3 text-[0.8rem] leading-relaxed text-[var(--pjc-muted)]">
               Si el botón está deshabilitado, abre la página en una ventana normal de navegador y vuelve a intentarlo.
