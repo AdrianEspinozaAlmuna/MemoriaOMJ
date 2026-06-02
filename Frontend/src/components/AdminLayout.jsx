@@ -108,14 +108,16 @@ export default function AdminLayout() {
 		setRecentNotificationIds([]);
 	}
 
-	const loadPendingCount = React.useCallback(async () => {
-		try {
-			const data = await getAdminActivities({ approved: false, estado: "pendiente" });
-			setPendingApprovalsCount(Array.isArray(data) ? data.length : 0);
-		} catch (error) {
-			console.error("Error cargando aprobaciones pendientes:", error);
+	function isAdminNotification(notification = {}) {
+		const type = String(notification.type ?? notification.tipo ?? "").toLowerCase();
+		if (["sistema", "actividad", "revision", "review"].includes(type)) {
+			return true;
 		}
-	}, []);
+
+		const title = String(notification.title ?? notification.titulo ?? "").toLowerCase();
+		const detail = String(notification.detail ?? notification.descripcion ?? notification.description ?? "").toLowerCase();
+		return title.includes("actividad") || title.includes("sistema") || detail.includes("actividad") || detail.includes("sistema") || title.includes("revis") || detail.includes("revis");
+	}
 
 	function registerRecentNotification(notificationId) {
 		if (!notificationId) return;
@@ -138,53 +140,68 @@ export default function AdminLayout() {
 	const displayInitials = getInitials(displayName);
 
 	React.useEffect(() => {
-	loadPendingCount();
-}, [loadPendingCount]);
-
-React.useEffect(() => {
-	if (!localStorage.getItem("token")) return undefined;
-
-	const token = localStorage.getItem("token");
-	const socket = io(SOCKET_BASE_URL, {
-		auth: { token: token ? `Bearer ${token}` : undefined },
-		transports: ["websocket"]
-	});
-
-	function handleNotification(payload) {
-		try {
-			const notification = normalizeNotification(payload);
-			const id = notification?.id || notification?.id_notificacion || notification?.notificationId || null;
-			if (id && isAdminNotification(notification)) {
-				registerRecentNotification(id);
-				loadPendingCount();
+		async function loadPendingCount() {
+			try {
+				const data = await getAdminActivities({ approved: false, estado: "pendiente" });
+				setPendingApprovalsCount(Array.isArray(data) ? data.length : 0);
+			} catch (error) {
+				console.error("Error cargando aprobaciones pendientes:", error);
 			}
-		} catch (e) {
-			// noop
 		}
-	}
 
-	socket.on("notification:new", handleNotification);
+		loadPendingCount();
+	}, []);
 
-	return () => {
-		socket.off("notification:new", handleNotification);
-		socket.disconnect();
-		clearRecentNotificationTimers();
-	};
-}, [loadPendingCount]);
 	React.useEffect(() => {
+		if (!localStorage.getItem("token")) return undefined;
+
+		const token = localStorage.getItem("token");
+		const socket = io(SOCKET_BASE_URL, {
+			auth: { token: token ? `Bearer ${token}` : undefined },
+			transports: ["websocket"]
+		});
+
+		function handleNotification(payload) {
+			try {
+				const notification = normalizeNotification(payload);
+				const id = notification?.id || notification?.id_notificacion || notification?.notificationId || null;
+				if (id && isAdminNotification(notification)) {
+					registerRecentNotification(id);
+				}
+			} catch (e) {
+				// noop
+			}
+		}
+
+		socket.on("notification:new", handleNotification);
+
+		return () => {
+			socket.off("notification:new", handleNotification);
+			socket.disconnect();
+			clearRecentNotificationTimers();
+		};
+	}, []);
+
+	React.useEffect(() => {
+		async function loadPendingCount() {
+			try {
+				const data = await getAdminActivities({ approved: false, estado: "pendiente" });
+				setPendingApprovalsCount(Array.isArray(data) ? data.length : 0);
+			} catch (error) {
+				console.error("Error cargando aprobaciones pendientes:", error);
+			}
+		}
+
 		function handleApprovalsChanged() {
 			loadPendingCount();
 		}
 
 		window.addEventListener("admin:approvals-changed", handleApprovalsChanged);
 		return () => window.removeEventListener("admin:approvals-changed", handleApprovalsChanged);
-	}, [loadPendingCount]);
+	}, []);
 
 	React.useEffect(() => {
 		setMobileNavOpen(false);
-		if (location.pathname.endsWith("/admin/notificaciones")) {
-			clearRecentNotificationTimers();
-		}
 	}, [location.pathname]);
 
 	React.useEffect(() => {
@@ -355,12 +372,9 @@ React.useEffect(() => {
 							</div>
 						</div>
 						<div className="flex items-center gap-2">
-														<button
+							<button
 								type="button"
-								onClick={() => {
-						clearRecentNotificationTimers();
-						navigate("/admin/notificaciones");
-					}}
+								onClick={() => navigate("/admin/notificaciones")}
 								className="inline-flex h-10 items-center gap-2 rounded-sm border border-[#d7e4dc] bg-white px-4 py-2.5 text-[0.86rem] font-semibold text-[#335043] hover:bg-[#f3faf5] max-[980px]:px-0 max-[980px]:w-10 max-[980px]:justify-center min-[981px]:inline-flex"
 								aria-label="Ir a notificaciones"
 							>
