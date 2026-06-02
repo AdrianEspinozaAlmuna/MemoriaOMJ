@@ -381,7 +381,6 @@ React.useEffect(() => {
 										</span>
 									)}
 								</div>
-								<span className="max-[980px]:hidden">Notificaciones</span>
 							</button>
 							<button
 								type="button"
