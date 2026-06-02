@@ -355,16 +355,7 @@ React.useEffect(() => {
 							</div>
 						</div>
 						<div className="flex items-center gap-2">
-							<button
-								type="button"
-								onClick={() => navigate("/admin/crear-actividad")}
-								className="hidden h-10 items-center gap-2 rounded-sm bg-[var(--primary)] px-4 py-2.5 text-[0.86rem] font-semibold text-white hover:bg-[var(--primary-strong)] min-[981px]:inline-flex"
-								aria-label="Crear actividad"
-							>
-								<Plus aria-hidden="true" focusable="false" className="h-4 w-4" strokeWidth={2} />
-								Crear actividad
-							</button>
-							<button
+														<button
 								type="button"
 								onClick={() => {
 						clearRecentNotificationTimers();
@@ -381,6 +372,15 @@ React.useEffect(() => {
 										</span>
 									)}
 								</div>
+							</button>
+							<button
+								type="button"
+								onClick={() => navigate("/admin/crear-actividad")}
+								className="hidden h-10 items-center gap-2 rounded-sm bg-[var(--primary)] px-4 py-2.5 text-[0.86rem] font-semibold text-white hover:bg-[var(--primary-strong)] min-[981px]:inline-flex"
+								aria-label="Crear actividad"
+							>
+								<Plus aria-hidden="true" focusable="false" className="h-4 w-4" strokeWidth={2} />
+								Crear actividad
 							</button>
 							<button
 								type="button"
