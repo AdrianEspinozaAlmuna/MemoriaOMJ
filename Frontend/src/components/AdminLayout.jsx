@@ -1,7 +1,10 @@
 import React from "react";
+import { io } from "socket.io-client";
+import api, { API_BASE_URL } from "../services/api";
 import { ListCheck, BarChart3, Bell, CalendarDays, CheckCircle2, Circle, LayoutGrid, DoorOpen, Home, LogOut, Menu, PanelLeftClose, PanelLeftOpen, Plus, Tags, UserRound, Users, X } from "lucide-react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { getAdminActivities } from "../services/userViewsService";
+import { normalizeNotification } from "../services/notificationsService";
 
 function decodeToken(token) {
 	if (!token) return null;
@@ -91,6 +94,46 @@ export default function AdminLayout() {
 	const [mobileNavTop, setMobileNavTop] = React.useState(0);
 	const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
 	const [pendingApprovalsCount, setPendingApprovalsCount] = React.useState(0);
+	const [recentNotificationIds, setRecentNotificationIds] = React.useState([]);
+	const notificationTimersRef = React.useRef(new Map());
+
+	const SOCKET_BASE_URL = (import.meta.env.VITE_SOCKET_URL || API_BASE_URL).replace(/\/api\/?$/, "");
+	const NOTIFICATION_BADGE_TTL_MS = 15 * 60 * 1000;
+
+	function clearRecentNotificationTimers() {
+		for (const timerId of notificationTimersRef.current.values()) {
+			window.clearTimeout(timerId);
+		}
+		notificationTimersRef.current.clear();
+		setRecentNotificationIds([]);
+	}
+
+	function isAdminNotification(notification = {}) {
+		const type = String(notification.type ?? notification.tipo ?? "").toLowerCase();
+		if (["sistema", "actividad", "revision", "review"].includes(type)) {
+			return true;
+		}
+
+		const title = String(notification.title ?? notification.titulo ?? "").toLowerCase();
+		const detail = String(notification.detail ?? notification.descripcion ?? notification.description ?? "").toLowerCase();
+		return title.includes("actividad") || title.includes("sistema") || detail.includes("actividad") || detail.includes("sistema") || title.includes("revis") || detail.includes("revis");
+	}
+
+	function registerRecentNotification(notificationId) {
+		if (!notificationId) return;
+
+		setRecentNotificationIds(previousIds => {
+			if (previousIds.includes(notificationId)) return previousIds;
+
+			const timerId = window.setTimeout(() => {
+				notificationTimersRef.current.delete(notificationId);
+				setRecentNotificationIds(currentIds => currentIds.filter(id => id !== notificationId));
+			}, NOTIFICATION_BADGE_TTL_MS);
+
+			notificationTimersRef.current.set(notificationId, timerId);
+			return [...previousIds, notificationId];
+		});
+	}
 
 	const displayName = user?.nombre ? `${user.nombre} ${user.apellido || ""}`.trim() : "Admin Usuario";
 	const displayEmail = user?.mail || user?.email || "";
@@ -107,6 +150,36 @@ export default function AdminLayout() {
 		}
 
 		loadPendingCount();
+	}, []);
+
+	React.useEffect(() => {
+		if (!localStorage.getItem("token")) return undefined;
+
+		const token = localStorage.getItem("token");
+		const socket = io(SOCKET_BASE_URL, {
+			auth: { token: token ? `Bearer ${token}` : undefined },
+			transports: ["websocket"]
+		});
+
+		function handleNotification(payload) {
+			try {
+				const notification = normalizeNotification(payload);
+				const id = notification?.id || notification?.id_notificacion || notification?.notificationId || null;
+				if (id && isAdminNotification(notification)) {
+					registerRecentNotification(id);
+				}
+			} catch (e) {
+				// noop
+			}
+		}
+
+		socket.on("notification:new", handleNotification);
+
+		return () => {
+			socket.off("notification:new", handleNotification);
+			socket.disconnect();
+			clearRecentNotificationTimers();
+		};
 	}, []);
 
 	React.useEffect(() => {
@@ -314,7 +387,14 @@ export default function AdminLayout() {
 								className="inline-flex h-10 items-center gap-2 rounded-sm border border-[#d7e4dc] bg-white px-4 py-2.5 text-[0.86rem] font-semibold text-[#335043] hover:bg-[#f3faf5] max-[980px]:px-0 max-[980px]:w-10 max-[980px]:justify-center min-[981px]:inline-flex"
 								aria-label="Ir a notificaciones"
 							>
-								<Bell aria-hidden="true" focusable="false" className="h-4 w-4 text-[var(--primary)]" strokeWidth={1.8} />
+								<div className="relative">
+									<Bell aria-hidden="true" focusable="false" className="h-4 w-4 text-[var(--primary)]" strokeWidth={1.8} />
+									{recentNotificationIds && recentNotificationIds.length > 0 && (
+										<span className="absolute -right-2 -top-2 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#e03a3a] px-1 text-[0.62rem] font-bold leading-none text-white shadow-[0_8px_16px_-10px_rgba(224,58,58,0.8)]">
+											{recentNotificationIds.length > 9 ? "9+" : recentNotificationIds.length}
+										</span>
+									)}
+								</div>
 								<span className="max-[980px]:hidden">Notificaciones</span>
 							</button>
 							<button

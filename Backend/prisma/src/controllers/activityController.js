@@ -855,6 +855,8 @@ async function createActivity(req, res) {
       });
     }
 
+      const isAdmin = String(req.user?.rol || "").toLowerCase() === "admin";
+
       const created = await prisma.$transaction(async tx => {
       const newActivity = await tx.actividad.create({
         data: {
@@ -867,9 +869,9 @@ async function createActivity(req, res) {
           hora_inicio: startTime,
           hora_termino: endTime,
           max_participantes: maxParticipants,
-          chat_bidireccional: Boolean(chat_bidireccional),
-          aprobado: false,
-          estado: "pendiente"
+            chat_bidireccional: Boolean(chat_bidireccional),
+            aprobado: isAdmin ? true : false,
+            estado: isAdmin ? "programada" : "pendiente"
         },
         include: {
           usuario: { select: { id_usuario: true, nombre: true, apellido: true } },
@@ -1531,25 +1533,6 @@ async function reviewActivity(req, res) {
       emitNotificationBatch(ownerNotifications);
     } catch (notifError) {
       console.error("[reviewActivity] ownerNotification failed:", notifError);
-    }
-
-    if (action === "approve" || action === "reject") {
-      try {
-        emitNotificationCreated({
-          id: `approval-${idActividad}-${Date.now()}`,
-          id_notificacion: null,
-          type: "actividad",
-          tipo: "actividad",
-          title: ownerNotification.titulo,
-          titulo: ownerNotification.titulo,
-          detail: ownerNotification.descripcion,
-          descripcion: ownerNotification.descripcion,
-          activityId: idActividad,
-          id_actividad: idActividad
-        }, { broadcastAdmins: true });
-      } catch (_eventError) {
-        // noop: el alta persistida ya se intentó arriba
-      }
     }
 
     if (action === "approve" && pendingRevision) {

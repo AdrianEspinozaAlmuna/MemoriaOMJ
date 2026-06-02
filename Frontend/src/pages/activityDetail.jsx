@@ -240,7 +240,7 @@ export default function ActivityDetail() {
 	const currentUserRating = Number(currentParticipant?.valoracion);
 	const hasExistingRating = Number.isInteger(currentUserRating) && currentUserRating >= 1 && currentUserRating <= 5;
 	const hasAttendanceRegistered = Boolean(currentParticipant?.asistio);
-	const canManageMarkAttendance = isInProgress && !hasAttendanceRegistered && role === "encargado" && isActivityManager;
+	const canManageMarkAttendance = isInProgress && !hasAttendanceRegistered && isActivityManager;
 	const canMarkOwnAttendance = isInProgress && !hasAttendanceRegistered && (isEnrolled || canManageMarkAttendance);
 	const canCancelActivity = canManageActivity && !isFinished && !isCanceled;
 	const canEditActivity = canManageActivity && !isFinished && !isCanceled && !isInProgress && !activity?.revision_pendiente;

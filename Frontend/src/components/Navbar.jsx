@@ -488,7 +488,7 @@ export default function Navbar() {
 
 				{renderMobileMenu()}
 
-				<div className="flex w-full flex-nowrap items-center justify-center gap-1.5 justify-self-center max-[1120px]:w-auto max-[1120px]:max-w-full max-[1120px]:min-w-0 max-[1120px]:justify-start max-[1120px]:overflow-x-auto max-[1120px]:pb-1 max-[980px]:hidden" aria-label="Navegacion de usuario">
+				<div className="hidden min-[981px]:flex w-full flex-nowrap items-center justify-center gap-1.5 justify-self-center max-[1120px]:w-auto max-[1120px]:max-w-full max-[1120px]:min-w-0 max-[1120px]:justify-start max-[1120px]:overflow-x-auto max-[1120px]:pb-1" aria-label="Navegacion de usuario">
 					{isAuthenticated && rol === "participante" && (
 						<NavLink
 							to="/user/dashboard"

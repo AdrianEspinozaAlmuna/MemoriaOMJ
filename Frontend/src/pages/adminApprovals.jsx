@@ -330,6 +330,14 @@ export default function AdminApprovals() {
 										<p className="m-0 text-[0.9rem] leading-6 break-words whitespace-pre-wrap text-[var(--text-muted)]">{activeItem.description || "Sin descripcion"}</p>
 									</div>
 
+									<div className="grid gap-1.5 rounded-[10px] px-3 py-2.5">
+										<p className="m-0 text-[0.74rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Propuesto por</p>
+										<p className="m-0 text-[0.9rem] font-semibold text-[var(--text)]">{activeItem.manager || "Sin encargado"}</p>
+									</div>
+									<div className="grid gap-1.5 rounded-[10px] px-3 py-2.5">
+										<p className="m-0 text-[0.74rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Fecha</p>
+										<p className="m-0 text-[0.9rem] font-semibold text-[var(--text)]">{formatDateForChile(activeItem.date, { day: "2-digit", month: "long", year: "numeric" })}</p>
+									</div>
 									<div className="grid gap-1.5 rounded-[10px]  px-3 py-2.5">
 										<p className="m-0 text-[0.74rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Hora inicio</p>
 										<p className="m-0 text-[0.9rem] font-semibold text-[var(--text)]">{activeItem.startTime || activeItem.time || "-"}</p>
@@ -341,14 +349,6 @@ export default function AdminApprovals() {
 									<div className="grid gap-1.5 rounded-[10px] px-3 py-2.5">
 										<p className="m-0 text-[0.74rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Sala</p>
 										<p className="m-0 text-[0.9rem] font-semibold text-[var(--text)]">{activeItem.room || activeItem.place || "Sin sala"}</p>
-									</div>
-									<div className="grid gap-1.5 rounded-[10px] px-3 py-2.5">
-										<p className="m-0 text-[0.74rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Fecha</p>
-										<p className="m-0 text-[0.9rem] font-semibold text-[var(--text)]">{formatDateForChile(activeItem.date, { day: "2-digit", month: "long", year: "numeric" })}</p>
-									</div>
-									<div className="grid gap-1.5 rounded-[10px] px-3 py-2.5">
-										<p className="m-0 text-[0.74rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Propuesto por</p>
-										<p className="m-0 text-[0.9rem] font-semibold text-[var(--text)]">{activeItem.manager || "Sin encargado"}</p>
 									</div>
 									<div className="grid gap-1.5 rounded-[10px] px-3 py-2.5">
 										<p className="m-0 text-[0.74rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Cupos</p>

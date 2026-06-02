@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus } from "lucide-react";
+import { Plus, RefreshCw } from "lucide-react";
 import ActivityCard from "../components/ActivityCard";
 import LoadingState from "../components/LoadingState";
 import { getAdminActivities } from "../services/userViewsService";
@@ -11,26 +11,38 @@ export default function AdminActivities() {
 	const [currentPage, setCurrentPage] = useState(1);
 	const [allActivities, setAllActivities] = useState([]);
 	const [loading, setLoading] = useState(true);
+	const [refreshing, setRefreshing] = useState(false);
 	const [error, setError] = useState("");
+
+	async function loadApprovedActivities() {
+		setLoading(true);
+		setError("");
+
+		const activities = await getAdminActivities({ approved: true });
+		const available = (Array.isArray(activities) ? activities : []).filter(
+			item => item.state === "programada" || item.state === "en_curso"
+		);
+
+		setAllActivities(available);
+		setError(activities?.error || "");
+		setLoading(false);
+	}
+
+	async function handleRefresh() {
+		setRefreshing(true);
+		setError("");
+
+		try {
+			await loadApprovedActivities();
+		} catch (err) {
+			setError("No se pudieron recargar las actividades disponibles.");
+		} finally {
+			setRefreshing(false);
+		}
+	}
 
 	useEffect(() => {
 		let mounted = true;
-
-		async function loadApprovedActivities() {
-			setLoading(true);
-			setError("");
-
-			const activities = await getAdminActivities({ approved: true });
-			if (!mounted) return;
-
-			const available = (Array.isArray(activities) ? activities : []).filter(
-				item => item.state === "programada" || item.state === "en_curso"
-			);
-
-			setAllActivities(available);
-			setError(activities?.error || "");
-			setLoading(false);
-		}
 
 		loadApprovedActivities().catch(() => {
 			if (!mounted) return;
@@ -41,6 +53,17 @@ export default function AdminActivities() {
 
 		return () => {
 			mounted = false;
+		};
+	}, []);
+
+	useEffect(() => {
+		function handleExternalUpdate() {
+			handleRefresh();
+		}
+
+		window.addEventListener("admin:approvals-changed", handleExternalUpdate);
+		return () => {
+			window.removeEventListener("admin:approvals-changed", handleExternalUpdate);
 		};
 	}, []);
 
@@ -64,10 +87,22 @@ export default function AdminActivities() {
 					<h1 className="m-0 text-[clamp(1.8rem,2.5vw,2.3rem)] font-bold text-[var(--text)]">Actividades disponibles</h1>
 					<p className="max-w-3xl text-[0.92rem] text-[var(--text-muted)]">Listado completo de actividades publicadas en formato de cards.</p>
 				</div>
+<div className="inline-flex items-center gap-2">
+				<button
+					type="button"
+					onClick={handleRefresh}
+					disabled={loading || refreshing}
+					className="inline-flex items-center gap-2 rounded-sm border border-[var(--primary)] bg-white px-4 py-2.5 text-[0.88rem] font-semibold text-[var(--primary)] transition-all hover:bg-[var(--primary)] hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+					aria-label="Actualizar actividades disponibles"
+				>
+					<RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} strokeWidth={2} />
+					{refreshing ? "Actualizando..." : "Actualizar"}
+				</button>
 				<Link to="/admin/crear-actividad" className="inline-flex items-center gap-2 rounded-sm border border-[var(--primary)] bg-[var(--primary)] px-3.5 py-2 text-[0.84rem] font-semibold !text-white transition-all hover:bg-[#0a7f3d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#05a63d]/30">
 					<Plus className="h-4 w-4 !text-white" strokeWidth={2} />
 					Crear actividad
 				</Link>
+			</div>
 			</header>
 
 			<section className="rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-5 shadow-sm">

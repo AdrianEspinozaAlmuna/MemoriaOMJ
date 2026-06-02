@@ -167,7 +167,7 @@ async function createSystemNotification(db = prisma, idEmisor, payload = {}) {
 }
 
 async function notifyAdminUsers(db = prisma, idEmisor, payload = {}) {
-  const admin = await db.usuario.findFirst({
+  const admins = await db.usuario.findMany({
     where: {
       rol: "admin",
       estado: true
@@ -176,18 +176,18 @@ async function notifyAdminUsers(db = prisma, idEmisor, payload = {}) {
     select: { id_usuario: true }
   });
 
-  if (!admin?.id_usuario) {
+  const adminIds = admins
+    .map(item => Number(item?.id_usuario))
+    .filter(id => Number.isInteger(id) && id > 0);
+
+  if (adminIds.length === 0) {
     return [];
   }
 
-  const created = await createNotificationRecord(db, {
+  return createNotificationsForUsers(db, idEmisor, adminIds, {
     ...payload,
-    id_emisor: idEmisor,
-    id_receptor: admin.id_usuario,
     tipo: payload.tipo || "revision"
   });
-
-  return created ? [created] : [];
 }
 
 async function notifyUsersByIds(db = prisma, idEmisor, userIds = [], payload = {}) {

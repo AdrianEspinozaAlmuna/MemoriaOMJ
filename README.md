@@ -1,4 +1,4 @@
-# Plataforma OMJ
+# Plataforma OMJ Curicó
 
 Plataforma OMJ para gestion de actividades juveniles, con arquitectura separada en Frontend (React + Vite + PWA) y Backend (Node.js + Express + Prisma).
 
