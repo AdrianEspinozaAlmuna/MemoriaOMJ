@@ -134,6 +134,19 @@ function timeStringToDate(time) {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
+function parseLocalDateString(value) {
+  if (!value) return null;
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const parts = value.split("-").map(v => Number(v));
+    if (parts.length === 3 && parts.every(n => Number.isInteger(n))) {
+      return new Date(parts[0], parts[1] - 1, parts[2]);
+    }
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
 function toDateLabel(dateValue) {
   if (!dateValue) return null;
   const date = new Date(dateValue);
@@ -506,7 +519,7 @@ async function requestActivityEdit(req, res) {
 
   const activityTitle = (title || titulo || "").trim();
   const activityDescription = (description || descripcion || "").trim();
-  const activityDate = new Date(date || fecha || "");
+  const activityDate = parseLocalDateString(date || fecha || "");
   const startTime = timeStringToDate(hora_inicio);
   const endTime = timeStringToDate(hora_termino);
   const maxParticipants = Number(max_participantes ?? capacity ?? 0);
@@ -747,7 +760,7 @@ async function createActivity(req, res) {
 
   const activityTitle = (title || titulo || "").trim();
   const activityDescription = (description || descripcion || "").trim();
-  const activityDate = new Date(date || fecha || "");
+  const activityDate = parseLocalDateString(date || fecha || "");
   const startTime = timeStringToDate(hora_inicio);
   const endTime = timeStringToDate(hora_termino);
   const maxParticipants = Number(max_participantes ?? capacity ?? 0);

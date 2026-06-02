@@ -76,22 +76,32 @@ export default function CreateActivity() {
       return;
     }
 
-    // Validación: solo permitir crear actividades para el día actual
+    // Validación: permitir crear actividades para hoy o en fechas posteriores
     if (!isEditMode) {
       const now = new Date();
-      const todayStr = now.toISOString().slice(0, 10);
-      if (form.date !== todayStr) {
+      if (!form.date) {
         setFeedback({
           type: "error",
           title: "Fecha inválida",
-          message: "Solo puedes crear actividades para el día de hoy.",
-          hint: "Elige la fecha de hoy para registrar la actividad."
+          message: "Selecciona una fecha válida.",
+          hint: "La fecha debe ser hoy o posterior."
+        });
+        return;
+      }
+
+      // rechazar fechas anteriores a hoy
+      if (form.date < todayStr) {
+        setFeedback({
+          type: "error",
+          title: "Fecha inválida",
+          message: "La fecha no puede ser anterior a hoy.",
+          hint: "Selecciona una fecha igual o posterior al día de hoy."
         });
         return;
       }
 
       const selectedStart = new Date(`${form.date}T${form.hora_inicio}:00`);
-      if (selectedStart.getTime() < now.getTime()) {
+      if (selectedStart.getTime() < now.getTime() && form.date === todayStr) {
         setFeedback({
           type: "error",
           title: "Hora inválida",
@@ -354,7 +364,7 @@ export default function CreateActivity() {
 
   const tipoSeleccionado = tiposActividad.find(tipo => String(tipo.id_tipo) === String(form.id_tipo_actividad));
   const now = new Date();
-  const todayStr = now.toISOString().slice(0, 10);
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   const nowTimeStr = now.toTimeString().slice(0, 5);
   const backLink = isEditMode
     ? `${isAdminRoute ? "/admin/actividad" : "/user/actividad"}/${editActivityId}`
@@ -519,7 +529,6 @@ export default function CreateActivity() {
                 onChange={handleChange}
                 required
                 min={!isEditMode ? todayStr : undefined}
-                max={!isEditMode ? todayStr : undefined}
               />
             </div>
 
