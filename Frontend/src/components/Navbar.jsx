@@ -237,6 +237,9 @@ export default function Navbar() {
 	useEffect(() => {
 		setMenuOpen(false);
 		setMobileMenuOpen(false);
+		if (location.pathname.endsWith("/user/notificaciones")) {
+			clearRecentNotificationTimers();
+		}
 	}, [location.pathname]);
 
 	useEffect(() => {
@@ -334,6 +337,7 @@ export default function Navbar() {
 
 	async function openNotificationItem(item) {
 		setNotificationsOpen(false);
+		clearRecentNotificationTimers();
 		navigate("/user/notificaciones");
 	}
 
