@@ -1,4 +1,4 @@
-const express = require("express");
+﻿const express = require("express");
 const router = express.Router();
 const {
   getMyGroups,
@@ -9,35 +9,33 @@ const {
   removeUserFromGroup,
   leaveGroup,
   deleteGroup,
-  searchUsersToInvite
+  searchUsersToInvite,
+  getAllGroupsAdmin,
+  getEligibleLeadersAdmin,
+  createGroupAdmin,
+  updateGroupAdmin,
+  removeUserFromGroupAdmin,
+  deleteGroupAdmin
 } = require("../controllers/groupController");
-const { requireAuth } = require("../middleware/auth");
+const { requireAuth, requireRole } = require("../middleware/auth");
 
-// Obtener todos los grupos del usuario
+// --- ADMIN ROUTES ---
+router.get("/admin/all", requireAuth, requireRole("admin"), getAllGroupsAdmin);
+router.get("/admin/eligible-leaders", requireAuth, requireRole("admin"), getEligibleLeadersAdmin);
+router.post("/admin", requireAuth, requireRole("admin"), createGroupAdmin);
+router.patch("/admin/:id_grupo", requireAuth, requireRole("admin"), updateGroupAdmin);
+router.delete("/admin/:id_grupo/members/:id_usuario", requireAuth, requireRole("admin"), removeUserFromGroupAdmin);
+router.delete("/admin/:id_grupo", requireAuth, requireRole("admin"), deleteGroupAdmin);
+
+// --- USER ROUTES ---
 router.get("/", requireAuth, getMyGroups);
-
-// Crear nuevo grupo
 router.post("/", requireAuth, createGroup);
-
-// Editar grupo
 router.patch("/:id_grupo", requireAuth, updateGroup);
-
-// Obtener detalles de un grupo
 router.get("/:id_grupo", requireAuth, getGroup);
-
-// Buscar usuarios para invitar
 router.get("/:id_grupo/search-users", requireAuth, searchUsersToInvite);
-
-// Agregar usuario al grupo
 router.post("/:id_grupo/members", requireAuth, addUserToGroup);
-
-// Eliminar usuario del grupo
 router.delete("/:id_grupo/members", requireAuth, removeUserFromGroup);
-
-// Salir del grupo
 router.post("/:id_grupo/leave", requireAuth, leaveGroup);
-
-// Eliminar grupo
 router.delete("/:id_grupo", requireAuth, deleteGroup);
 
 module.exports = router;

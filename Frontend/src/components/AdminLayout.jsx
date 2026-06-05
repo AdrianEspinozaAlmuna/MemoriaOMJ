@@ -1,7 +1,7 @@
-import React from "react";
+﻿import React from "react";
 import { io } from "socket.io-client";
 import api, { API_BASE_URL } from "../services/api";
-import { ListCheck, BarChart3, Bell, CalendarDays, CheckCircle2, Circle, LayoutGrid, DoorOpen, Home, LogOut, Menu, PanelLeftClose, PanelLeftOpen, Plus, Tags, UserRound, Users, X } from "lucide-react";
+import { ListCheck, BarChart3, Bell, CalendarDays, CheckCircle2, Circle, LayoutGrid, DoorOpen, Home, LogOut, Menu, PanelLeftClose, PanelLeftOpen, Plus, Tags, UserRound, User, Users, X } from "lucide-react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { getAdminActivities } from "../services/userViewsService";
 import { normalizeNotification } from "../services/notificationsService";
@@ -45,7 +45,8 @@ const sidebarSections = [
 	{
 		title: "Gestión",
 		items: [
-			{ to: "/admin/usuarios", label: "Usuarios", icon: "users" },
+			{ to: "/admin/usuarios", label: "Usuarios", icon: "user" },
+			{ to: "/admin/grupos", label: "Grupos", icon: "users" },
 			{ to: "/admin/tipos-e-imagenes", label: "Tipos e Imágenes", icon: "tags" },
 			{ to: "/admin/salas", label: "Salas", icon: "rooms" }
 		]
@@ -55,6 +56,9 @@ const sidebarSections = [
 function SidebarIcon({ name, className = "h-[18px] w-[18px]" }) {
 	if (name === "home") {
 		return <Home aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
+	}
+	if (name === "user") {
+		return <User aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
 	}
 	if (name === "users") {
 		return <Users aria-hidden="true" focusable="false" className={className} strokeWidth={1.8} />;
@@ -255,12 +259,13 @@ export default function AdminLayout() {
 		const path = location.pathname.replace(/\/$/, "");
 		if (path.endsWith("/admin") || path.endsWith("/admin/dashboard")) return "Dashboard";
 		if (path.endsWith("/admin/usuarios")) return "Usuarios";
+		if (path.endsWith("/admin/grupos")) return "Grupos";
 		if (path.endsWith("/admin/aprobaciones")) return "Aprobaciones";
 		if (path.endsWith("/admin/calendario")) return "Calendario";
 		if (path.endsWith("/admin/actividades")) return "Actividades";
 		if (path.endsWith("/admin/reportes")) return "Reportes";
 		if (path.endsWith("/admin/notificaciones")) return "Notificaciones";
-		if (path.endsWith("/admin/imagenes")) return "Tipos e Imagenes";
+		if (path.endsWith("/admin/imagenes")) return "Tipos e Imágenes";
 		if (path.endsWith("/admin/configuracion")) return "Salas";
 		return "Panel de administrador";
 	}
@@ -280,13 +285,13 @@ export default function AdminLayout() {
 				<div className={`mb-3 flex items-center gap-2 px-2 ${sidebarCollapsed ? "min-[981px]:justify-center" : ""}`}>
 					<img src="/iconOMJ.jpg" alt="OMJ" className="h-7 w-7 rounded-md border border-[#d8dfda]" />
 					<div className={`min-w-0 ${sidebarCollapsed ? "min-[981px]:hidden" : ""}`}>
-						<p className="m-0 truncate text-[0.84rem] font-semibold text-[#455b50]">Administracion OMJ</p>
-						<p className="m-0 text-[0.75rem] text-[#7a8881]">Gestion interna</p>
+						<p className="m-0 truncate text-[0.84rem] font-semibold text-[#455b50]">Administración OMJ</p>
+						<p className="m-0 text-[0.75rem] text-[#7a8881]">Gestión interna</p>
 					</div>
 				</div>
 
 
-				<nav className="grid gap-6" aria-label="Menu de administracion">
+				<nav className="grid gap-6" aria-label="Menu de administración">
 					{sidebarSections.map(section => (
 						<section key={section.title} className="grid gap-3">
 							<div className={`px-2 ${sidebarCollapsed ? "min-[981px]:hidden" : ""}`}>
@@ -340,7 +345,7 @@ export default function AdminLayout() {
 							className={`inline-flex w-full items-center justify-center rounded-sm border border-[var(--reject-hover)] bg-white py-2 text-center text-[0.84rem] font-semibold text-[var(--reject-hover)] hover:bg-[#ffefed] ${sidebarCollapsed ? "min-[981px]:gap-0 min-[981px]:px-0" : "gap-2 px-2.5"}`}
 						>
 							<LogOut aria-hidden="true" focusable="false" className="h-4 w-4" strokeWidth={2} />
-							<span className={sidebarCollapsed ? "min-[981px]:hidden" : ""}>Cerrar sesion</span>
+							<span className={sidebarCollapsed ? "min-[981px]:hidden" : ""}>Cerrar sesión</span>
 						</button>
 					</div>
 				</div>
@@ -355,7 +360,7 @@ export default function AdminLayout() {
 								onClick={openMobileNav}
 								className="inline-flex h-10 w-10 items-center justify-center rounded-md text-[var(--text)] hover:bg-[#eef7ef] min-[981px]:hidden"
 								aria-expanded={mobileNavOpen}
-								aria-label={mobileNavOpen ? "Cerrar menu de administracion" : "Abrir menu de administracion"}
+								aria-label={mobileNavOpen ? "Cerrar menu de administración" : "Abrir menu de administración"}
 							>
 								{mobileNavOpen ? <X className="h-5 w-5" strokeWidth={1.9} /> : <Menu className="h-5 w-5" strokeWidth={1.9} />}
 							</button>
@@ -416,3 +421,4 @@ export default function AdminLayout() {
 		</div>
 	);
 }
+

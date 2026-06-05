@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+﻿import React, { useEffect, useRef } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import Home from "./pages/home";
 import Login from "./pages/login";
@@ -14,6 +14,7 @@ import Navbar from "./components/Navbar";
 import AdminLayout from "./components/AdminLayout";
 import AdminDashboard from "./pages/adminDashboard";
 import AdminUsers from "./pages/adminUsers";
+import AdminGroups from "./pages/adminGroups";
 import AdminApprovals from "./pages/adminApprovals";
 import AdminCalendar from "./pages/adminCalendar";
 import AdminActivities from "./pages/adminActivities";
@@ -74,7 +75,7 @@ export default function App() {
       }
 
       try {
-        new Notification(notification.title || "Notificación de Sistema", {
+        new Notification(notification.title || "NotificaciÃ³n de Sistema", {
           body: notification.detail || notification.descripcion || "",
           icon: "/icons/icon-192.png",
           tag: String(notification.id || notification.id_notificacion || notificationKey || "notification"),
@@ -84,7 +85,7 @@ export default function App() {
           }
         });
       } catch (_error) {
-        // Si el navegador no permite mostrarla, dejamos que socket/lista cubran la actualización.
+        // Si el navegador no permite mostrarla, dejamos que socket/lista cubran la actualizaciÃ³n.
       }
     });
 
@@ -123,7 +124,7 @@ export default function App() {
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />
               <Route path="dashboard" element={<AdminDashboard />} />
-              <Route path="usuarios" element={<AdminUsers />} />
+              <Route path="usuarios" element={<AdminUsers />} />`n              <Route path="grupos" element={<AdminGroups />} />
               <Route path="aprobaciones" element={<AdminApprovals />} />
               <Route path="calendario" element={<AdminCalendar />} />
               <Route path="actividades" element={<AdminActivities />} />

@@ -23,6 +23,7 @@ function formatPhone(value) {
 // Función para evaluar fortaleza de contraseña
 function getPasswordStrength(password) {
   return {
+    hasLowerCase: /[a-z]/.test(password),
     hasUpperCase: /[A-Z]/.test(password),
     hasNumber: /\d/.test(password),
     hasSpecialChar: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password),

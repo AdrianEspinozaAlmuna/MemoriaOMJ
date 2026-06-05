@@ -723,7 +723,7 @@ export default function Home() {
           )}
           {!installPrompt && !isInstalled && (
             <p className="mt-3 text-[0.8rem] leading-relaxed text-[var(--pjc-muted)]">
-              Si el botón está deshabilitado, abre la página en una ventana normal de navegador y vuelve a intentarlo.
+              Si el botón está deshabilitado, recarga la página y vuelve a intentarlo.
             </p>
           )}
         </div>
