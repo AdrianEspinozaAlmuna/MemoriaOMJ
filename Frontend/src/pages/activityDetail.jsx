@@ -891,7 +891,7 @@ export default function ActivityDetail() {
 										<>
 											{canEnroll && (
 												<button type="button" onClick={handleEnrollmentToggle} disabled={enrollmentBusy || (!isEnrolled && freeSpots === 0) || (isEnrolled && !canCancelEnrollment)} className={`w-full rounded-sm border px-4 py-2.5 text-[0.88rem] font-semibold transition-all ${isEnrolled ? "border-[var(--reject)] bg-[var(--reject)] text-white hover:bg-[var(--reject-hover)] disabled:border-[#dce6df] disabled:bg-[#f4f8f6] disabled:text-[#7d9084]" : "border-[var(--primary)] bg-[var(--primary)] text-white hover:bg-[var(--primary-strong)] disabled:border-[#dce6df] disabled:bg-[#f4f8f6] disabled:text-[#7d9084]"}`}>
-												{isEnrolled ? "Cancelar inscripción" : freeSpots === 0 ? "Sin cupos" : "Inscribirme"}
+												{enrollmentBusy ? (isEnrolled ? "Cancelando..." : "Inscribiendo...") : isEnrolled ? "Cancelar inscripción" : freeSpots === 0 ? "Sin cupos" : "Inscribirme"}
 											</button>
 											)}
 											{enrollmentError && (
@@ -1073,9 +1073,10 @@ export default function ActivityDetail() {
 						<button
 							type="button"
 							onClick={confirmCancelEnrollment}
-							className="rounded-sm border border-[#f1c8be] bg-[#8a3b2a] px-3.5 py-2 text-[0.84rem] font-semibold text-white transition-colors hover:bg-[#743021]"
+							disabled={enrollmentBusy}
+							className="rounded-sm border border-[#f1c8be] bg-[#8a3b2a] px-3.5 py-2 text-[0.84rem] font-semibold text-white transition-colors hover:bg-[#743021] disabled:cursor-not-allowed disabled:opacity-70"
 						>
-							Cancelar inscripción
+							{enrollmentBusy ? "Cancelando..." : "Cancelar inscripción"}
 						</button>
 					</>
 				)}

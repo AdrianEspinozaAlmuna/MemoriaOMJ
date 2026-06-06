@@ -172,6 +172,11 @@ export default function AdminLayout() {
 				if (id && isAdminNotification(notification)) {
 					registerRecentNotification(id);
 				}
+
+				const title = String(notification?.titulo ?? notification?.title ?? "").toLowerCase();
+				if (title.includes("pendiente") || title.includes("propuesta") || title.includes("edición") || title.includes("edicion")) {
+					window.dispatchEvent(new CustomEvent("admin:approvals-changed"));
+				}
 			} catch (e) {
 				// noop
 			}

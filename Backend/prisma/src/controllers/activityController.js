@@ -766,6 +766,8 @@ async function requestActivityEdit(req, res) {
           id_actividad: idActividad
         });
 
+        console.log("[requestEdit] adminNotifications count:", adminNotifications.length, "for activity", idActividad);
+
         emitNotificationBatch(adminNotifications, { broadcastAdmins: true });
       } catch (notificationError) {
         console.error("[activities] edit notification failed:", notificationError);
@@ -1531,6 +1533,12 @@ async function reviewActivity(req, res) {
     const activityTitle = existing?.titulo || updated?.titulo || `#${idActividad}`;
     const reason = String(req.body?.descripcion ?? req.body?.reason ?? "").trim();
 
+    const adminUser = await prisma.usuario.findUnique({
+      where: { id_usuario: idUsuario },
+      select: { nombre: true, apellido: true }
+    });
+    const adminName = adminUser ? `${adminUser.nombre} ${adminUser.apellido}`.trim() : "Administración";
+
     const changesList = pendingRevision && action === "approve"
       ? buildChangesList(pendingRevision, updated)
       : "";
@@ -1539,26 +1547,26 @@ async function reviewActivity(req, res) {
       ? action === "approve"
         ? {
             titulo: `Edición de actividad aprobada ${quoteActivityTitle(activityTitle)}`,
-            descripcion: `Los cambios solicitados de ${quoteActivityTitle(activityTitle)} fueron publicados.${changesList}`,
+            descripcion: `Los cambios solicitados de ${quoteActivityTitle(activityTitle)} fueron publicados por ${adminName}.${changesList}`,
             tipo: "actividad",
             id_actividad: idActividad
           }
         : {
             titulo: `Edición de actividad rechazada ${quoteActivityTitle(activityTitle)}`,
-            descripcion: reason || `Los cambios solicitados de ${quoteActivityTitle(activityTitle)} no fueron aprobados.`,
+            descripcion: reason || `Los cambios solicitados de ${quoteActivityTitle(activityTitle)} fueron rechazados por ${adminName}.`,
             tipo: "actividad",
             id_actividad: idActividad
           }
       : action === "approve"
         ? {
             titulo: `Aprobación propuesta actividad ${quoteActivityTitle(activityTitle)}`,
-            descripcion: `La actividad ${quoteActivityTitle(activityTitle)} quedó habilitada para publicarse.`,
+            descripcion: `La actividad ${quoteActivityTitle(activityTitle)} fue aprobada por ${adminName}.`,
             tipo: "actividad",
             id_actividad: idActividad
           }
         : {
             titulo: `Rechazo propuesta actividad ${quoteActivityTitle(activityTitle)}`,
-            descripcion: reason || `La actividad ${quoteActivityTitle(activityTitle)} no fue aprobada por administración.`,
+            descripcion: reason || `La actividad ${quoteActivityTitle(activityTitle)} fue rechazada por ${adminName}.`,
             tipo: "actividad",
             id_actividad: idActividad
           };
@@ -1591,8 +1599,8 @@ async function reviewActivity(req, res) {
             ? `Edición aprobada ${quoteActivityTitle(activityTitle)}`
             : `Actividad aprobada ${quoteActivityTitle(activityTitle)}`,
           descripcion: pendingRevision
-            ? `Los cambios de ${quoteActivityTitle(activityTitle)} fueron aprobados y publicados.${changesList}`
-            : `La actividad ${quoteActivityTitle(activityTitle)} fue aprobada y está disponible.`,
+            ? `Los cambios de ${quoteActivityTitle(activityTitle)} fueron aprobados por ${adminName} y publicados.${changesList}`
+            : `La actividad ${quoteActivityTitle(activityTitle)} fue aprobada por ${adminName}.`,
           tipo: "actividad",
           id_actividad: idActividad
         });
@@ -1667,6 +1675,12 @@ async function cancelActivity(req, res) {
       return res.status(400).json({ message: "No puedes cancelar una actividad finalizada" });
     }
 
+    const adminUser = await prisma.usuario.findUnique({
+      where: { id_usuario: idUsuario },
+      select: { nombre: true, apellido: true }
+    });
+    const adminName = adminUser ? `${adminUser.nombre} ${adminUser.apellido}`.trim() : "Administración";
+
     const updated = await prisma.actividad.update({
       where: { id_actividad: idActividad },
       data: {
@@ -1691,7 +1705,7 @@ async function cancelActivity(req, res) {
     try {
       const adminNotifications = await notifyAdminUsers(prisma, idUsuario, {
         titulo: `Actividad cancelada ${quoteActivityTitle(existing.titulo)}`,
-        descripcion: `La actividad ${quoteActivityTitle(existing.titulo)} fue cancelada por ${isAdmin ? "administración" : "el encargado"}.`,
+        descripcion: `La actividad ${quoteActivityTitle(existing.titulo)} fue cancelada por ${isAdmin ? adminName : "el encargado"}.`,
         tipo: "actividad",
         id_actividad: idActividad
       });

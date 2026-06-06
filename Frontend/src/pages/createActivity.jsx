@@ -192,14 +192,20 @@ export default function CreateActivity() {
       if (response?.ok) {
         setFeedback({
           type: "success",
-          title: isEditMode ? "Edicion enviada" : isAdminRoute ? "Actividad publicada" : "Propuesta enviada",
+          title: isEditMode
+            ? (isAdminRoute ? "Actividad actualizada" : "Edicion enviada")
+            : isAdminRoute ? "Actividad publicada" : "Propuesta enviada",
           message: isEditMode
-            ? "Tu solicitud de edicion fue registrada correctamente y quedo en revision."
+            ? (isAdminRoute
+              ? "Los cambios se aplicaron directamente a la actividad."
+              : "Tu solicitud de edicion fue registrada correctamente y quedo en revision.")
             : isAdminRoute
               ? "La actividad se registro y quedo publicada para los usuarios."
               : "Tu actividad fue registrada correctamente y quedo en revision.",
           hint: isEditMode
-            ? "Cuando el admin la revise, te notificaremos el resultado."
+            ? (isAdminRoute
+              ? "Puedes gestionarla desde el panel de actividades cuando lo necesites."
+              : "Cuando el admin la revise, te notificaremos el resultado.")
             : isAdminRoute
               ? "Puedes gestionarla desde el panel de actividades cuando lo necesites."
               : "El equipo OMJ te notificara cuando cambie su estado."
@@ -377,7 +383,7 @@ export default function CreateActivity() {
       <section className="max-w-7xl mx-auto px-4 py-6 space-y-8">
         <article className="rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-6 shadow-sm">
           <p className="m-0 text-[0.92rem] font-semibold text-[var(--text)]">Cargando actividad para edición</p>
-          <p className="mt-2 text-[0.88rem] text-[var(--text-muted)]">Estamos preparando los datos actuales para que puedas enviar cambios a revisión.</p>
+          <p className="mt-2 text-[0.88rem] text-[var(--text-muted)]">{isAdminRoute ? "Cargando datos de la actividad..." : "Estamos preparando los datos actuales para que puedas enviar cambios a revisión."}</p>
         </article>
       </section>
     );
@@ -392,7 +398,9 @@ export default function CreateActivity() {
         </h1>
         <p className="mt-2 text-[0.92rem] text-[var(--text-muted)]">
           {isEditMode
-            ? "Ajusta los datos de la actividad y envía la modificación a revisión."
+            ? (isAdminRoute
+              ? "Modifica los datos de la actividad y guarda los cambios directamente."
+              : "Ajusta los datos de la actividad y envía la modificación a revisión.")
             : isAdminRoute
               ? "Crea una actividad con publicación inmediata indicando lugar, fecha y horario."
               : "Propone una nueva actividad indicando lugar, fecha y horario para su revision."}
@@ -678,7 +686,7 @@ export default function CreateActivity() {
                   Enviando...
                 </>
               ) : isEditMode ? (
-                "Enviar edición a revisión"
+                isAdminRoute ? "Guardar cambios" : "Enviar edición a revisión"
               ) : (
                 "Enviar propuesta"
               )}
