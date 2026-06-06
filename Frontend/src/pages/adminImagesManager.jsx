@@ -96,6 +96,8 @@ export default function AdminImagesManager() {
   const [error, setError] = useState(null);
   const [deleting, setDeleting] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTipo, setEditingTipo] = useState(null);
   const [form, setForm] = useState(emptyForm());
@@ -227,19 +229,21 @@ export default function AdminImagesManager() {
     }
   };
 
-  const handleDelete = async tipo => {
-    if (!window.confirm(`¿Eliminar el tipo de actividad "${tipo.nombre}"?`)) return;
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
 
-    setDeleting(tipo.id_tipo);
+    setDeleting(deleteTarget.id_tipo);
     setError(null);
+    setShowDeleteModal(false);
     try {
-      await api.delete(`/imagenes/${tipo.id_tipo}`);
+      await api.delete(`/imagenes/${deleteTarget.id_tipo}`);
       setRefreshKey(prev => prev + 1);
     } catch (err) {
       console.error("Error eliminando tipo:", err);
       setError(err.response?.data?.message || "No se pudo eliminar el tipo de actividad.");
     } finally {
       setDeleting(null);
+      setDeleteTarget(null);
     }
   };
 
@@ -320,7 +324,7 @@ export default function AdminImagesManager() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleDelete(tipo)}
+                        onClick={() => { setDeleteTarget(tipo); setShowDeleteModal(true); }}
                         disabled={deleting === tipo.id_tipo}
                         className={[
                           "inline-flex items-center rounded-sm border px-3 py-1.5 text-[0.78rem] font-semibold transition-colors",
@@ -428,6 +432,34 @@ export default function AdminImagesManager() {
             </button>
           </div>
         </div>
+      </Modal>
+      <Modal
+        isOpen={showDeleteModal}
+        title="Eliminar tipo de actividad"
+        onClose={() => { setShowDeleteModal(false); setDeleteTarget(null); }}
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => { setShowDeleteModal(false); setDeleteTarget(null); }}
+              className="inline-flex items-center rounded-sm border border-[#d8e6dd] bg-white px-4 py-2.5 text-[0.9rem] font-semibold text-[#355447] transition-colors hover:bg-[#f5f9f7]"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={deleting === deleteTarget?.id_tipo}
+              className="inline-flex items-center rounded-sm border border-[#efcdc7] bg-[#fff4f2] px-5 py-2.5 text-[0.9rem] font-semibold text-[#8b2f22] transition-colors hover:bg-[#ffeceb] disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {deleting === deleteTarget?.id_tipo ? "Eliminando..." : "Eliminar"}
+            </button>
+          </>
+        }
+      >
+        <p className="m-0 text-[0.92rem] text-[var(--text)]">
+          ¿Eliminar el tipo de actividad <strong>{deleteTarget?.nombre}</strong>?
+        </p>
       </Modal>
     </section>
   );

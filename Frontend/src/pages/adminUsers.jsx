@@ -23,6 +23,7 @@ export default function AdminUsers() {
 	// Para modal de acciones pequeño
 	const [selectedUser, setSelectedUser] = useState(null);
 	const [actionModalOpen, setActionModalOpen] = useState(false);
+	const [showDeleteUserModal, setShowDeleteUserModal] = useState(false);
 	const actionPopoverRef = useRef(null);
 	const actionTriggerRef = useRef(null);
 	const [formValues, setFormValues] = useState({
@@ -427,7 +428,7 @@ export default function AdminUsers() {
 													<button type="button" className={`w-full rounded-md px-2.5 py-2 text-left text-[0.82rem] font-medium ${selectedUser?.estado ? "text-[#8a3b2a] hover:bg-[#fff4ef]" : "text-[#1f5137] hover:bg-[#eef8f1]"}`} onClick={toggleSelectedUserState}>
 														{selectedUser?.estado ? "Deshabilitar" : "Habilitar"}
 													</button>
-													<button type="button" className="w-full rounded-md px-2.5 py-2 text-left text-[0.82rem] font-medium text-[#8a3b2a] hover:bg-[#fff4ef]" onClick={removeSelectedUser}>
+													<button type="button" className="w-full rounded-md px-2.5 py-2 text-left text-[0.82rem] font-medium text-[#8a3b2a] hover:bg-[#fff4ef]" onClick={() => { closeActionModal(); setShowDeleteUserModal(true); }}>
 														Eliminar
 													</button>
 												</div>
@@ -618,6 +619,25 @@ export default function AdminUsers() {
 
 					{error && <p className="m-0 rounded-lg border border-[#f2cbc4] bg-[#fff0ee] px-3 py-2 text-[0.84rem] font-semibold text-[#8f3526]">{error}</p>}
 				</form>
+			</Modal>
+			<Modal
+				isOpen={showDeleteUserModal}
+				title="Eliminar usuario"
+				onClose={() => setShowDeleteUserModal(false)}
+			>
+				<div className="p-6">
+					<p className="text-[0.95rem] text-[var(--text)]">
+						¿Estás seguro de que deseas eliminar a <strong>{selectedUser?.nombre} {selectedUser?.apellido}</strong>? Esta acción no se puede deshacer.
+					</p>
+				</div>
+				<div className="flex items-center justify-end gap-3 border-t border-[#dce7df] px-6 py-4">
+					<button type="button" className="btn btn-ghost btn-inline" onClick={() => setShowDeleteUserModal(false)}>
+						Cancelar
+					</button>
+					<button type="button" className="rounded-sm border border-[#8a3b2a] bg-[#8a3b2a] px-4 py-2 text-[0.85rem] font-semibold text-white hover:bg-[#6f2e1f]" onClick={() => { removeSelectedUser(); setShowDeleteUserModal(false); }}>
+						Eliminar
+					</button>
+				</div>
 			</Modal>
 		</section>
 	);

@@ -29,6 +29,8 @@ function AdminGroups() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState(null);
   const [removingMemberId, setRemovingMemberId] = useState(null);
+  const [showRemoveMemberModal, setShowRemoveMemberModal] = useState(false);
+  const [removeMemberTarget, setRemoveMemberTarget] = useState(null);
 
   function normalizeGroup(group) {
     if (!group) return null;
@@ -748,7 +750,10 @@ function AdminGroups() {
                         <button
                           type="button"
                           disabled={isRemoving}
-                          onClick={() => handleRemoveMember(participante.id_usuario)}
+                          onClick={() => {
+                            setRemoveMemberTarget(participante.id_usuario);
+                            setShowRemoveMemberModal(true);
+                          }}
                           className="ml-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full text-[var(--text-muted)] transition-colors hover:bg-red-100 hover:text-red-600 disabled:opacity-50"
                           title="Eliminar miembro"
                         >
@@ -766,6 +771,40 @@ function AdminGroups() {
             </div>
           </div>
         </form>
+      </Modal>
+
+      <Modal
+        isOpen={showRemoveMemberModal}
+        title="Eliminar miembro"
+        onClose={() => { setShowRemoveMemberModal(false); setRemoveMemberTarget(null); }}
+        panelClassName="sm:max-w-[440px]"
+        footer={
+          <div className="flex w-full items-center gap-3">
+            <div className="flex-1" />
+            <button
+              type="button"
+              onClick={() => { setShowRemoveMemberModal(false); setRemoveMemberTarget(null); }}
+              className="rounded-sm border border-[#d2ded7] bg-white px-4 py-2.5 text-[0.9rem] font-semibold text-[var(--text)] transition-colors hover:bg-[#f5f9f7]"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                handleRemoveMember(removeMemberTarget);
+                setShowRemoveMemberModal(false);
+              }}
+              disabled={removingMemberId !== null}
+              className="rounded-sm border border-[#efcdc7] bg-[#8b2f22] px-4 py-2.5 text-[0.9rem] font-semibold text-white transition-colors hover:bg-[#72251a] disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {removingMemberId !== null ? "Eliminando..." : "Eliminar"}
+            </button>
+          </div>
+        }
+      >
+        <p className="text-[0.92rem] text-[var(--text)]">
+          ¿Estás seguro de que deseas eliminar a {groupBeingEdited?.participantes?.find(p => p.id_usuario === removeMemberTarget)?.nombre || "este miembro"} del grupo?
+        </p>
       </Modal>
 
       <Modal

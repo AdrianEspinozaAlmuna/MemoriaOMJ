@@ -93,6 +93,9 @@ export default function ActivityDetail() {
 	const [activityActionError, setActivityActionError] = useState("");
 	const [cancelModalOpen, setCancelModalOpen] = useState(false);
 	const [cancelBusy, setCancelBusy] = useState(false);
+	const [showRemoveParticipantModal, setShowRemoveParticipantModal] = useState(false);
+	const [removeParticipantTargetId, setRemoveParticipantTargetId] = useState(null);
+	const [showCancelEnrollModal, setShowCancelEnrollModal] = useState(false);
 	const [attendanceBusy, setAttendanceBusy] = useState(false);
 	const [manualAttendanceBusyByUser, setManualAttendanceBusyByUser] = useState({});
 	const [ratingValue, setRatingValue] = useState(5);
@@ -302,10 +305,13 @@ export default function ActivityDetail() {
 		setEnrollmentMessage("");
 		setEnrollmentError("");
 
+		if (isEnrolled) {
+			openCancelEnrollModal();
+			return;
+		}
+
 		setEnrollmentBusy(true);
-		const response = isEnrolled
-			? await cancelActivityEnrollment(activityId)
-			: await enrollInActivity(activityId);
+		const response = await enrollInActivity(activityId);
 		setEnrollmentBusy(false);
 
 		if (!response.ok) {
@@ -316,20 +322,36 @@ export default function ActivityDetail() {
 		const refreshed = await refreshActivityDetail({ silentError: true });
 
 		if (!refreshed) {
-			if (isEnrolled) {
-				setIsEnrolled(false);
-				setEnrolledCount(current => Math.max(current - 1, 0));
-				setEnrollmentMessage("Inscripción cancelada correctamente.");
-				return;
-			}
-
 			setIsEnrolled(true);
 			setEnrolledCount(current => Math.min(current + 1, activity.capacity));
 			setEnrollmentMessage("Inscrito correctamente en la actividad.");
 			return;
 		}
 
-		setEnrollmentMessage(isEnrolled ? "Inscripción cancelada correctamente." : "Inscrito correctamente en la actividad.");
+		setEnrollmentMessage("Inscrito correctamente en la actividad.");
+	}
+
+	async function confirmCancelEnrollment() {
+		if (loading || enrollmentBusy) return;
+		setEnrollmentMessage("");
+		setEnrollmentError("");
+		setEnrollmentBusy(true);
+		const response = await cancelActivityEnrollment(activityId);
+		setEnrollmentBusy(false);
+		if (!response.ok) {
+			setEnrollmentError(response.message || "No se pudo actualizar la inscripción.");
+			return;
+		}
+		const refreshed = await refreshActivityDetail({ silentError: true });
+		if (!refreshed) {
+			setIsEnrolled(false);
+			setEnrolledCount(current => Math.max(current - 1, 0));
+			setEnrollmentMessage("Inscripción cancelada correctamente.");
+			setShowCancelEnrollModal(false);
+			return;
+		}
+		setEnrollmentMessage("Inscripción cancelada correctamente.");
+		setShowCancelEnrollModal(false);
 	}
 
 	async function handleMarkAttendance() {
@@ -371,16 +393,13 @@ export default function ActivityDetail() {
 		setActivityActionMessage(response.message || "Asistencia registrada correctamente.");
 	}
 
-	async function handleRemoveParticipant(participantId) {
-		if (!participantId) return;
-
-		const confirmed = window.confirm("¿Expulsar a este participante de la actividad?");
-		if (!confirmed) return;
+	async function handleRemoveParticipant() {
+		if (!removeParticipantTargetId) return;
 
 		setActivityActionError("");
 		setActivityActionMessage("");
 
-		const response = await removeParticipantFromActivity(activityId, participantId);
+		const response = await removeParticipantFromActivity(activityId, removeParticipantTargetId);
 		if (!response.ok) {
 			setActivityActionError(response.message || "No se pudo expulsar al participante.");
 			return;
@@ -389,6 +408,8 @@ export default function ActivityDetail() {
 		setActiveParticipantMenu(null);
 		await refreshActivityDetail({ silentError: true });
 		setActivityActionMessage(response.message || "Participante expulsado correctamente.");
+		setShowRemoveParticipantModal(false);
+		setRemoveParticipantTargetId(null);
 	}
 
 	async function handleSubmitRating() {
@@ -436,6 +457,25 @@ export default function ActivityDetail() {
 	function closeCancelModal() {
 		if (cancelBusy) return;
 		setCancelModalOpen(false);
+	}
+
+	function openRemoveParticipantModal(participantId) {
+		if (!participantId) return;
+		setRemoveParticipantTargetId(participantId);
+		setShowRemoveParticipantModal(true);
+	}
+
+	function closeRemoveParticipantModal() {
+		setShowRemoveParticipantModal(false);
+		setRemoveParticipantTargetId(null);
+	}
+
+	function openCancelEnrollModal() {
+		setShowCancelEnrollModal(true);
+	}
+
+	function closeCancelEnrollModal() {
+		setShowCancelEnrollModal(false);
 	}
 
 	async function handleConfirmCancelActivity() {
@@ -687,7 +727,7 @@ export default function ActivityDetail() {
 																	{person.asistio ? "Asistencia registrada" : manualAttendanceBusyByUser[person.id] ? "Registrando..." : "Marcar asistencia manual"}
 																</button>
 															)}
-															<button type="button" onClick={() => handleRemoveParticipant(person.id)} className="w-full rounded-md px-2.5 py-2 text-left text-[0.82rem] font-medium text-[#8a3b2a] hover:bg-[#fff4ef]">Expulsar de la actividad</button>
+															<button type="button" onClick={() => openRemoveParticipantModal(person.id)} className="w-full rounded-md px-2.5 py-2 text-left text-[0.82rem] font-medium text-[#8a3b2a] hover:bg-[#fff4ef]">Expulsar de la actividad</button>
 														</div>
 													)}
 												</>
@@ -981,6 +1021,68 @@ export default function ActivityDetail() {
 						Esta acción cambiará el estado de la actividad a <strong>Cancelada</strong> y dejará de estar disponible para inscripción.
 					</p>
 					<p className="m-0 text-[0.84rem] text-[#8a3b2a]">Puedes realizar esta acción porque eres admin o encargado de la actividad.</p>
+				</div>
+			</Modal>
+
+			<Modal
+				isOpen={showRemoveParticipantModal}
+				title="Expulsar participante"
+				onClose={closeRemoveParticipantModal}
+				panelClassName="sm:max-w-[480px]"
+				footer={(
+					<>
+						<button
+							type="button"
+							onClick={closeRemoveParticipantModal}
+							className="rounded-sm border border-[#d8e6dd] bg-white px-3.5 py-2 text-[0.84rem] font-semibold text-[#486154] transition-colors hover:bg-[#f5faf7]"
+						>
+							Cancelar
+						</button>
+						<button
+							type="button"
+							onClick={handleRemoveParticipant}
+							className="rounded-sm border border-[#f1c8be] bg-[#8a3b2a] px-3.5 py-2 text-[0.84rem] font-semibold text-white transition-colors hover:bg-[#743021]"
+						>
+							Expulsar
+						</button>
+					</>
+				)}
+			>
+				<div className="space-y-2">
+					<p className="m-0 text-[0.9rem] leading-relaxed text-[var(--text-muted)]">
+						¿Estás seguro de que deseas expulsar a <strong>{participants.find(p => Number(p.id) === Number(removeParticipantTargetId))?.name || "este participante"}</strong> de la actividad?
+					</p>
+				</div>
+			</Modal>
+
+			<Modal
+				isOpen={showCancelEnrollModal}
+				title="Cancelar inscripción"
+				onClose={closeCancelEnrollModal}
+				panelClassName="sm:max-w-[480px]"
+				footer={(
+					<>
+						<button
+							type="button"
+							onClick={closeCancelEnrollModal}
+							className="rounded-sm border border-[#d8e6dd] bg-white px-3.5 py-2 text-[0.84rem] font-semibold text-[#486154] transition-colors hover:bg-[#f5faf7]"
+						>
+							Cancelar
+						</button>
+						<button
+							type="button"
+							onClick={confirmCancelEnrollment}
+							className="rounded-sm border border-[#f1c8be] bg-[#8a3b2a] px-3.5 py-2 text-[0.84rem] font-semibold text-white transition-colors hover:bg-[#743021]"
+						>
+							Cancelar inscripción
+						</button>
+					</>
+				)}
+			>
+				<div className="space-y-2">
+					<p className="m-0 text-[0.9rem] leading-relaxed text-[var(--text-muted)]">
+						¿Estás seguro de que deseas cancelar tu inscripción a esta actividad?
+					</p>
 				</div>
 			</Modal>
 		</section>

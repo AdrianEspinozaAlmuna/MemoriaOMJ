@@ -19,6 +19,10 @@ function UserGroups() {
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState("");
   const [userSearchQuery, setUserSearchQuery] = useState("");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
+  const [leaveTargetId, setLeaveTargetId] = useState(null);
 
   function normalizeGroup(group) {
     if (!group) return null;
@@ -79,8 +83,6 @@ function UserGroups() {
   }
 
   async function handleDeleteGroup(idGrupo) {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar este grupo?")) return;
-
     try {
       await api.delete(`/groups/${idGrupo}`);
       setGrupos(previous => previous.filter(g => g.id_grupo !== idGrupo));
@@ -91,8 +93,6 @@ function UserGroups() {
   }
 
   async function handleLeaveGroup(idGrupo) {
-    if (!window.confirm("¿Estás seguro de que deseas salir de este grupo?")) return;
-
     try {
       await api.post(`/groups/${idGrupo}/leave`);
       setGrupos(previous => previous.filter(g => g.id_grupo !== idGrupo));
@@ -100,6 +100,16 @@ function UserGroups() {
     } catch (err) {
       setError(err.response?.data?.message || "Error al salir del grupo");
     }
+  }
+
+  function confirmDeleteGroup(id) {
+    setDeleteTargetId(id);
+    setShowDeleteModal(true);
+  }
+
+  function confirmLeaveGroup(id) {
+    setLeaveTargetId(id);
+    setShowLeaveModal(true);
   }
 
   async function openEditModal(grupo) {
@@ -411,9 +421,7 @@ function UserGroups() {
                 type="button"
                 onClick={() => {
                   if (!editingGroupId) return;
-                  if (!window.confirm("¿Estás seguro de eliminar este grupo?")) return;
-                  handleDeleteGroup(editingGroupId);
-                  closeEditModal();
+                  confirmDeleteGroup(editingGroupId);
                 }}
                 className="rounded-sm border border-[#efcdc7] bg-[#fff6f4] px-4 py-2.5 text-[0.9rem] font-semibold text-[#8b2f22] transition-colors hover:bg-[#fff0ed]"
               >
@@ -424,9 +432,7 @@ function UserGroups() {
                 type="button"
                 onClick={() => {
                   if (!editingGroupId) return;
-                  if (!window.confirm("¿Estás seguro de salir de este grupo?")) return;
-                  handleLeaveGroup(editingGroupId);
-                  closeEditModal();
+                  confirmLeaveGroup(editingGroupId);
                 }}
                 className="rounded-sm border border-[#efcdc7] bg-[#fff6f4] px-4 py-2.5 text-[0.9rem] font-semibold text-[#8b2f22] transition-colors hover:bg-[#fff0ed]"
               >
@@ -581,6 +587,88 @@ function UserGroups() {
             </div>
           </div>
         </form>
+      </Modal>
+
+      <Modal
+        isOpen={showDeleteModal}
+        title="Eliminar grupo"
+        onClose={() => {
+          setShowDeleteModal(false);
+          setDeleteTargetId(null);
+        }}
+        panelClassName="sm:max-w-[440px] sm:rounded-[12px] border-[#d8e6dd]"
+        contentClassName="px-5 pb-5 pt-4 sm:px-6 sm:pb-6"
+        footerClassName="border-t border-[#dce7df] bg-[#f8fbf9] px-5 py-4 sm:px-6"
+        footer={
+          <div className="flex w-full gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setShowDeleteModal(false);
+                setDeleteTargetId(null);
+              }}
+              className="flex-1 rounded-sm border border-[#d2ded7] bg-white px-4 py-2.5 text-[0.9rem] font-semibold text-[var(--text)] transition-colors hover:bg-[#f5f9f7]"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (deleteTargetId !== null) {
+                  handleDeleteGroup(deleteTargetId);
+                }
+                setShowDeleteModal(false);
+                setDeleteTargetId(null);
+              }}
+              className="flex-1 rounded-sm border border-[#efcdc7] bg-[#fff6f4] px-4 py-2.5 text-[0.9rem] font-semibold text-[#8b2f22] transition-colors hover:bg-[#fff0ed]"
+            >
+              Eliminar
+            </button>
+          </div>
+        }
+      >
+        <p className="text-[0.94rem] text-[var(--text)]">¿Estás seguro de que deseas eliminar este grupo?</p>
+      </Modal>
+
+      <Modal
+        isOpen={showLeaveModal}
+        title="Salir del grupo"
+        onClose={() => {
+          setShowLeaveModal(false);
+          setLeaveTargetId(null);
+        }}
+        panelClassName="sm:max-w-[440px] sm:rounded-[12px] border-[#d8e6dd]"
+        contentClassName="px-5 pb-5 pt-4 sm:px-6 sm:pb-6"
+        footerClassName="border-t border-[#dce7df] bg-[#f8fbf9] px-5 py-4 sm:px-6"
+        footer={
+          <div className="flex w-full gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setShowLeaveModal(false);
+                setLeaveTargetId(null);
+              }}
+              className="flex-1 rounded-sm border border-[#d2ded7] bg-white px-4 py-2.5 text-[0.9rem] font-semibold text-[var(--text)] transition-colors hover:bg-[#f5f9f7]"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (leaveTargetId !== null) {
+                  handleLeaveGroup(leaveTargetId);
+                }
+                setShowLeaveModal(false);
+                setLeaveTargetId(null);
+              }}
+              className="flex-1 rounded-sm border border-[#efcdc7] bg-[#fff6f4] px-4 py-2.5 text-[0.9rem] font-semibold text-[#8b2f22] transition-colors hover:bg-[#fff0ed]"
+            >
+              Salir
+            </button>
+          </div>
+        }
+      >
+        <p className="text-[0.94rem] text-[var(--text)]">¿Estás seguro de que deseas salir de este grupo?</p>
       </Modal>
     </section>
   );

@@ -45,6 +45,7 @@ export default function AdminSettings() {
 		name: "",
 		capacity: 30
 	});
+	const [showDeleteRoomModal, setShowDeleteRoomModal] = useState(false);
 
 	const stats = useMemo(() => {
 		const enabled = rooms.filter(room => room.enabled).length;
@@ -345,7 +346,7 @@ export default function AdminSettings() {
 													<button type="button" className={`w-full rounded-md px-2.5 py-2 text-left text-[0.82rem] font-medium ${room.enabled ? "text-[#8a3b2a] hover:bg-[#fff4ef]" : "text-[#1f5137] hover:bg-[#eef8f1]"}`} onClick={() => { setSelectedRoom(room); toggleSelectedRoom(); }}>
 														{room.enabled ? "Deshabilitar" : "Habilitar"}
 													</button>
-													<button type="button" className="w-full rounded-md px-2.5 py-2 text-left text-[0.82rem] font-medium text-[#8a3b2a] hover:bg-[#fff4ef]" onClick={() => { setSelectedRoom(room); removeSelectedRoom(); }}>
+													<button type="button" className="w-full rounded-md px-2.5 py-2 text-left text-[0.82rem] font-medium text-[#8a3b2a] hover:bg-[#fff4ef]" onClick={() => { setSelectedRoom(room); closeActionModal(); setShowDeleteRoomModal(true); }}>
 														Eliminar
 													</button>
 												</div>
@@ -440,6 +441,33 @@ export default function AdminSettings() {
 					</label>
 
 					{error && <p className="m-0 text-[0.82rem] font-semibold text-[#a03d2e]">{error}</p>}
+				</div>
+			</Modal>
+			<Modal
+				isOpen={showDeleteRoomModal}
+				title="Eliminar sala"
+				onClose={() => setShowDeleteRoomModal(false)}
+				hideHeader
+				panelClassName="sm:max-w-[520px] sm:rounded-[16px] sm:border-[#d7e4dc] sm:shadow-[0_22px_46px_-30px_rgba(16,24,40,0.48)]"
+				contentClassName="px-0 pb-0 pt-0"
+				footerClassName="border-t border-[#dce7df] bg-[#f8fbf9] px-5 py-4 sm:px-6"
+				footer={
+					<>
+						<button type="button" className="btn btn-ghost btn-inline" onClick={() => setShowDeleteRoomModal(false)}>
+							Cancelar
+						</button>
+						<button type="button" className="btn btn-primary btn-inline" onClick={() => { removeSelectedRoom(); setShowDeleteRoomModal(false); }}>
+							Eliminar
+						</button>
+					</>
+				}
+			>
+				<div className="border-b border-[#dce7df] bg-[linear-gradient(180deg,#f8fbf9,rgba(248,251,249,0.88))] px-5 py-5 sm:px-6">
+					<div>
+						<p className="m-0 text-[0.78rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Gestion interna</p>
+						<h3 className="mt-1 text-[1.08rem] font-semibold text-[var(--text)]">Eliminar sala</h3>
+						<p className="mt-1 mb-0 text-[0.88rem] text-[var(--text-muted)]">¿Estás seguro de que deseas eliminar la sala "{selectedRoom?.nombre}"?</p>
+					</div>
 				</div>
 			</Modal>
 		</section>

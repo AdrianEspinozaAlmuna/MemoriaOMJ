@@ -169,6 +169,62 @@ function toTimeLabel(timeValue) {
   return `${hh}:${mm}`;
 }
 
+function formatDateForDisplay(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString("es-CL", { day: "numeric", month: "long", year: "numeric" });
+}
+
+function formatDateTimeForDisplay(value) {
+  if (!value) return null;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  const hh = String(d.getUTCHours()).padStart(2, "0");
+  const mm = String(d.getUTCMinutes()).padStart(2, "0");
+  return `${hh}:${mm}`;
+}
+
+function buildChangesList(snapshot, currentActivity) {
+  const fieldLabels = {
+    titulo: "Título",
+    descripcion: "Descripción",
+    fecha: "Fecha",
+    hora_inicio: "Hora inicio",
+    hora_termino: "Hora término",
+    max_participantes: "Máx. participantes",
+    chat_bidireccional: "Chat bidireccional"
+  };
+
+  const changes = [];
+
+  for (const [field, displayName] of Object.entries(fieldLabels)) {
+    let oldVal = snapshot[field];
+    let newVal = currentActivity[field];
+
+    if (field === "fecha") {
+      oldVal = formatDateForDisplay(oldVal);
+      newVal = formatDateForDisplay(newVal);
+    } else if (field === "hora_inicio" || field === "hora_termino") {
+      oldVal = formatDateTimeForDisplay(oldVal);
+      newVal = formatDateTimeForDisplay(newVal);
+    } else if (field === "chat_bidireccional") {
+      oldVal = oldVal ? "Sí" : "No";
+      newVal = newVal ? "Sí" : "No";
+    }
+
+    const oldStr = String(oldVal ?? "").trim();
+    const newStr = String(newVal ?? "").trim();
+    if (oldStr !== newStr && (oldStr || newStr)) {
+      const oldDisplay = oldStr || "(sin especificar)";
+      const newDisplay = newStr || "(sin especificar)";
+      changes.push(`  • ${displayName}: ${oldDisplay} → ${newDisplay}`);
+    }
+  }
+
+  return changes.length > 0 ? `\n\nCambios realizados:\n${changes.join("\n")}` : "";
+}
+
 function hasTimeOverlap({ newStart, newEnd, existingStart, existingEnd }) {
   const safeNewEnd = newEnd || newStart;
   const safeExistingEnd = existingEnd || existingStart;
@@ -1506,11 +1562,15 @@ async function reviewActivity(req, res) {
     const activityTitle = existing?.titulo || updated?.titulo || `#${idActividad}`;
     const reason = String(req.body?.descripcion ?? req.body?.reason ?? "").trim();
 
+    const changesList = pendingRevision && action === "approve"
+      ? buildChangesList(pendingRevision, updated)
+      : "";
+
     const ownerNotification = pendingRevision
       ? action === "approve"
         ? {
             titulo: `Edición de actividad aprobada ${quoteActivityTitle(activityTitle)}`,
-            descripcion: `Los cambios solicitados de ${quoteActivityTitle(activityTitle)} fueron publicados.`,
+            descripcion: `Los cambios solicitados de ${quoteActivityTitle(activityTitle)} fueron publicados.${changesList}`,
             tipo: "actividad",
             id_actividad: idActividad
           }
@@ -1545,7 +1605,7 @@ async function reviewActivity(req, res) {
       try {
         const participantsNotifications = await notifyActivityParticipants(prisma, idUsuario, idActividad, {
           titulo: "Actividad actualizada",
-          descripcion: "Los cambios aprobados ya están disponibles para los participantes inscritos.",
+          descripcion: `Los cambios aprobados ya están disponibles para los participantes inscritos.${changesList}`,
           tipo: "actividad",
           id_actividad: idActividad
         }, { includeOwner: false });
@@ -1562,7 +1622,7 @@ async function reviewActivity(req, res) {
             ? `Edición aprobada ${quoteActivityTitle(activityTitle)}`
             : `Actividad aprobada ${quoteActivityTitle(activityTitle)}`,
           descripcion: pendingRevision
-            ? `Los cambios de ${quoteActivityTitle(activityTitle)} fueron aprobados y publicados.`
+            ? `Los cambios de ${quoteActivityTitle(activityTitle)} fueron aprobados y publicados.${changesList}`
             : `La actividad ${quoteActivityTitle(activityTitle)} fue aprobada y está disponible.`,
           tipo: "actividad",
           id_actividad: idActividad
