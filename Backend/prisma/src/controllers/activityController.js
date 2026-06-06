@@ -1075,14 +1075,6 @@ async function enrollInActivity(req, res) {
       }
     });
 
-    const ownerNotifications = await notifyActivityOwner(prisma, idUsuario, idActividad, {
-      titulo: "Nueva inscripción en tu actividad",
-      descripcion: "Un usuario se inscribió en tu actividad.",
-      tipo: "actividad"
-    });
-
-    emitNotificationBatch(ownerNotifications);
-
     return res.status(201).json({ ok: true, enrolled: true });
   } catch (error) {
     return res.status(500).json({ message: "Error inscribiendo en actividad", detail: error.message });
@@ -1138,14 +1130,6 @@ async function cancelEnrollment(req, res) {
         }
       }
     });
-
-    const ownerNotifications = await notifyActivityOwner(prisma, idUsuario, idActividad, {
-      titulo: "Un participante abandonó la actividad",
-      descripcion: "Un participante canceló su inscripción.",
-      tipo: "actividad"
-    });
-
-    emitNotificationBatch(ownerNotifications);
 
     return res.json({ ok: true, enrolled: false });
   } catch (error) {
