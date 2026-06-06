@@ -776,8 +776,8 @@ async function requestActivityEdit(req, res) {
 
     try {
       const adminNotifications = await notifyAdminUsers(prisma, idUsuario, {
-        titulo: "Edición de actividad pendiente",
-        descripcion: `Se solicitó la edición de la actividad ${activityTitle} para revisión.`,
+        titulo: `Edición de actividad pendiente ${quoteActivityTitle(activityTitle)}`,
+        descripcion: `Se solicitó la edición de la actividad ${quoteActivityTitle(activityTitle)} para revisión.`,
         tipo: "revision",
         id_actividad: idActividad
       });
@@ -1009,8 +1009,8 @@ async function createActivity(req, res) {
 
     try {
       const adminNotifications = await notifyAdminUsers(prisma, idEncargado, {
-        titulo: "Nueva propuesta de actividad",
-        descripcion: `Se creó la actividad ${activityTitle} para revisión.`,
+        titulo: `Nueva propuesta de actividad ${quoteActivityTitle(activityTitle)}`,
+        descripcion: `Se creó la actividad ${quoteActivityTitle(activityTitle)} para revisión.`,
         tipo: "actividad",
         id_actividad: created.newActivity.id_actividad
       });
