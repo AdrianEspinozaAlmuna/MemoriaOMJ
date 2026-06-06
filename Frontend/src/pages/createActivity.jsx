@@ -31,7 +31,11 @@ export default function CreateActivity() {
   const editActivityId = searchParams.get("edit");
   const isEditMode = Boolean(editActivityId);
   const isAdminRoute = location.pathname.startsWith("/admin");
-  const [form, setForm] = useState(initialForm);
+  const prefillDate = searchParams.get("date");
+  const [form, setForm] = useState({
+    ...initialForm,
+    date: /^\d{4}-\d{2}-\d{2}$/.test(prefillDate) ? prefillDate : initialForm.date
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState({ type: "", title: "", message: "", hint: "" });
   const [roomOptions, setRoomOptions] = useState([]);

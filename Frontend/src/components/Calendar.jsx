@@ -436,9 +436,9 @@ export default function Calendar({ activities, viewMode, monthDate, onActivityCl
                     Por sala
                   </button>
                 </div>
-                {createActivityPath ? (
+                {createActivityPath && selectedDay ? (
                   <Link
-                    to={createActivityPath}
+                    to={`${createActivityPath}?date=${formatDateKey(selectedDay)}`}
                     onClick={closeDayModal}
                     className="inline-flex cursor-pointer items-center gap-1.5 rounded-[8px] border border-[var(--primary)] bg-[var(--primary)] px-3 py-1.5 text-[0.9rem] font-semibold !text-white transition-colors hover:border-[var(--primary-strong)] hover:bg-[var(--primary-strong)] max-[640px]:w-full max-[640px]:justify-center"
                   >
