@@ -237,6 +237,7 @@ export default function ActivityDetail() {
 	const isFinished = activity?.status === "finalizada";
 	const isInProgress = activity?.status === "en_curso";
 	const isCanceled = activity?.status === "cancelada" || activity?.status === "rechazada";
+	const canEnroll = !isFinished && !isCanceled && (activity?.status === "programada" || isInProgress);
 	const isActivityManager = currentUserId !== null && Number(activity?.id_encargado) === currentUserId;
 	const canManageActivity = role === "admin" || isActivityManager;
 	const currentParticipant = useMemo(() => participants.find(item => Number(item.id) === Number(currentUserId)) || null, [participants, currentUserId]);
@@ -888,7 +889,7 @@ export default function ActivityDetail() {
 										</>
 									) : (
 										<>
-											{isInProgress && (
+											{canEnroll && (
 												<button type="button" onClick={handleEnrollmentToggle} disabled={enrollmentBusy || (!isEnrolled && freeSpots === 0) || (isEnrolled && !canCancelEnrollment)} className={`w-full rounded-sm border px-4 py-2.5 text-[0.88rem] font-semibold transition-all ${isEnrolled ? "border-[var(--reject)] bg-[var(--reject)] text-white hover:bg-[var(--reject-hover)] disabled:border-[#dce6df] disabled:bg-[#f4f8f6] disabled:text-[#7d9084]" : "border-[var(--primary)] bg-[var(--primary)] text-white hover:bg-[var(--primary-strong)] disabled:border-[#dce6df] disabled:bg-[#f4f8f6] disabled:text-[#7d9084]"}`}>
 												{isEnrolled ? "Cancelar inscripción" : freeSpots === 0 ? "Sin cupos" : "Inscribirme"}
 											</button>
