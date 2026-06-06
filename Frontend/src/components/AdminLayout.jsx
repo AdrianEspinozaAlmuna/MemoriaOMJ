@@ -404,7 +404,7 @@ export default function AdminLayout() {
 							<button
 								type="button"
 								onClick={handleLogout}
-								className="hidden h-9 w-9 items-center justify-center rounded-sm text-[#d43c3c] hover:bg-[#fff1f1] max-[980px]:inline-flex"
+								className="hidden h-10 px-3 py-2.5 items-center justify-center rounded-sm border border-[#d7e4dc] text-[#d43c3c] hover:bg-[#fff1f1] max-[980px]:inline-flex"
 								aria-label="Cerrar sesion"
 							>
 								<LogOut aria-hidden="true" focusable="false" className="h-4 w-4" strokeWidth={1.9} />

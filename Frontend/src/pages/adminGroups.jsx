@@ -21,6 +21,8 @@ function AdminGroups() {
   const [eligibleLeaders, setEligibleLeaders] = useState([]);
   const [leadersLoading, setLeadersLoading] = useState(false);
 
+  const [creating, setCreating] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState("");
   const [userSearchQuery, setUserSearchQuery] = useState("");
@@ -89,6 +91,7 @@ function AdminGroups() {
     }
 
     try {
+      setCreating(true);
       const response = await api.post("/groups/admin", {
         nombre: formData.nombre.trim(),
         descripcion: formData.descripcion.trim(),
@@ -103,6 +106,8 @@ function AdminGroups() {
       setError("");
     } catch (err) {
       setError(err.response?.data?.message || "Error al crear grupo");
+    } finally {
+      setCreating(false);
     }
   }
 
@@ -114,6 +119,7 @@ function AdminGroups() {
   async function handleDeleteGroup() {
     if (deleteTargetId === null) return;
     try {
+      setDeleting(true);
       await api.delete(`/groups/admin/${deleteTargetId}`);
       setGrupos(previous => previous.filter(g => g.id_grupo !== deleteTargetId));
       setError("");
@@ -123,6 +129,8 @@ function AdminGroups() {
       setError(err.response?.data?.message || "Error al eliminar grupo");
       setShowDeleteModal(false);
       setDeleteTargetId(null);
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -417,9 +425,10 @@ function AdminGroups() {
             <button
               type="submit"
               form="create-group-form"
-              className="flex-1 rounded-sm border border-[var(--primary)] bg-[var(--primary)] px-4 py-2.5 text-[0.9rem] font-semibold text-white transition-colors hover:bg-[var(--primary-strong)]"
+              disabled={creating}
+              className="flex-1 rounded-sm border border-[var(--primary)] bg-[var(--primary)] px-4 py-2.5 text-[0.9rem] font-semibold text-white transition-colors hover:bg-[var(--primary-strong)] disabled:cursor-not-allowed disabled:opacity-70"
             >
-              Crear Grupo
+              {creating ? "Creando grupo..." : "Crear Grupo"}
             </button>
           </div>
         }
@@ -777,9 +786,10 @@ function AdminGroups() {
             <button
               type="button"
               onClick={handleDeleteGroup}
-              className="rounded-sm border border-[#efcdc7] bg-[#8b2f22] px-4 py-2.5 text-[0.9rem] font-semibold text-white transition-colors hover:bg-[#72251a]"
+              disabled={deleting}
+              className="rounded-sm border border-[#efcdc7] bg-[#8b2f22] px-4 py-2.5 text-[0.9rem] font-semibold text-white transition-colors hover:bg-[#72251a] disabled:cursor-not-allowed disabled:opacity-70"
             >
-              Eliminar
+              {deleting ? "Eliminando..." : "Eliminar"}
             </button>
           </div>
         }

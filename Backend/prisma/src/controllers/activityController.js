@@ -19,7 +19,13 @@ function parseUserId(value) {
   return Number.isInteger(parsed) ? parsed : null;
 }
 
-function emitNotificationBatch(notifications = []) {
+function emitNotificationBatch(notifications = [], batchOptions = {}) {
+  if (batchOptions.broadcastAdmins && notifications.length > 0) {
+    for (const notification of notifications) {
+      emitNotificationCreated(notification, { broadcastAdmins: true });
+    }
+    return;
+  }
   for (const notification of notifications) {
     const targetUserId = Number(notification?.id_receptor ?? notification?.id_usuario);
     const options = Number.isInteger(targetUserId) && targetUserId > 0 ? { targetUserIds: [targetUserId] } : { broadcast: true };
@@ -720,7 +726,7 @@ async function requestActivityEdit(req, res) {
         id_actividad: idActividad
       });
 
-      emitNotificationBatch(adminNotifications);
+      emitNotificationBatch(adminNotifications, { broadcastAdmins: true });
     } catch (notificationError) {
       console.error("[activities] edit notification failed:", notificationError);
     }
@@ -953,7 +959,7 @@ async function createActivity(req, res) {
         id_actividad: created.newActivity.id_actividad
       });
 
-      emitNotificationBatch(adminNotifications);
+      emitNotificationBatch(adminNotifications, { broadcastAdmins: true });
     } catch (notificationError) {
       console.error("[activities] admin notification failed:", notificationError);
     }
@@ -1551,6 +1557,24 @@ async function reviewActivity(req, res) {
 
     if (action === "approve") {
       try {
+        const adminNotifications = await notifyAdminUsers(prisma, idUsuario, {
+          titulo: pendingRevision
+            ? `Edición aprobada ${quoteActivityTitle(activityTitle)}`
+            : `Actividad aprobada ${quoteActivityTitle(activityTitle)}`,
+          descripcion: pendingRevision
+            ? `Los cambios de ${quoteActivityTitle(activityTitle)} fueron aprobados y publicados.`
+            : `La actividad ${quoteActivityTitle(activityTitle)} fue aprobada y está disponible.`,
+          tipo: "actividad",
+          id_actividad: idActividad
+        });
+        emitNotificationBatch(adminNotifications, { broadcastAdmins: true });
+      } catch (notifError) {
+        console.error("[reviewActivity] adminNotification failed:", notifError);
+      }
+    }
+
+    if (action === "approve") {
+      try {
         await syncActivityStatuses();
       } catch (syncError) {
         console.error("[reviewActivity] syncActivityStatuses failed:", syncError);
@@ -1634,6 +1658,18 @@ async function cancelActivity(req, res) {
       descripcion: "La actividad fue cancelada y ya no está disponible.",
       tipo: "actividad"
     }, { includeOwner: true });
+
+    try {
+      const adminNotifications = await notifyAdminUsers(prisma, idUsuario, {
+        titulo: `Actividad cancelada ${quoteActivityTitle(existing.titulo)}`,
+        descripcion: `La actividad ${quoteActivityTitle(existing.titulo)} fue cancelada por ${isAdmin ? "administración" : "el encargado"}.`,
+        tipo: "actividad",
+        id_actividad: idActividad
+      });
+      emitNotificationBatch(adminNotifications, { broadcastAdmins: true });
+    } catch (notifError) {
+      console.error("[cancelActivity] adminNotification failed:", notifError);
+    }
 
     return res.json({
       ok: true,
