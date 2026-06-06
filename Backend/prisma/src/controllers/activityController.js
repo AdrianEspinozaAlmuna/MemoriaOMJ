@@ -600,31 +600,6 @@ async function requestActivityEdit(req, res) {
     return res.status(400).json({ message: "max_participantes invalido" });
   }
 
-  // Validación servidor: solo permitir creación para el día actual y horas futuras
-  try {
-    const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const activityDateOnly = new Date(activityDate.getFullYear(), activityDate.getMonth(), activityDate.getDate());
-    if (activityDateOnly.getTime() !== todayStart.getTime()) {
-      return res.status(400).json({ message: "Solo se pueden crear actividades para el día de hoy." });
-    }
-
-    const startDateTimeLocal = new Date(
-      activityDate.getFullYear(),
-      activityDate.getMonth(),
-      activityDate.getDate(),
-      startTime.getUTCHours(),
-      startTime.getUTCMinutes()
-    );
-
-    if (startDateTimeLocal.getTime() < now.getTime()) {
-      return res.status(400).json({ message: "La hora de inicio no puede ser anterior a la hora actual." });
-    }
-  } catch (e) {
-    // si hay cualquier error en la comprobación, continuar con validación posterior (no permitir crear datos inválidos)
-    return res.status(400).json({ message: "Fecha u hora de actividad inválida" });
-  }
-
   if (!Number.isInteger(salaId) || salaId < 1) {
     return res.status(400).json({ message: "id_sala invalido" });
   }
@@ -744,11 +719,19 @@ async function requestActivityEdit(req, res) {
       });
     }
 
-    const revisionSnapshot = buildActivityRevisionSnapshot(existing);
-
     const updated = await prisma.actividad.update({
       where: { id_actividad: idActividad },
-      data: {
+      data: isAdmin ? {
+        titulo: activityTitle,
+        descripcion: activityDescription || null,
+        id_sala: salaId,
+        id_tipo_actividad: idTipoActividad,
+        fecha: activityDate,
+        hora_inicio: startTime,
+        hora_termino: endTime,
+        max_participantes: maxParticipants,
+        chat_bidireccional: Boolean(chat_bidireccional)
+      } : {
         titulo: activityTitle,
         descripcion: activityDescription || null,
         id_sala: salaId,
@@ -760,7 +743,7 @@ async function requestActivityEdit(req, res) {
         chat_bidireccional: Boolean(chat_bidireccional),
         aprobado: false,
         estado: "pendiente",
-        revision_original_data: revisionSnapshot
+        revision_original_data: buildActivityRevisionSnapshot(existing)
       },
       include: {
         usuario: { select: { id_usuario: true, nombre: true, apellido: true } },
@@ -774,22 +757,24 @@ async function requestActivityEdit(req, res) {
       }
     });
 
-    try {
-      const adminNotifications = await notifyAdminUsers(prisma, idUsuario, {
-        titulo: `Edición de actividad pendiente ${quoteActivityTitle(activityTitle)}`,
-        descripcion: `Se solicitó la edición de la actividad ${quoteActivityTitle(activityTitle)} para revisión.`,
-        tipo: "revision",
-        id_actividad: idActividad
-      });
+    if (!isAdmin) {
+      try {
+        const adminNotifications = await notifyAdminUsers(prisma, idUsuario, {
+          titulo: `Edición de actividad pendiente ${quoteActivityTitle(activityTitle)}`,
+          descripcion: `Se solicitó la edición de la actividad ${quoteActivityTitle(activityTitle)} para revisión.`,
+          tipo: "revision",
+          id_actividad: idActividad
+        });
 
-      emitNotificationBatch(adminNotifications, { broadcastAdmins: true });
-    } catch (notificationError) {
-      console.error("[activities] edit notification failed:", notificationError);
+        emitNotificationBatch(adminNotifications, { broadcastAdmins: true });
+      } catch (notificationError) {
+        console.error("[activities] edit notification failed:", notificationError);
+      }
     }
 
     return res.json({
       ok: true,
-      message: "Edición enviada correctamente para revisión",
+      message: isAdmin ? "Actividad actualizada correctamente" : "Edición enviada correctamente para revisión",
       activity: serializeActivity(updated, idUsuario)
     });
   } catch (error) {
