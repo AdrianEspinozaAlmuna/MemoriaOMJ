@@ -79,7 +79,7 @@ export default function CreateActivity() {
     // Validación: permitir crear actividades para hoy o en fechas posteriores
     if (!isEditMode) {
       const now = new Date();
-      if (!form.date) {
+      if (!form.date || !/^\d{4}-\d{2}-\d{2}$/.test(form.date)) {
         setFeedback({
           type: "error",
           title: "Fecha inválida",
@@ -532,9 +532,10 @@ export default function CreateActivity() {
                 id="date"
                 name="date"
                 type="date"
+                lang="es-CL"
                 className="rounded-sm border border-[#d8e6dd] bg-[var(--panel-bg)] px-3.5 py-2.5 text-[0.92rem] text-[var(--text)] outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[#05a63d]/20 hover:cursor-pointer"
-                value={form.date}
-                onChange={handleChange}
+                value={form.date ? form.date.substring(0, 10) : ""}
+                onChange={(e) => setForm(previous => ({ ...previous, date: e.target.value }))}
                 required
                 min={!isEditMode ? todayStr : undefined}
               />

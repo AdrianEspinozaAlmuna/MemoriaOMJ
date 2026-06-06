@@ -95,7 +95,7 @@ export default function ActivityDetail() {
 	const [cancelBusy, setCancelBusy] = useState(false);
 	const [showRemoveParticipantModal, setShowRemoveParticipantModal] = useState(false);
 	const [removeParticipantTargetId, setRemoveParticipantTargetId] = useState(null);
-	const [showCancelEnrollModal, setShowCancelEnrollModal] = useState(false);
+
 	const [attendanceBusy, setAttendanceBusy] = useState(false);
 	const [manualAttendanceBusyByUser, setManualAttendanceBusyByUser] = useState({});
 	const [ratingValue, setRatingValue] = useState(5);
@@ -306,53 +306,36 @@ export default function ActivityDetail() {
 		setEnrollmentMessage("");
 		setEnrollmentError("");
 
+		setEnrollmentBusy(true);
+
 		if (isEnrolled) {
-			openCancelEnrollModal();
-			return;
-		}
-
-		setEnrollmentBusy(true);
-		const response = await enrollInActivity(activityId);
-		setEnrollmentBusy(false);
-
-		if (!response.ok) {
-			setEnrollmentError(response.message || "No se pudo actualizar la inscripción.");
-			return;
-		}
-
-		const refreshed = await refreshActivityDetail({ silentError: true });
-
-		if (!refreshed) {
-			setIsEnrolled(true);
-			setEnrolledCount(current => Math.min(current + 1, activity.capacity));
-			setEnrollmentMessage("Inscrito correctamente en la actividad.");
-			return;
-		}
-
-		setEnrollmentMessage("Inscrito correctamente en la actividad.");
-	}
-
-	async function confirmCancelEnrollment() {
-		if (loading || enrollmentBusy) return;
-		setEnrollmentMessage("");
-		setEnrollmentError("");
-		setEnrollmentBusy(true);
-		const response = await cancelActivityEnrollment(activityId);
-		setEnrollmentBusy(false);
-		if (!response.ok) {
-			setEnrollmentError(response.message || "No se pudo actualizar la inscripción.");
-			return;
-		}
-		const refreshed = await refreshActivityDetail({ silentError: true });
-		if (!refreshed) {
+			const response = await cancelActivityEnrollment(activityId);
+			if (!response.ok) {
+				setEnrollmentBusy(false);
+				setEnrollmentError(response.message || "No se pudo actualizar la inscripción.");
+				return;
+			}
+			const refreshed = await refreshActivityDetail({ silentError: true });
 			setIsEnrolled(false);
 			setEnrolledCount(current => Math.max(current - 1, 0));
 			setEnrollmentMessage("Inscripción cancelada correctamente.");
-			setShowCancelEnrollModal(false);
+			setEnrollmentBusy(false);
 			return;
 		}
-		setEnrollmentMessage("Inscripción cancelada correctamente.");
-		setShowCancelEnrollModal(false);
+
+		const response = await enrollInActivity(activityId);
+		if (!response.ok) {
+			setEnrollmentBusy(false);
+			setEnrollmentError(response.message || "No se pudo actualizar la inscripción.");
+			return;
+		}
+
+		const refreshed = await refreshActivityDetail({ silentError: true });
+
+		setIsEnrolled(true);
+		setEnrolledCount(current => Math.min(current + 1, activity.capacity));
+		setEnrollmentMessage("Inscrito correctamente en la actividad.");
+		setEnrollmentBusy(false);
 	}
 
 	async function handleMarkAttendance() {
@@ -469,14 +452,6 @@ export default function ActivityDetail() {
 	function closeRemoveParticipantModal() {
 		setShowRemoveParticipantModal(false);
 		setRemoveParticipantTargetId(null);
-	}
-
-	function openCancelEnrollModal() {
-		setShowCancelEnrollModal(true);
-	}
-
-	function closeCancelEnrollModal() {
-		setShowCancelEnrollModal(false);
 	}
 
 	async function handleConfirmCancelActivity() {
@@ -1056,37 +1031,6 @@ export default function ActivityDetail() {
 				</div>
 			</Modal>
 
-			<Modal
-				isOpen={showCancelEnrollModal}
-				title="Cancelar inscripción"
-				onClose={closeCancelEnrollModal}
-				panelClassName="sm:max-w-[480px]"
-				footer={(
-					<>
-						<button
-							type="button"
-							onClick={closeCancelEnrollModal}
-							className="rounded-sm border border-[#d8e6dd] bg-white px-3.5 py-2 text-[0.84rem] font-semibold text-[#486154] transition-colors hover:bg-[#f5faf7]"
-						>
-							Cancelar
-						</button>
-						<button
-							type="button"
-							onClick={confirmCancelEnrollment}
-							disabled={enrollmentBusy}
-							className="rounded-sm border border-[#f1c8be] bg-[#8a3b2a] px-3.5 py-2 text-[0.84rem] font-semibold text-white transition-colors hover:bg-[#743021] disabled:cursor-not-allowed disabled:opacity-70"
-						>
-							{enrollmentBusy ? "Cancelando..." : "Cancelar inscripción"}
-						</button>
-					</>
-				)}
-			>
-				<div className="space-y-2">
-					<p className="m-0 text-[0.9rem] leading-relaxed text-[var(--text-muted)]">
-						¿Estás seguro de que deseas cancelar tu inscripción a esta actividad?
-					</p>
-				</div>
-			</Modal>
 		</section>
 	);
 }

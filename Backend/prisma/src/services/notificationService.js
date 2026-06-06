@@ -63,7 +63,6 @@ async function createNotificationRecord(db = prisma, payload = {}) {
   const idEmisorValid = Number.isInteger(Number(idEmisor)) && idEmisor > 0 ? idEmisor : null;
 
   if (!idReceptorValid && !idEmisorValid) {
-    console.log("[createNotificationRecord] both receptor and emisor invalid, payload:", JSON.stringify({ titulo: payload.titulo?.substring(0, 30), id_receptor: payload.id_receptor, id_emisor: payload.id_emisor }));
     return null;
   }
 
@@ -148,10 +147,7 @@ async function createNotificationRecord(db = prisma, payload = {}) {
 
 async function createNotificationsForUsers(db = prisma, idEmisor, userIds = [], payload = {}) {
   const recipients = uniqueIntegerIds(userIds);
-  console.log("[createNotificationsForUsers] idEmisor:", idEmisor, "recipients:", recipients.length, "idEmisor is integer:", Number.isInteger(Number(idEmisor)));
-
   if (!Number.isInteger(Number(idEmisor)) || recipients.length === 0) {
-    console.log("[createNotificationsForUsers] returning early - invalid emisor or no recipients");
     return [];
   }
 
@@ -160,12 +156,9 @@ async function createNotificationsForUsers(db = prisma, idEmisor, userIds = [], 
     const created = await createNotificationRecord(db, { ...payload, id_receptor: id_usuario, id_emisor: idEmisor });
     if (created) {
       notifications.push(created);
-    } else {
-      console.log("[createNotificationsForUsers] notification NOT created for user", id_usuario);
     }
   }
 
-  console.log("[createNotificationsForUsers] total created:", notifications.length, "out of", recipients.length);
   return notifications;
 }
 
@@ -187,20 +180,14 @@ async function notifyAdminUsers(db = prisma, idEmisor, payload = {}) {
     .map(item => Number(item?.id_usuario))
     .filter(id => Number.isInteger(id) && id > 0);
 
-  console.log("[notifyAdminUsers] admins found:", adminIds.length, "idEmisor:", idEmisor, "titulo:", payload.titulo?.substring(0, 50));
-
   if (adminIds.length === 0) {
-    console.log("[notifyAdminUsers] no admin users found, skipping notification");
     return [];
   }
 
-  const notifications = await createNotificationsForUsers(db, idEmisor, adminIds, {
+  return createNotificationsForUsers(db, idEmisor, adminIds, {
     ...payload,
-    tipo: payload.tipo || "revision"
+    tipo: payload.tipo || "actividad"
   });
-
-  console.log("[notifyAdminUsers] notifications created:", notifications.length);
-  return notifications;
 }
 
 async function notifyUsersByIds(db = prisma, idEmisor, userIds = [], payload = {}) {
@@ -219,7 +206,7 @@ async function notifyActivityOwner(db = prisma, idEmisor, activityId, payload = 
 
   return createNotificationsForUsers(db, idEmisor, [activity.id_encargado], {
     ...payload,
-    tipo: payload.tipo || "revision",
+    tipo: payload.tipo || "actividad",
     id_actividad: activityId
   });
 }

@@ -169,11 +169,22 @@ function toTimeLabel(timeValue) {
   return `${hh}:${mm}`;
 }
 
-function formatDateForDisplay(dateStr) {
-  if (!dateStr) return null;
-  const d = new Date(dateStr);
-  if (Number.isNaN(d.getTime())) return null;
-  return d.toLocaleDateString("es-CL", { day: "numeric", month: "long", year: "numeric" });
+function formatDateForDisplay(value) {
+  if (!value) return null;
+  let year, month, day;
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    year = parseInt(value.slice(0, 4), 10);
+    month = parseInt(value.slice(5, 7), 10) - 1;
+    day = parseInt(value.slice(8, 10), 10);
+  } else {
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return null;
+    year = d.getUTCFullYear();
+    month = d.getUTCMonth();
+    day = d.getUTCDate();
+  }
+  const date = new Date(year, month, day, 12, 0, 0, 0);
+  return date.toLocaleDateString("es-CL", { day: "numeric", month: "long", year: "numeric" });
 }
 
 function formatDateTimeForDisplay(value) {
@@ -215,10 +226,8 @@ function buildChangesList(snapshot, currentActivity) {
 
     const oldStr = String(oldVal ?? "").trim();
     const newStr = String(newVal ?? "").trim();
-    if (oldStr !== newStr && (oldStr || newStr)) {
-      const oldDisplay = oldStr || "(sin especificar)";
-      const newDisplay = newStr || "(sin especificar)";
-      changes.push(`  • ${displayName}: ${oldDisplay} → ${newDisplay}`);
+    if (oldStr && newStr && oldStr !== newStr) {
+      changes.push(`  • ${displayName}: ${oldStr} → ${newStr}`);
     }
   }
 
@@ -762,15 +771,35 @@ async function requestActivityEdit(req, res) {
         const adminNotifications = await notifyAdminUsers(prisma, idUsuario, {
           titulo: `Edición de actividad pendiente ${quoteActivityTitle(activityTitle)}`,
           descripcion: `Se solicitó la edición de la actividad ${quoteActivityTitle(activityTitle)} para revisión.`,
-          tipo: "revision",
+          tipo: "actividad",
           id_actividad: idActividad
         });
-
-        console.log("[requestEdit] adminNotifications count:", adminNotifications.length, "for activity", idActividad);
 
         emitNotificationBatch(adminNotifications, { broadcastAdmins: true });
       } catch (notificationError) {
         console.error("[activities] edit notification failed:", notificationError);
+      }
+    } else {
+      const snapshot = buildActivityRevisionSnapshot(existing);
+      const adminChanges = buildChangesList(snapshot, updated);
+      try {
+        const participantsNotifications = await notifyActivityParticipants(prisma, idUsuario, idActividad, {
+          titulo: "Actividad actualizada",
+          descripcion: `La actividad fue actualizada por administración.${adminChanges}`,
+          tipo: "actividad",
+          id_actividad: idActividad
+        }, { includeOwner: true });
+        emitNotificationBatch(participantsNotifications);
+
+        const adminNotifications = await notifyAdminUsers(prisma, idUsuario, {
+          titulo: `Actividad actualizada ${quoteActivityTitle(activityTitle)}`,
+          descripcion: `La actividad ${quoteActivityTitle(activityTitle)} fue actualizada por administración.${adminChanges}`,
+          tipo: "actividad",
+          id_actividad: idActividad
+        });
+        emitNotificationBatch(adminNotifications, { broadcastAdmins: true });
+      } catch (notificationError) {
+        console.error("[activities] admin edit notification failed:", notificationError);
       }
     }
 
@@ -1696,9 +1725,10 @@ async function cancelActivity(req, res) {
       }
     });
 
+    const cancelador = isAdmin ? adminName : "El encargado";
     await notifyActivityParticipants(prisma, idUsuario, idActividad, {
       titulo: "Actividad cancelada",
-      descripcion: "La actividad fue cancelada y ya no está disponible.",
+      descripcion: `La actividad fue cancelada por ${cancelador}.`,
       tipo: "actividad"
     }, { includeOwner: true });
 
