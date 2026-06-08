@@ -435,6 +435,15 @@ export default function Navbar() {
 							</>
 						)}
 
+						{isAuthenticated && isAdmin && (
+							<NavLink to="/admin/dashboard" onClick={handleNavItemClick} className={navLinkClass}>
+								<span className="inline-flex h-5 w-5 shrink-0 items-center justify-center">
+									<NavIcon name="admin" className="h-[18px] w-[18px] shrink-0" />
+								</span>
+								<span>Panel admin</span>
+							</NavLink>
+						)}
+
 						{!isAuthenticated && (
 							<div className="mt-4 grid gap-2">
 								<NavLink to="/login" className="btn btn-ghost w-full" onClick={handleNavItemClick}>

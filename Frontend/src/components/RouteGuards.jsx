@@ -46,11 +46,12 @@ export function ParticipantProtectedRoute() {
 		return <Navigate to="/login" replace state={{ from: location }} />;
 	}
 
-	if (user.rol === "admin") {
+	const role = String(user.rol || "").trim().toLowerCase();
+	if (role === "admin") {
 		return <Navigate to="/" replace state={{ from: location }} />;
 	}
 
-	if (user.rol !== "participante") {
+	if (role !== "participante") {
 		return <Navigate to="/" replace />;
 	}
 
@@ -65,8 +66,9 @@ export function AdminProtectedRoute() {
 		return <Navigate to="/login" replace state={{ from: location }} />;
 	}
 
-	if (user.rol !== "admin" && user.rol !== "encargado") {
-		if (user.rol === "participante") {
+	const role = String(user.rol || "").trim().toLowerCase();
+	if (role !== "admin" && role !== "encargado") {
+		if (role === "participante") {
 			return <Navigate to="/user/dashboard" replace />;
 		}
 
