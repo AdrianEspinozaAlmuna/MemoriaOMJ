@@ -11,17 +11,23 @@ const SOCKET_BASE_URL = (import.meta.env.VITE_SOCKET_URL || API_BASE_URL).replac
 const NOTIFICATION_BADGE_TTL_MS = 15 * 60 * 1000;
 
 function decodeToken(token) {
-  if (!token) return null;
-  
-  const parts = token.split(".");
-  if (parts.length !== 3) return null;
+	if (!token) return null;
 
-  try {
-    const decoded = JSON.parse(atob(parts[1]));
-    return decoded;
-  } catch (e) {
-    return null;
-  }
+	const parts = token.split(".");
+	if (parts.length !== 3) return null;
+
+	try {
+		const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+		const decoded = atob(base64);
+		try {
+			return JSON.parse(decoded);
+		} catch (_inner) {
+			const utf8 = decodeURIComponent(Array.from(decoded, c => "%" + c.charCodeAt(0).toString(16).padStart(2, "0")).join(""));
+			return JSON.parse(utf8);
+		}
+	} catch (error) {
+		return null;
+	}
 }
 
 export default function Navbar() {
@@ -42,12 +48,15 @@ export default function Navbar() {
 	const pushRegistrationAttemptedRef = useRef(false);
 
   const token = localStorage.getItem("token");
-  const user = decodeToken(token);
+  let user = decodeToken(token);
+  if (user && typeof user.exp === "number" && Date.now() >= user.exp * 1000) {
+    localStorage.removeItem("token");
+    user = null;
+  }
   const isAuthenticated = !!user;
-  const mergedUser = profileUser ? { ...user, ...profileUser } : user;
-  const rol = mergedUser?.rol || null;
-	const displayName = mergedUser?.nombre || "Usuario";
-	const fullName = mergedUser?.nombre ? `${mergedUser.nombre} ${mergedUser.apellido || ""}`.trim() : displayName;
+  const rol = user?.rol || null;
+  const displayName = user?.nombre || "Usuario";
+  const fullName = user?.nombre ? `${user.nombre} ${user.apellido || ""}`.trim() : displayName;
 	const notificationPreview = notificationItems.slice(0, 3);
 	const notificationBadgeCount = recentNotificationIds.length;
 
@@ -449,7 +458,7 @@ export default function Navbar() {
 									</span>
 									<span className="grid min-w-0 text-left">
 										<span className="truncate text-[0.86rem] font-semibold text-[#2f463a]">{fullName}</span>
-										{mergedUser?.mail && <span className="truncate text-[0.74rem] font-normal text-[#7a8881]">{mergedUser.mail}</span>}
+										{user?.mail && <span className="truncate text-[0.74rem] font-normal text-[#7a8881]">{user.mail}</span>}
 									</span>
 								</div>
 
@@ -639,7 +648,7 @@ export default function Navbar() {
 								<UserRound aria-hidden="true" focusable="false" className="h-5 w-5 text-[#2e4c3d]" strokeWidth={1.5} />
 								<span className="max-w-[12rem] min-w-0 overflow-hidden">
 									<span className="block truncate">{fullName}</span>
-									{mergedUser?.mail && <span className="block truncate text-[0.72rem] font-normal text-[#7f8b85]">{mergedUser.mail}</span>}
+									{user?.mail && <span className="block truncate text-[0.72rem] font-normal text-[#7f8b85]">{user.mail}</span>}
 								</span>
 							</div>
 							<button

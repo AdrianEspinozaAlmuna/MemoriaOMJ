@@ -16,7 +16,14 @@ function decodeToken(token) {
 	if (parts.length !== 3) return null;
 
 	try {
-		return JSON.parse(atob(parts[1]));
+		const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+		const decoded = atob(base64);
+		try {
+			return JSON.parse(decoded);
+		} catch (_inner) {
+			const utf8 = decodeURIComponent(Array.from(decoded, c => "%" + c.charCodeAt(0).toString(16).padStart(2, "0")).join(""));
+			return JSON.parse(utf8);
+		}
 	} catch (_error) {
 		return null;
 	}
@@ -248,7 +255,8 @@ export default function ActivityDetail() {
 	const canMarkOwnAttendance = isInProgress && !hasAttendanceRegistered && (isEnrolled || canManageMarkAttendance);
 	const canCancelActivity = canManageActivity && !isFinished && !isCanceled;
 	const canEditActivity = canManageActivity && !isFinished && !isCanceled && !isInProgress && !activity?.revision_pendiente;
-	const canSendChat = Boolean(activity?.chat_bidireccional) || canManageActivity;
+	const canViewChat = canManageActivity || isEnrolled;
+	const canSendChat = role === "admin" || Boolean(activity?.chat_bidireccional) || canManageActivity;
 	const isChatReadOnlyForUser = !canSendChat;
 	const canRateInActivity = isFinished && role === "participante" && !canManageActivity;
 	const freeSpots = useMemo(() => Math.max((activity?.capacity ?? 0) - enrolledCount, 0), [enrolledCount, activity?.capacity]);
@@ -317,7 +325,6 @@ export default function ActivityDetail() {
 			}
 			const refreshed = await refreshActivityDetail({ silentError: true });
 			setIsEnrolled(false);
-			setEnrolledCount(current => Math.max(current - 1, 0));
 			setEnrollmentMessage("Inscripción cancelada correctamente.");
 			setEnrollmentBusy(false);
 			return;
@@ -333,8 +340,13 @@ export default function ActivityDetail() {
 		const refreshed = await refreshActivityDetail({ silentError: true });
 
 		setIsEnrolled(true);
-		setEnrolledCount(current => Math.min(current + 1, activity.capacity));
 		setEnrollmentMessage("Inscrito correctamente en la actividad.");
+		setChatError("");
+
+		if (socketRef.current?.connected) {
+			socketRef.current.emit("activity:join", { activityId: Number(activityId) });
+		}
+
 		setEnrollmentBusy(false);
 	}
 
@@ -894,6 +906,7 @@ export default function ActivityDetail() {
 							</article>
 						)}
 
+						{canViewChat && (
 						<article className="order-3 overflow-hidden rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-6 shadow-sm lg:order-none">
 							<div className="mb-3 flex items-center justify-between gap-2">
 								<div>
@@ -962,6 +975,7 @@ export default function ActivityDetail() {
 								)}
 							</div>
 						</article>
+						)}
 					</aside>
 				</section>
 			</div>
