@@ -3,7 +3,8 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "build": "cd Frontend && npm run build"
+    "build": "cd Frontend && npm run build",
+    "test": "cd tests && npm test"
   },
   "dependencies": {
     "@prisma/client": "^5.0.0",

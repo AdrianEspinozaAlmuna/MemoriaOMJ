@@ -289,5 +289,15 @@ async function deleteUser(req, res) {
   }
 }
 
-module.exports = { getUsers, createUser, loginUser, getMe, getMyActivityRole, getMyAttendance, testEndpoint, updateUser, deleteUser };
+function validateLoginFields(email, password) {
+  if (!email || !String(email).trim()) return "Debes enviar email/mail";
+  if (!password) return "Debes enviar la contrasena";
+  return "";
+}
+
+module.exports = { getUsers, createUser, loginUser, getMe, getMyActivityRole, getMyAttendance, testEndpoint, updateUser, deleteUser,
+
+  __testables: {
+    validateLoginFields,
+  } };
 // Referencias: [`userController.getUsers`](Backend/src/controllers/userController.js)
