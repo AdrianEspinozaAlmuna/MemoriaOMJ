@@ -3,8 +3,8 @@ import { describe, it, expect } from "vitest";
 const { __testables } = await import("../../../Backend/prisma/src/controllers/activityController");
 const { timeStringToDate, toTimeLabel } = __testables;
 
-describe("PU-07: Conversión y consistencia de horarios", () => {
-  beforeAll(() => console.log("\n[PU-07] timeStringToDate / toTimeLabel"));
+describe("PU-13: Conversión y consistencia de horarios", () => {
+  beforeAll(() => console.log("\n[PU-13] timeStringToDate / toTimeLabel"));
 
   it("timeStringToDate('15:30') → UTC 15:30", () => {
     const d = timeStringToDate("15:30");

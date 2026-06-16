@@ -291,6 +291,11 @@ function canMessageInActivity(estado) {
   return estado !== "cancelada";
 }
 
+function validateRating(value) {
+  const n = Number(value);
+  return Number.isInteger(n) && n >= 1 && n <= 5;
+}
+
 function serializeActivity(activity, currentUserId = null) {
   const membership = currentUserId
     ? activity.actividad_participantes?.find(item => item.id_usuario === currentUserId) || null
@@ -1916,5 +1921,6 @@ module.exports = {
     validateCapacity,
     isValidMessage,
     canMessageInActivity,
+    validateRating,
   }
 };

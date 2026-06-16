@@ -11,9 +11,9 @@ function fmt(d) {
   return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
 }
 
-describe("PU-03: hasTimeOverlap", () => {
+describe("PU-04: hasTimeOverlap", () => {
   beforeAll(() => {
-    console.log("\n[PU-03] Detección de topes horarios ⭐");
+    console.log("\n[PU-04] Detección de topes horarios ⭐");
   });
 
   it("horarios cruzados (10-12 vs 11-13) → conflicto", () => {

@@ -3,8 +3,8 @@ import { describe, it, expect } from "vitest";
 const { __testables } = await import("../../../Backend/prisma/src/controllers/activityController");
 const { buildChangesList } = __testables;
 
-describe("PU-04: buildChangesList", () => {
-  beforeAll(() => console.log("\n[PU-04] Generación de cambios de actividad"));
+describe("PU-09: buildChangesList", () => {
+  beforeAll(() => console.log("\n[PU-09] Generación de cambios de actividad"));
 
   it("cambio simple → viñeta con '→'", () => {
     const snap = { titulo: "A", fecha: "2026-05-20", hora_inicio: "15:00", hora_termino: "17:00", max_participantes: 20, chat_bidireccional: true };

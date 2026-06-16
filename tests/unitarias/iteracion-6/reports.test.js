@@ -8,8 +8,8 @@ function computeAttendanceRate(attendanceData) {
   return `${Math.round((attended / total) * 100)}%`;
 }
 
-describe("PU-07b: computeAttendanceRate", () => {
-  beforeAll(() => console.log("\n[PU-07b] Cálculo de asistencia promedio"));
+describe("PU-14: computeAttendanceRate", () => {
+  beforeAll(() => console.log("\n[PU-14] Cálculo de asistencia promedio"));
 
   it("100% de asistencia", () => {
     const data = [{ asistio: true, _count: 10 }, { asistio: false, _count: 0 }];

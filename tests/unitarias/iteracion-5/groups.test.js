@@ -4,7 +4,7 @@ const { __testables } = await import("../../../Backend/prisma/src/controllers/gr
 const { isGroupLeader } = __testables;
 
 describe("isGroupLeader", () => {
-  beforeAll(() => console.log("\n[PU-06d] Reglas de grupo (isGroupLeader)"));
+  beforeAll(() => console.log("\n[PU-12] Reglas de grupo (isGroupLeader)"));
 
   it("userId coincide con leaderId → true", () => {
     const r = isGroupLeader(5, 5);

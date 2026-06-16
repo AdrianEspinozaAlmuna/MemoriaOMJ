@@ -6,8 +6,8 @@ import { toUiActivity } from "../../../Frontend/src/services/userViewsService";
 const { __testables } = await import("../../../Backend/prisma/src/controllers/activityController");
 const { mapEstadoToUi } = __testables;
 
-describe("PU-06a: mapEstadoToUi (backend)", () => {
-  beforeAll(() => console.log("\n[PU-06a] mapEstadoToUi"));
+describe("PU-11a: mapEstadoToUi", () => {
+  beforeAll(() => console.log("\n[PU-11a] mapEstadoToUi"));
 
   it("participante inscrito → 'inscrito'", () => {
     const r = mapEstadoToUi("pendiente", "participante");
@@ -34,8 +34,8 @@ describe("PU-06a: mapEstadoToUi (backend)", () => {
   });
 });
 
-describe("PU-06b: toUiActivity (frontend)", () => {
-  beforeAll(() => console.log("\n[PU-06b] toUiActivity"));
+describe("PU-11b: toUiActivity", () => {
+  beforeAll(() => console.log("\n[PU-11b] toUiActivity"));
 
   it("mapea campos de actividad completa", () => {
     const ui = toUiActivity({ id_actividad: 42, titulo: "Taller", fecha: "2026-06-10", hora_inicio: "15:30", estado: "programada" });
@@ -46,8 +46,8 @@ describe("PU-06b: toUiActivity (frontend)", () => {
   });
 });
 
-describe("PU-06c: getActivityStatusMeta (frontend)", () => {
-  beforeAll(() => console.log("\n[PU-06c] getActivityStatusMeta"));
+describe("PU-11c: getActivityStatusMeta", () => {
+  beforeAll(() => console.log("\n[PU-11c] getActivityStatusMeta"));
 
   it("programada → 'Programada'", () => {
     const r = getActivityStatusMeta("programada").label;

@@ -4,7 +4,7 @@ const { __testables } = await import("../../../Backend/prisma/src/controllers/ac
 const { canEnroll, isInCourse, canCancel, validateCapacity } = __testables;
 
 describe("canEnroll", () => {
-  beforeAll(() => console.log("\n[PU-03b] Reglas de inscripción (canEnroll)"));
+  beforeAll(() => console.log("\n[PU-05a] Reglas de inscripción (canEnroll)"));
 
   it("actividad aprobada y programada con cupos → true", () => {
     const act = { aprobado: true, estado: "programada", max_participantes: 20, _count: { actividad_participantes: 5 } };
@@ -35,7 +35,7 @@ describe("canEnroll", () => {
 });
 
 describe("isInCourse", () => {
-  beforeAll(() => console.log("\n[PU-03c] Estado 'en_curso' (isInCourse)"));
+  beforeAll(() => console.log("\n[PU-05b] Estado 'en_curso' (isInCourse)"));
 
   it("'en_curso' → true", () => {
     expect(isInCourse("en_curso")).toBe(true);
@@ -54,7 +54,7 @@ describe("isInCourse", () => {
 });
 
 describe("canCancel", () => {
-  beforeAll(() => console.log("\n[PU-03d] Cancelación de actividad (canCancel)"));
+  beforeAll(() => console.log("\n[PU-05c] Cancelación de actividad (canCancel)"));
 
   it("programada → true", () => {
     const r = canCancel("programada");
@@ -76,7 +76,7 @@ describe("canCancel", () => {
 });
 
 describe("validateCapacity", () => {
-  beforeAll(() => console.log("\n[PU-03e] Validación de capacidad vs sala (validateCapacity)"));
+  beforeAll(() => console.log("\n[PU-05d] Validación de capacidad vs sala (validateCapacity)"));
 
   it("cupo <= capacidad → true", () => {
     expect(validateCapacity(15, 20)).toBe(true);

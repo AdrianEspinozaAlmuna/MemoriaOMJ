@@ -3,8 +3,8 @@ import { describe, it, expect } from "vitest";
 const { __testables } = await import("../../../Backend/prisma/src/controllers/activityController");
 const { buildActivityRevisionSnapshot, buildChangesList, timeStringToDate } = __testables;
 
-describe("PU-05b: snapshot como insumo de notificación", () => {
-  beforeAll(() => console.log("\n[PU-05b] Snapshot para notificaciones"));
+describe("PU-10: Snapshot para notificaciones", () => {
+  beforeAll(() => console.log("\n[PU-10] Snapshot para notificaciones"));
 
   it("snapshot contiene datos formateados para la notificación", () => {
     const activity = {

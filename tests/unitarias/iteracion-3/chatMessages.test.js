@@ -4,7 +4,7 @@ const { __testables } = await import("../../../Backend/prisma/src/controllers/ac
 const { isValidMessage, canMessageInActivity } = __testables;
 
 describe("isValidMessage", () => {
-  beforeAll(() => console.log("\n[PU-04b] Validación de mensajes de chat"));
+  beforeAll(() => console.log("\n[PU-06] Validación de mensajes de chat"));
 
   it("texto normal → true", () => {
     const r = isValidMessage("Hola, ¿cómo están?");
@@ -37,7 +37,7 @@ describe("isValidMessage", () => {
 });
 
 describe("canMessageInActivity", () => {
-  beforeAll(() => console.log("\n[PU-04c] Restricción de chat por estado"));
+  beforeAll(() => console.log("\n[PU-06] Restricción de chat por estado"));
 
   it("programada → true", () => {
     expect(canMessageInActivity("programada")).toBe(true);

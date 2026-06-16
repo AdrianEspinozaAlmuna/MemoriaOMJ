@@ -4,7 +4,8 @@
   "version": "0.1.0",
   "scripts": {
     "build": "cd Frontend && npm run build",
-    "test": "cd tests && npm test"
+    "test": "cd tests && npm test",
+    "test:ordered": "cd tests && npm run test:ordered"
   },
   "dependencies": {
     "@prisma/client": "^5.0.0",

@@ -17,8 +17,8 @@ const base = {
   estado: "pendiente",
 };
 
-describe("PU-05: buildActivityRevisionSnapshot / restoreActivityRevisionSnapshot", () => {
-  beforeAll(() => console.log("\n[PU-05] Snapshot y restauración de actividad"));
+describe("PU-08: Snapshot y restauraci�n de actividad", () => {
+  beforeAll(() => console.log("\n[PU-08] Snapshot y restauración de actividad"));
 
   it("restaura nombre cambiado", () => {
     const snap = buildActivityRevisionSnapshot(base);
