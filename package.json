@@ -5,7 +5,10 @@
   "scripts": {
     "build": "cd Frontend && npm run build",
     "test": "cd tests && npm test",
-    "test:ordered": "cd tests && npm run test:ordered"
+    "test:ordered": "cd tests && npm run test:ordered",
+    "test:blackbox": "cd tests && npm run test:blackbox",
+    "test:integration": "cd tests && npm run test:integration",
+    "test:e2e": "cd tests && npm run test:e2e"
   },
   "dependencies": {
     "@prisma/client": "^5.0.0",

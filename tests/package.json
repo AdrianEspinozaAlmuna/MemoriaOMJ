@@ -11,10 +11,14 @@
     "test:it5": "vitest run unitarias/iteracion-5",
     "test:it6": "vitest run unitarias/iteracion-6",
     "test:unit": "vitest run unitarias",
-    "test:blackbox": "vitest run blackbox",
-    "test:integration": "vitest run integration"
+    "test:blackbox": "jest --config jest.config.js --verbose blackbox",
+    "test:integration": "jest --config jest.config.js --verbose integration",
+    "test:e2e": "jest --config jest.config.js --verbose"
   },
   "devDependencies": {
+    "dotenv": "^16.4.0",
+    "jest": "^30.4.2",
+    "supertest": "^7.2.2",
     "vitest": "^3.0.0"
   }
 }
