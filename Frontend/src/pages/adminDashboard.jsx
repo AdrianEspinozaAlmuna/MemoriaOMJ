@@ -151,7 +151,7 @@ export default function AdminDashboard() {
 			</section>
 
 			<section className="space-y-3.5">
-				<h2 className="m-0 text-[1rem] font-semibold text-[var(--text)]">Accesos rapidos</h2>
+				<h2 className="m-0 text-[1rem] font-semibold text-[var(--text)]">Accesos rápidos</h2>
 				<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
 					{quickActions.map(action => (
 						<Link

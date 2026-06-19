@@ -78,7 +78,7 @@ export default function Navbar() {
 	async function refreshUnreadCount() {
 		try {
 			const data = await getUnreadNotificationCount();
-			if (isMountedRef.current) setUnreadCount(data.unreadCount || 0);
+			if (isMountedRef.current) setUnreadCount(data || 0);
 		} catch {
 			// ignorar errores de conteo
 		}

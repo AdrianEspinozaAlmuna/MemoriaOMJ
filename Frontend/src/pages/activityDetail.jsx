@@ -725,7 +725,7 @@ export default function ActivityDetail() {
 					</div>
 
 					<aside className="grid content-start gap-6 max-lg:contents lg:sticky lg:top-6 lg:self-start">
-						{isFinished ? (
+						{isFinished && role ? (
 							<article className="order-2 rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-6 shadow-sm lg:order-none">
 								<div className="mb-4 flex items-center justify-between gap-3">
 									<h2 className="m-0 text-[1rem] font-semibold text-[var(--text)]">Valoraciones</h2>

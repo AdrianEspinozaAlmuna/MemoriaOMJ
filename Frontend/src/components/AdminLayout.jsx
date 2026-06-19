@@ -194,12 +194,12 @@ export default function AdminLayout() {
 		socket.on("notification:new", handleNotification);
 
 		getUnreadNotificationCount().then(data => {
-			setUnreadCount(data.unreadCount || 0);
+			setUnreadCount(data || 0);
 		}).catch(() => {});
 
 		function onNotificationsRead() {
 			getUnreadNotificationCount().then(data => {
-				setUnreadCount(data.unreadCount || 0);
+				setUnreadCount(data || 0);
 			}).catch(() => {});
 		}
 		window.addEventListener("notifications:read", onNotificationsRead);
@@ -216,7 +216,7 @@ export default function AdminLayout() {
 		const token = localStorage.getItem("token");
 		if (token) {
 			getUnreadNotificationCount().then(data => {
-				setUnreadCount(data.unreadCount || 0);
+				setUnreadCount(data || 0);
 			}).catch(() => {});
 		} else {
 			setUnreadCount(0);
