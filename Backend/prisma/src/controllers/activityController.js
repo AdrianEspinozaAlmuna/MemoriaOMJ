@@ -1063,9 +1063,16 @@ async function createActivity(req, res) {
     });
 
     try {
+      const notifTitulo = isAdmin
+        ? `Actividad creada ${quoteActivityTitle(activityTitle)}`
+        : `Nueva propuesta de actividad ${quoteActivityTitle(activityTitle)}`;
+      const notifDesc = isAdmin
+        ? `La actividad ${quoteActivityTitle(activityTitle)} fue creada.`
+        : `Se creó la actividad ${quoteActivityTitle(activityTitle)} para revisión.`;
+
       const adminNotifications = await notifyAdminUsers(prisma, idEncargado, {
-        titulo: `Nueva propuesta de actividad ${quoteActivityTitle(activityTitle)}`,
-        descripcion: `Se creó la actividad ${quoteActivityTitle(activityTitle)} para revisión.`,
+        titulo: notifTitulo,
+        descripcion: notifDesc,
         tipo: "actividad",
         id_actividad: created.newActivity.id_actividad
       });

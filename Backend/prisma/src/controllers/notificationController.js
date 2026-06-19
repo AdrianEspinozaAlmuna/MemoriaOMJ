@@ -387,20 +387,33 @@ async function createBroadcastNotification(req, res) {
   }
 
   try {
-    const created = await createSystemNotification(prisma, idEmisor, {
+    const usuarios = await prisma.usuario.findMany({
+      where: { estado: true },
+      select: { id_usuario: true }
+    });
+
+    const userIds = usuarios.map(u => u.id_usuario);
+
+    if (userIds.length === 0) {
+      return res.status(500).json({ message: "No hay usuarios activos para notificar" });
+    }
+
+    const created = await createNotificationsForUsers(prisma, idEmisor, userIds, {
       titulo,
       descripcion,
       tipo: "sistema",
       id_actividad: Number.isInteger(idActividad) ? idActividad : null
     });
 
-    if (!created) {
+    if (created.length === 0) {
       return res.status(500).json({ message: "Error creando notificacion" });
     }
 
-    emitNotificationCreated(serializeNotification(created), { broadcast: true });
+    for (const notif of created) {
+      emitNotificationCreated(serializeNotification(notif), { targetUserIds: [notif.id_receptor] });
+    }
 
-    return res.status(201).json({ ok: true, updatedCount: 1, notification: serializeNotification(created) });
+    return res.status(201).json({ ok: true, updatedCount: created.length, notifications: created.map(serializeNotification) });
   } catch (error) {
     console.error("[notifications] createBroadcastNotification failed:", error);
     return res.status(500).json({ message: "Error creando notificacion", detail: error.message });

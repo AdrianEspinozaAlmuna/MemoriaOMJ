@@ -4,7 +4,7 @@ import { Link, NavLink } from "react-router-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
 import api, { API_BASE_URL } from "../services/api";
-import { getMyNotifications, getNotificationListDisplay, normalizeNotification } from "../services/notificationsService";
+import { getMyNotifications, getUnreadNotificationCount, getNotificationListDisplay, normalizeNotification } from "../services/notificationsService";
 import { requestNotificationPermissionAndGetToken } from "../services/firebase";
 
 const SOCKET_BASE_URL = (import.meta.env.VITE_SOCKET_URL || API_BASE_URL).replace(/\/api\/?$/, "");
@@ -40,6 +40,7 @@ export default function Navbar() {
 	const [profileUser, setProfileUser] = useState(null);
 	const [notificationItems, setNotificationItems] = useState([]);
 	const [recentNotificationIds, setRecentNotificationIds] = useState([]);
+	const [unreadCount, setUnreadCount] = useState(0);
 	const [notificationsLoading, setNotificationsLoading] = useState(false);
 	const [notificationsError, setNotificationsError] = useState("");
 	const navRef = useRef(null);
@@ -58,7 +59,7 @@ export default function Navbar() {
   const displayName = user?.nombre || "Usuario";
   const fullName = user?.nombre ? `${user.nombre} ${user.apellido || ""}`.trim() : displayName;
 	const notificationPreview = notificationItems.slice(0, 3);
-	const notificationBadgeCount = recentNotificationIds.length;
+	const notificationBadgeCount = unreadCount;
 
 	async function loadNotifications() {
 		try {
@@ -75,6 +76,15 @@ export default function Navbar() {
 			if (isMountedRef.current) {
 				setNotificationsLoading(false);
 			}
+		}
+	}
+
+	async function refreshUnreadCount() {
+		try {
+			const data = await getUnreadNotificationCount();
+			if (isMountedRef.current) setUnreadCount(data.unreadCount || 0);
+		} catch {
+			// ignorar errores de conteo
 		}
 	}
 
@@ -208,9 +218,11 @@ export default function Navbar() {
 
 			setNotificationItems(previousItems => [notification, ...previousItems.filter(item => item.id !== notification.id)].slice(0, 20));
 			registerRecentNotification(notification.id);
+			setUnreadCount(prev => prev + 1);
 		}
 
 		socket.on("notification:new", handleNotificationEvent);
+		refreshUnreadCount();
 
 		return () => {
 			socket.off("notification:new", handleNotificationEvent);

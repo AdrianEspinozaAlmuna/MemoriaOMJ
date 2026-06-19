@@ -4,7 +4,7 @@ import api, { API_BASE_URL } from "../services/api";
 import { ListCheck, BarChart3, Bell, CalendarDays, CheckCircle2, Circle, LayoutGrid, DoorOpen, Home, LogOut, Menu, PanelLeftClose, PanelLeftOpen, Plus, Tags, UserRound, User, Users, X } from "lucide-react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { getAdminActivities } from "../services/userViewsService";
-import { normalizeNotification } from "../services/notificationsService";
+import { normalizeNotification, getUnreadNotificationCount } from "../services/notificationsService";
 
 function decodeToken(token) {
 	if (!token) return null;
@@ -110,6 +110,7 @@ export default function AdminLayout() {
 	const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
 	const [pendingApprovalsCount, setPendingApprovalsCount] = React.useState(0);
 	const [recentNotificationIds, setRecentNotificationIds] = React.useState([]);
+	const [unreadCount, setUnreadCount] = React.useState(0);
 	const notificationTimersRef = React.useRef(new Map());
 
 	const SOCKET_BASE_URL = (import.meta.env.VITE_SOCKET_URL || API_BASE_URL).replace(/\/api\/?$/, "");
@@ -182,6 +183,7 @@ export default function AdminLayout() {
 				const id = notification?.id || notification?.id_notificacion || notification?.notificationId || null;
 				if (id && isAdminNotification(notification)) {
 					registerRecentNotification(id);
+					setUnreadCount(prev => prev + 1);
 				}
 
 				const title = String(notification?.titulo ?? notification?.title ?? "").toLowerCase();
@@ -194,6 +196,10 @@ export default function AdminLayout() {
 		}
 
 		socket.on("notification:new", handleNotification);
+
+		getUnreadNotificationCount().then(data => {
+			setUnreadCount(data.unreadCount || 0);
+		}).catch(() => {});
 
 		return () => {
 			socket.off("notification:new", handleNotification);
@@ -401,9 +407,9 @@ export default function AdminLayout() {
 							>
 								<div className="relative">
 									<Bell aria-hidden="true" focusable="false" className="h-4 w-4 text-[var(--primary)]" strokeWidth={1.8} />
-									{recentNotificationIds && recentNotificationIds.length > 0 && (
+									{unreadCount > 0 && (
 										<span className="absolute -right-2 -top-2 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#e03a3a] px-1 text-[0.62rem] font-bold leading-none text-white shadow-[0_8px_16px_-10px_rgba(224,58,58,0.8)]">
-											{recentNotificationIds.length > 9 ? "9+" : recentNotificationIds.length}
+											{unreadCount > 9 ? "9+" : unreadCount}
 										</span>
 									)}
 								</div>

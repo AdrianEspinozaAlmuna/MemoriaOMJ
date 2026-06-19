@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { BellRing, LoaderCircle, Megaphone, RefreshCw, Send } from "lucide-react";
 import { io } from "socket.io-client";
 import Modal from "../components/Modal";
-import { createBroadcastNotification, getAdminNotifications, getNotificationListDisplay } from "../services/notificationsService";
+import { createBroadcastNotification, getAdminNotifications, getNotificationListDisplay, markAllNotificationsAsRead } from "../services/notificationsService";
 import { API_BASE_URL } from "../services/api";
 
 const SOCKET_BASE_URL = (import.meta.env.VITE_SOCKET_URL || API_BASE_URL).replace(/\/api\/?$/, "");
@@ -130,6 +130,8 @@ export default function AdminNotifications() {
 	const [actionError, setActionError] = useState("");
 	const [submitting, setSubmitting] = useState(false);
 
+	const hasUnread = useMemo(() => notifications.some(item => !item.read), [notifications]);
+
 	const filteredNotifications = useMemo(() => {
 		if (filter === "all") {
 			return notifications;
@@ -217,6 +219,15 @@ export default function AdminNotifications() {
 		setError("");
 	}
 
+	async function handleMarkAllRead() {
+		try {
+			await markAllNotificationsAsRead();
+			setNotifications(prev => prev.map(n => ({ ...n, read: true, leida: true })));
+		} catch {
+			// silencioso
+		}
+	}
+
 	async function handleRefresh() {
 		try {
 			setRefreshing(true);
@@ -264,6 +275,11 @@ export default function AdminNotifications() {
 				</div>
 
 				<div className="flex flex-wrap items-center gap-2">
+					{hasUnread && (
+						<button type="button" className="inline-flex items-center gap-2 rounded-sm border border-[#cfded5] bg-white px-3.5 py-2 text-[0.9rem] font-semibold text-[#a03d2e] hover:bg-[#fff7f5]" onClick={handleMarkAllRead}>
+							Marcar todas como leídas
+						</button>
+					)}
 					<button type="button" className="inline-flex items-center gap-2 rounded-sm border border-[#cfded5] bg-white px-3.5 py-2 text-[0.9rem] font-semibold text-[var(--text)] hover:bg-[#f6faf7]" onClick={handleRefresh} disabled={refreshing}>
 						{refreshing ? <LoaderCircle className="h-4 w-4 animate-spin" strokeWidth={1.9} /> : <RefreshCw className="h-4 w-4" strokeWidth={1.9} />}
 						Actualizar
@@ -313,7 +329,8 @@ export default function AdminNotifications() {
 				) : (
 					<div className="grid gap-3.5">
 						{filteredNotifications.map(item => (
-							<article key={item.id} className="grid gap-4 rounded-[14px] border border-[#d8e6dd] bg-white px-4 py-4 shadow-[0_8px_18px_-20px_rgba(16,24,40,0.28)] lg:grid-cols-[auto_1fr_auto] lg:items-start">
+							<article key={item.id} className={`relative grid gap-4 rounded-[14px] border px-4 py-4 shadow-[0_8px_18px_-20px_rgba(16,24,40,0.28)] lg:grid-cols-[auto_1fr_auto] lg:items-start ${!item.read ? "border-[var(--primary)] bg-[#f0faf5]" : "border-[#d8e6dd] bg-white"}`}>
+								{!item.read && <span className="absolute top-3 right-3 h-2.5 w-2.5 rounded-full bg-[var(--primary)]" title="No leída" />}
 								<div className="inline-flex h-11 w-11 items-center justify-center rounded-[12px] bg-white text-[var(--primary)] shadow-[0_6px_14px_-12px_rgba(16,24,40,0.35)]">
 									<BellRing className="h-4 w-4" strokeWidth={1.9} />
 								</div>
