@@ -224,7 +224,11 @@ export default function Navbar() {
 		socket.on("notification:new", handleNotificationEvent);
 		refreshUnreadCount();
 
+		function onNotificationsRead() { refreshUnreadCount(); }
+		window.addEventListener("notifications:read", onNotificationsRead);
+
 		return () => {
+			window.removeEventListener("notifications:read", onNotificationsRead);
 			socket.off("notification:new", handleNotificationEvent);
 			socket.disconnect();
 			clearRecentNotificationTimers();

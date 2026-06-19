@@ -223,6 +223,7 @@ export default function AdminNotifications() {
 		try {
 			await markAllNotificationsAsRead();
 			setNotifications(prev => prev.map(n => ({ ...n, read: true, leida: true })));
+			window.dispatchEvent(new CustomEvent("notifications:read"));
 		} catch {
 			// silencioso
 		}

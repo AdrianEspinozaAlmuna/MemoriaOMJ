@@ -201,7 +201,15 @@ export default function AdminLayout() {
 			setUnreadCount(data.unreadCount || 0);
 		}).catch(() => {});
 
+		function onNotificationsRead() {
+			getUnreadNotificationCount().then(data => {
+				setUnreadCount(data.unreadCount || 0);
+			}).catch(() => {});
+		}
+		window.addEventListener("notifications:read", onNotificationsRead);
+
 		return () => {
+			window.removeEventListener("notifications:read", onNotificationsRead);
 			socket.off("notification:new", handleNotification);
 			socket.disconnect();
 			clearRecentNotificationTimers();
