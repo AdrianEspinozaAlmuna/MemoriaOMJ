@@ -241,6 +241,11 @@ export default function Navbar() {
 	}, [isAuthenticated]);
 
 	useEffect(() => {
+		const token = localStorage.getItem("token");
+		if (token) refreshUnreadCount();
+	}, []);
+
+	useEffect(() => {
 		function handleDocumentClick(event) {
 			if (navRef.current && !navRef.current.contains(event.target)) {
 				setMenuOpen(false);
