@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { BellRing, LoaderCircle, RefreshCw } from "lucide-react";
 import { io } from "socket.io-client";
-import { getMyNotifications, getNotificationListDisplay, markAllNotificationsAsRead } from "../services/notificationsService";
+import { getMyNotifications, getNotificationListDisplay, markAllNotificationsAsRead, markNotificationAsRead } from "../services/notificationsService";
 import { API_BASE_URL } from "../services/api";
 
 const SOCKET_BASE_URL = (import.meta.env.VITE_SOCKET_URL || API_BASE_URL).replace(/\/api\/?$/, "");
@@ -188,6 +188,18 @@ export default function UserNotifications() {
     }
   }
 
+  async function handleMarkAsRead(item) {
+    if (item.read) return;
+    try {
+      await markNotificationAsRead(item.id);
+      setNotifications(prev => prev.map(n =>
+        n.id === item.id ? { ...n, read: true, leida: true } : n
+      ));
+    } catch {
+      // silencioso
+    }
+  }
+
   async function handleRefresh() {
     try {
       setRefreshing(true);
@@ -211,7 +223,7 @@ export default function UserNotifications() {
 
           <div className="flex flex-wrap items-center gap-2">
           {hasUnread && (
-            <button type="button" className="inline-flex items-center gap-2 rounded-sm border border-[#cfded5] bg-white px-3.5 py-2 text-[0.9rem] font-semibold text-[#a03d2e] hover:bg-[#fff7f5]" onClick={handleMarkAllRead}>
+            <button type="button" className="inline-flex items-center gap-2 rounded-sm border border-[#d8e6dd] bg-white px-3.5 py-2 text-[0.9rem] font-semibold text-[var(--primary)] hover:bg-[#f0faf5]" onClick={handleMarkAllRead}>
               Marcar todas como leídas
             </button>
           )}
@@ -263,7 +275,8 @@ export default function UserNotifications() {
             {visibleNotifications.map(item => (
               <div
                 key={item.id}
-              className={`relative grid gap-4 rounded-[14px] border px-4 py-4 text-left shadow-[0_8px_18px_-20px_rgba(16,24,40,0.28)] lg:grid-cols-[auto_1fr_auto] lg:items-start ${!item.read ? "border-[var(--primary)] bg-[#f0faf5]" : "border-[#d8e6dd] bg-white"}`}
+                onClick={() => handleMarkAsRead(item)}
+                className={`relative grid cursor-pointer gap-4 rounded-[14px] border px-4 py-4 text-left shadow-[0_8px_18px_-20px_rgba(16,24,40,0.28)] lg:grid-cols-[auto_1fr_auto] lg:items-start transition-colors hover:bg-[#f8fbf9] ${!item.read ? "border-[#d8e6dd] bg-white border-l-[3px] border-l-[var(--primary)]" : "border-[#d8e6dd] bg-white"}`}
               >
                 {!item.read && <span className="absolute top-3 right-3 h-2.5 w-2.5 rounded-full bg-[var(--primary)]" title="No leída" />}
                 <div className="inline-flex h-11 w-11 items-center justify-center rounded-[12px] bg-white text-[var(--primary)] shadow-[0_6px_14px_-12px_rgba(16,24,40,0.35)]">
@@ -276,7 +289,7 @@ export default function UserNotifications() {
                       {getHeaderLabel(item)}
                     </span>
                   </div>
-                <h3 className="m-0 text-[1rem] font-semibold leading-tight text-[var(--text)]">{getNotificationListDisplay(item).title}</h3>
+                <h3 className={`m-0 text-[1rem] leading-tight text-[var(--text)] ${!item.read ? "font-bold" : "font-semibold"}`}>{getNotificationListDisplay(item).title}</h3>
                 <p className="m-0 whitespace-pre-line text-[0.92rem] leading-relaxed text-[var(--text-muted)]">{getNotificationListDisplay(item).detail}</p>
                 </div>
 

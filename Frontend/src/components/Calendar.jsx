@@ -412,7 +412,7 @@ export default function Calendar({ activities, viewMode, monthDate, onActivityCl
           </header>
 
           <div className="min-h-0 flex-1 overflow-y-auto bg-[var(--surface)] border border-[#e5e7eb] max-[640px]:max-h-[calc(100dvh-13rem)]">
-            <div className="sticky top-0 z-20 border-b border-[#e5e7eb] bg-[var(--surface)] px-5 py-2.5 shadow-[0_8px_16px_-16px_rgba(19,38,29,0.28)] max-[640px]:px-4 max-[640px]:py-2">
+            <div className="sticky top-0 left-0 z-20 border-b border-[#e5e7eb] bg-[var(--surface)] px-5 py-2.5 shadow-[0_8px_16px_-16px_rgba(19,38,29,0.28)] max-[640px]:px-4 max-[640px]:py-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="inline-flex gap-1 rounded-[10px] border border-[#e5e7eb] bg-[#f8faf9] p-1 max-[640px]:w-full">
                   <button
