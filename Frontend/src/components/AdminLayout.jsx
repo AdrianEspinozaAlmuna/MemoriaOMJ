@@ -217,6 +217,17 @@ export default function AdminLayout() {
 	}, []);
 
 	React.useEffect(() => {
+		const token = localStorage.getItem("token");
+		if (token) {
+			getUnreadNotificationCount().then(data => {
+				setUnreadCount(data.unreadCount || 0);
+			}).catch(() => {});
+		} else {
+			setUnreadCount(0);
+		}
+	}, []);
+
+	React.useEffect(() => {
 		async function loadPendingCount() {
 			try {
 				const data = await getAdminActivities({ approved: false, estado: "pendiente" });
