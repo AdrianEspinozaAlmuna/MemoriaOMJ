@@ -236,6 +236,7 @@ export default function AdminNotifications() {
 			setNotifications(prev => prev.map(n =>
 				n.id === item.id ? { ...n, read: true, leida: true } : n
 			));
+			window.dispatchEvent(new CustomEvent("notifications:read"));
 		} catch {
 			// silencioso
 		}
@@ -342,7 +343,7 @@ export default function AdminNotifications() {
 				) : (
 					<div className="grid gap-3.5">
 						{filteredNotifications.map(item => (
-							<article key={item.id} onClick={() => handleMarkAsRead(item)} className={`relative grid cursor-pointer gap-4 rounded-[14px] border px-4 py-4 shadow-[0_8px_18px_-20px_rgba(16,24,40,0.28)] lg:grid-cols-[auto_1fr_auto] lg:items-start transition-colors hover:bg-[#f8fbf9] ${!item.read ? "border-[#d8e6dd] bg-white border-l-[3px] border-l-[var(--primary)]" : "border-[#d8e6dd] bg-white"}`}>
+							<article key={item.id} onClick={() => handleMarkAsRead(item)} className={`relative grid cursor-pointer gap-4 rounded-[14px] border px-4 py-4 shadow-[0_4px_8px_-4px_rgba(16,24,40,0.12)] lg:grid-cols-[auto_1fr_auto] lg:items-start transition-colors ${!item.read ? "border-[#b8dcc8] bg-[#f0faf5] hover:bg-[#e8f5ee]" : "border-[#d8e6dd] bg-white"}`}>
 								{!item.read && <span className="absolute top-3 right-3 h-2.5 w-2.5 rounded-full bg-[var(--primary)]" title="No leída" />}
 								<div className="inline-flex h-11 w-11 items-center justify-center rounded-[12px] bg-white text-[var(--primary)] shadow-[0_6px_14px_-12px_rgba(16,24,40,0.35)]">
 									<BellRing className="h-4 w-4" strokeWidth={1.9} />
