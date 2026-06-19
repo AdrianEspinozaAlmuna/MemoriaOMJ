@@ -5,7 +5,7 @@ function withError(payload, errorMessage) {
   return { ...payload, error: errorMessage };
 }
 
-function toUiActivity(item = {}) {
+export function toUiActivity(item = {}) {
   return {
     id: String(item.id ?? item.id_actividad ?? ""),
     title: item.title || item.titulo || "",

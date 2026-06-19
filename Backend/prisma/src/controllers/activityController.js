@@ -257,6 +257,45 @@ function mapEstadoToUi(estado, membershipRole) {
   return "disponible";
 }
 
+/* --- Reglas de negocio extraídas como funciones puras --- */
+
+function canEnroll(activity) {
+  if (!activity) return false;
+  if (!activity.aprobado || !["programada", "en_curso"].includes(activity.estado)) return false;
+  const enrolledCount = activity._count?.actividad_participantes ?? 0;
+  if (activity.max_participantes && enrolledCount >= activity.max_participantes) return false;
+  return true;
+}
+
+function isInCourse(estado) {
+  return estado === "en_curso";
+}
+
+function canCancel(estado) {
+  return estado !== "finalizada" && estado !== "cancelada";
+}
+
+function validateCapacity(maxParticipants, roomCapacity) {
+  if (!Number.isInteger(maxParticipants) || maxParticipants < 1) return false;
+  if (roomCapacity > 0 && maxParticipants > roomCapacity) return false;
+  return true;
+}
+
+function isValidMessage(text) {
+  if (!text || typeof text !== "string") return false;
+  const trimmed = text.trim();
+  return trimmed.length > 0 && trimmed.length <= 2000;
+}
+
+function canMessageInActivity(estado) {
+  return estado !== "cancelada";
+}
+
+function validateRating(value) {
+  const n = Number(value);
+  return Number.isInteger(n) && n >= 1 && n <= 5;
+}
+
 function serializeActivity(activity, currentUserId = null) {
   const membership = currentUserId
     ? activity.actividad_participantes?.find(item => item.id_usuario === currentUserId) || null
@@ -889,7 +928,7 @@ async function createActivity(req, res) {
     }
 
     const roomCapacity = Number(sala.capacidad ?? sala.capacity ?? 0);
-    if (Number.isInteger(roomCapacity) && roomCapacity > 0 && maxParticipants > roomCapacity) {
+    if (!validateCapacity(maxParticipants, roomCapacity)) {
       return res.status(400).json({
         message: "El cupo no puede superar la capacidad de la sala.",
         capacity: roomCapacity
@@ -1024,9 +1063,16 @@ async function createActivity(req, res) {
     });
 
     try {
+      const notifTitulo = isAdmin
+        ? `Actividad creada ${quoteActivityTitle(activityTitle)}`
+        : `Nueva propuesta de actividad ${quoteActivityTitle(activityTitle)}`;
+      const notifDesc = isAdmin
+        ? `La actividad ${quoteActivityTitle(activityTitle)} fue creada.`
+        : `Se creó la actividad ${quoteActivityTitle(activityTitle)} para revisión.`;
+
       const adminNotifications = await notifyAdminUsers(prisma, idEncargado, {
-        titulo: `Nueva propuesta de actividad ${quoteActivityTitle(activityTitle)}`,
-        descripcion: `Se creó la actividad ${quoteActivityTitle(activityTitle)} para revisión.`,
+        titulo: notifTitulo,
+        descripcion: notifDesc,
         tipo: "actividad",
         id_actividad: created.newActivity.id_actividad
       });
@@ -1192,7 +1238,7 @@ async function markMyAttendance(req, res) {
       return res.status(404).json({ message: "Actividad no encontrada" });
     }
 
-    if (activity.estado !== "en_curso") {
+    if (!isInCourse(activity.estado)) {
       return res.status(400).json({ message: "Solo puedes marcar asistencia cuando la actividad está en curso" });
     }
 
@@ -1269,7 +1315,7 @@ async function markParticipantAttendance(req, res) {
       return res.status(404).json({ message: "Actividad no encontrada" });
     }
 
-    if (activity.estado !== "en_curso") {
+    if (!isInCourse(activity.estado)) {
       return res.status(400).json({ message: "Solo puedes marcar asistencia cuando la actividad está en curso" });
     }
 
@@ -1696,12 +1742,11 @@ async function cancelActivity(req, res) {
       return res.status(403).json({ message: "No tienes permisos para cancelar esta actividad" });
     }
 
-    if (existing.estado === "cancelada") {
-      return res.status(400).json({ message: "La actividad ya se encuentra cancelada" });
-    }
-
-    if (existing.estado === "finalizada") {
-      return res.status(400).json({ message: "No puedes cancelar una actividad finalizada" });
+    if (!canCancel(existing.estado)) {
+      const mensaje = existing.estado === "cancelada"
+        ? "La actividad ya se encuentra cancelada"
+        : "No puedes cancelar una actividad finalizada";
+      return res.status(400).json({ message: mensaje });
     }
 
     const adminUser = await prisma.usuario.findUnique({
@@ -1767,12 +1812,8 @@ async function createActivityMessage(req, res) {
     return res.status(403).json({ message: "No se pudo identificar el usuario autenticado" });
   }
 
-  if (!text) {
-    return res.status(400).json({ message: "El mensaje no puede estar vacío" });
-  }
-
-  if (text.length > 2000) {
-    return res.status(400).json({ message: "El mensaje supera el largo máximo permitido (2000 caracteres)" });
+  if (!isValidMessage(text)) {
+    return res.status(400).json({ message: "El mensaje no puede estar vacío o supera los 2000 caracteres" });
   }
 
   try {
@@ -1790,7 +1831,7 @@ async function createActivityMessage(req, res) {
       return res.status(404).json({ message: "Actividad no encontrada" });
     }
 
-    if (activity.estado === "cancelada") {
+    if (!canMessageInActivity(activity.estado)) {
       return res.status(400).json({ message: "No se pueden enviar mensajes en una actividad cancelada" });
     }
 
@@ -1869,5 +1910,24 @@ module.exports = {
   reviewActivity,
   requestActivityEdit,
   cancelActivity,
-  createActivityMessage
+  createActivityMessage,
+
+  __testables: {
+    parseLocalDateString,
+    toDateLabel,
+    timeStringToDate,
+    toTimeLabel,
+    hasTimeOverlap,
+    buildActivityRevisionSnapshot,
+    restoreActivityRevisionSnapshot,
+    buildChangesList,
+    mapEstadoToUi,
+    canEnroll,
+    isInCourse,
+    canCancel,
+    validateCapacity,
+    isValidMessage,
+    canMessageInActivity,
+    validateRating,
+  }
 };

@@ -1,0 +1,24 @@
+{
+  "name": "omj-tests",
+  "private": true,
+  "scripts": {
+    "test": "vitest run",
+    "test:ordered": "powershell -ExecutionPolicy Bypass -File run-ordered.ps1",
+    "test:it1": "vitest run unitarias/iteracion-1",
+    "test:it2": "vitest run unitarias/iteracion-2",
+    "test:it3": "vitest run unitarias/iteracion-3",
+    "test:it4": "vitest run unitarias/iteracion-4",
+    "test:it5": "vitest run unitarias/iteracion-5",
+    "test:it6": "vitest run unitarias/iteracion-6",
+    "test:unit": "vitest run unitarias",
+    "test:blackbox": "jest --config jest.config.js --verbose blackbox",
+    "test:integration": "jest --config jest.config.js --verbose integration",
+    "test:e2e": "jest --config jest.config.js --verbose"
+  },
+  "devDependencies": {
+    "dotenv": "^16.4.0",
+    "jest": "^30.4.2",
+    "supertest": "^7.2.2",
+    "vitest": "^3.0.0"
+  }
+}

@@ -246,5 +246,13 @@ module.exports = {
   notifyAdminUsers,
   notifyUsersByIds,
   notifyActivityOwner,
-  notifyActivityParticipants
+  notifyActivityParticipants,
+
+  __testables: {
+    normalizeNotificationText,
+    uniqueIntegerIds,
+    normalizeUserId,
+    sqlLiteral,
+    normalizeNotificationType,
+  }
 };

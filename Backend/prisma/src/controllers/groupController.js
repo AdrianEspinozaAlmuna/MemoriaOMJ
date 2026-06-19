@@ -846,9 +846,17 @@ async function deleteGroupAdmin(req, res) {
   }
 }
 
+function isGroupLeader(userId, leaderId) {
+  return Number(userId) === Number(leaderId);
+}
+
 module.exports = {
   getMyGroups, createGroup, updateGroup, getGroup, addUserToGroup, removeUserFromGroup, leaveGroup, deleteGroup, searchUsersToInvite,
-  getAllGroupsAdmin, getEligibleLeadersAdmin, createGroupAdmin, updateGroupAdmin, removeUserFromGroupAdmin, deleteGroupAdmin
+  getAllGroupsAdmin, getEligibleLeadersAdmin, createGroupAdmin, updateGroupAdmin, removeUserFromGroupAdmin, deleteGroupAdmin,
+
+  __testables: {
+    isGroupLeader,
+  }
 };
 
 
