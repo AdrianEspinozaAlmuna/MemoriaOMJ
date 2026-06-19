@@ -271,11 +271,6 @@ export default function UserNotifications() {
                 </div>
 
                 <div className="min-w-0 space-y-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                  <span className={`inline-flex rounded-sm px-2 py-1 text-[0.7rem] font-bold uppercase tracking-[0.08em] ${getHeaderLabelClass(item)}`}>
-                      {getHeaderLabel(item)}
-                    </span>
-                  </div>
                 <h3 className="m-0 text-[1rem] font-semibold leading-tight text-[var(--text)]">{getNotificationListDisplay(item).title}</h3>
                 <p className="m-0 whitespace-pre-line text-[0.92rem] leading-relaxed text-[var(--text-muted)]">{getNotificationListDisplay(item).detail}</p>
                 </div>
