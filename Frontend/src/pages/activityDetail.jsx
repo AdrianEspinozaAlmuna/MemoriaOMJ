@@ -18,12 +18,8 @@ function decodeToken(token) {
 	try {
 		const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
 		const decoded = atob(base64);
-		try {
-			return JSON.parse(decoded);
-		} catch (_inner) {
-			const utf8 = decodeURIComponent(Array.from(decoded, c => "%" + c.charCodeAt(0).toString(16).padStart(2, "0")).join(""));
-			return JSON.parse(utf8);
-		}
+		const utf8 = decodeURIComponent(Array.from(decoded, c => "%" + c.charCodeAt(0).toString(16).padStart(2, "0")).join(""));
+		return JSON.parse(utf8);
 	} catch (_error) {
 		return null;
 	}

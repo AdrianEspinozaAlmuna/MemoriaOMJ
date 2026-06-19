@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { CalendarDays, ChevronLeft, ChevronRight, Layers3, ListFilter, Tags } from "lucide-react";
+import { ChevronLeft, ChevronRight, Layers3, ListFilter, Tags } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Calendar from "../components/Calendar";
 import LoadingState from "../components/LoadingState";
@@ -20,7 +20,6 @@ export default function UserCalendar() {
   });
   const [selectedCategory, setSelectedCategory] = useState("todos");
   const [selectedStatus, setSelectedStatus] = useState("todos");
-  const [selectedDate, setSelectedDate] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -47,10 +46,9 @@ export default function UserCalendar() {
     return activities.filter(activity => {
       const categoryMatch = selectedCategory === "todos" || activity.category === selectedCategory;
       const statusMatch = selectedStatus === "todos" || activity.status === selectedStatus;
-      const dateMatch = !selectedDate || activity.date === selectedDate;
-      return categoryMatch && statusMatch && dateMatch;
+      return categoryMatch && statusMatch;
     });
-  }, [activities, selectedCategory, selectedStatus, selectedDate]);
+  }, [activities, selectedCategory, selectedStatus]);
 
   const monthLabel = useMemo(() => getMonthLabel(monthDate), [monthDate]);
 
@@ -98,7 +96,7 @@ export default function UserCalendar() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <label className="grid gap-2 text-[0.82rem] font-semibold text-[var(--text)]">
             <span className="inline-flex items-center gap-1.5">
               <Tags className="h-4 w-4 text-[var(--primary)]" strokeWidth={1.9} />
@@ -115,21 +113,13 @@ export default function UserCalendar() {
 
           <label className="grid gap-2 text-[0.82rem] font-semibold text-[var(--text)]">
             <span className="inline-flex items-center gap-1.5">
-              <CalendarDays className="h-4 w-4 text-[var(--primary)]" strokeWidth={1.9} />
-              Fecha
-            </span>
-            <input className="rounded-sm border border-[#d8e6dd] bg-[var(--panel-bg)] px-3 py-2 text-[0.9rem] text-[var(--text)] outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[#05a63d]/20" type="date" value={selectedDate} onChange={event => setSelectedDate(event.target.value)} />
-          </label>
-
-          <label className="grid gap-2 text-[0.82rem] font-semibold text-[var(--text)]">
-            <span className="inline-flex items-center gap-1.5">
               <ListFilter className="h-4 w-4 text-[var(--primary)]" strokeWidth={1.9} />
               Estado
             </span>
             <select className="hover:cursor-pointer rounded-sm border border-[#d8e6dd] bg-[var(--panel-bg)] px-3 py-2 text-[0.9rem] text-[var(--text)] outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[#05a63d]/20" value={selectedStatus} onChange={event => setSelectedStatus(event.target.value)}>
-              <option value="todos">todos</option>
-              <option value="inscrito">inscrito</option>
-              <option value="disponible">disponible</option>
+              <option value="todos">Todos</option>
+              <option value="inscrito">Inscrito</option>
+              <option value="disponible">Disponible</option>
             </select>
           </label>
 
@@ -139,8 +129,8 @@ export default function UserCalendar() {
               Vista
             </span>
             <select className="hover:cursor-pointer rounded-sm border border-[#d8e6dd] bg-[var(--panel-bg)] px-3 py-2 text-[0.9rem] text-[var(--text)] outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[#05a63d]/20" value={viewMode} onChange={event => setViewMode(event.target.value)}>
-              <option value="mensual">mensual</option>
-              <option value="semanal">semanal</option>
+              <option value="mensual">Mensual</option>
+              <option value="semanal">Semanal</option>
             </select>
           </label>
         </div>

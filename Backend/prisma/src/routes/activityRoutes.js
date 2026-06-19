@@ -14,10 +14,12 @@ const {
   reviewActivity,
   requestActivityEdit,
   cancelActivity,
-  createActivityMessage
+  createActivityMessage,
+  getActivityRatings
 } = require("../controllers/activityController");
 const { requireAuth, requireRole } = require("../middleware/auth");
 
+router.get("/ratings/summary", requireAuth, requireRole("admin"), getActivityRatings);
 router.get("/", requireAuth, listActivities);
 router.get("/admin", requireAuth, requireRole("admin"), listAdminActivities);
 router.get("/:id_actividad", requireAuth, getActivityById);

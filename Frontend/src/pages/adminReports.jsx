@@ -11,6 +11,7 @@ import {
 	XAxis, YAxis, Tooltip, PieChart, Pie, Cell, BarChart, Bar, Area, AreaChart
 } from "recharts";
 
+import api from "../services/api";
 import { getAdminActivities } from "../services/userViewsService";
 import { getActivityStatusMeta } from "../utils/activityStatus";
 
@@ -225,7 +226,7 @@ function FilterPill({ active, onClick, children }) {
 		<button
 			type="button"
 			onClick={onClick}
-			className={`inline-flex min-w-[102px] items-center justify-center whitespace-nowrap rounded-sm border px-3.5 py-1.5 text-[0.82rem] font-semibold transition-all box-border ${active
+			className={`inline-flex min-w-[90px] max-[480px]:min-w-0 items-center justify-center rounded-sm border px-3 py-1.5 text-[0.8rem] font-semibold transition-all box-border ${active
 				? "border-[var(--primary)] bg-[var(--primary)] text-white shadow-none"
 				: "border-[#d8e6dd] bg-white text-[var(--text-muted)] hover:border-[var(--primary)] hover:text-[var(--primary)]"
 			}`}
@@ -253,6 +254,8 @@ export default function AdminReports() {
 	const [loadingActivities, setLoadingActivities] = useState(false);
 	const [loadError, setLoadError] = useState(null);
 	const [reportError, setReportError] = useState("");
+	const [avgRating, setAvgRating] = useState(null);
+	const [ratingCount, setRatingCount] = useState(0);
 	const hasGeneratedReport = reportReady;
 
 	function parseDateYMD(str) {
@@ -268,6 +271,17 @@ export default function AdminReports() {
 	}
 
 	// fetch activities on demand (when user clicks "Generar reporte")
+	async function fetchRatings() {
+		try {
+			const { data } = await api.get("/activities/ratings/summary");
+			setAvgRating(data.average);
+			setRatingCount(data.count);
+		} catch {
+			setAvgRating(null);
+			setRatingCount(0);
+		}
+	}
+
 	async function fetchActivities() {
 		setLoadingActivities(true);
 		setLoadError(null);
@@ -295,10 +309,16 @@ export default function AdminReports() {
 			return;
 		}
 
+		if (draftRange === "custom" && draftStart && draftEnd && draftStart > draftEnd) {
+			setReportError("La fecha de inicio no puede ser posterior a la fecha de término.");
+			return;
+		}
+
 		setActiveFilters({ range: draftRange, start: draftStart, end: draftEnd });
 		setTablePage(1);
 		setReportReady(true);
 		fetchActivities();
+		fetchRatings();
 	}
 
 	// ── Filtered by date range ──
@@ -414,7 +434,7 @@ export default function AdminReports() {
 		{ label: "Actividades",      value: `${totalActivities}`,   icon: Activity,    sub: "aprobadas en el período" },
 		{ label: "Inscritos",        value: `${avgFinalizedEnrolled}`, icon: Users,    sub: `promedio por actividad finalizada · cap. total ${totalCapacity}` },
 		{ label: "Ocupación media",  value: `${avgOccupancy}%`,      icon: TrendingUp,  sub: `${percentHighOccupancy}% con ≥80%` },
-		{ label: "Valoración media", value: "4.6 / 5",               icon: Star,        sub: "basado en reseñas" }
+		{ label: "Valoración media", value: avgRating ? `${avgRating} / 5` : "—", icon: Star, sub: ratingCount > 0 ? `${ratingCount} reseña${ratingCount !== 1 ? "s" : ""}` : "sin datos" }
 	];
 
 	const extraCards = [
@@ -472,7 +492,7 @@ export default function AdminReports() {
 	}, [filteredRows, reportReady]);
 
 	return (
-		<section className="animate-[revealUp_0.7s_ease_both] grid gap-6 pb-8">
+		<section className="mx-auto max-w-7xl px-4 animate-[revealUp_0.7s_ease_both] grid gap-6 pb-8">
 
 			{/* ── PAGE HEADER ── */}
 			<header className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
@@ -489,46 +509,53 @@ export default function AdminReports() {
 
 			{/* ── FILTER BAR ── */}
 			<div className="rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-3.5 shadow-sm">
-				<div className="grid gap-2">
-					<div className="flex flex-wrap items-center gap-2">
-						<div className="flex items-center gap-1.5">
+				<div className="grid gap-3">
+					<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+						<div className="flex items-center gap-1.5 min-w-0">
 							<Filter className="h-3.5 w-3.5 shrink-0 text-[var(--text-muted)]" strokeWidth={2} />
-							<span className="text-[0.8rem] font-semibold text-[var(--text-muted)]">Período:</span>
-							<div className="ml-1 flex items-center gap-1.5">
+							<span className="shrink-0 text-[0.8rem] font-semibold text-[var(--text-muted)]">Período:</span>
+							<div className="flex flex-wrap gap-1.5">
 								{[["week","Esta semana"],["month","Este mes"],["custom","Personalizado"]].map(([val, lbl]) => (
 									<FilterPill key={val} active={draftRange === val} onClick={() => setDraftRange(val)}>{lbl}</FilterPill>
 								))}
 							</div>
 						</div>
 
-						<div className="ml-auto flex flex-wrap items-center gap-2">
-							{draftRange === "custom" && (
-								<div className="flex items-center gap-2">
+						{draftRange === "custom" && (
+							<div className="flex flex-wrap items-center gap-2 sm:ml-7">
+								<label className="flex items-center gap-1.5">
+									<span className="text-[0.78rem] font-semibold text-[var(--text-muted)]">Desde</span>
 									<input
 										type="date"
 										value={draftStart}
+										max={draftEnd || undefined}
 										onChange={e => setDraftStart(e.target.value)}
 										className="rounded-lg border border-[#d8e6dd] px-2.5 py-1.5 text-[0.82rem] text-[var(--text)] bg-white outline-none focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]/20"
 									/>
-									<span className="text-[0.8rem] text-[var(--text-muted)]">—</span>
+								</label>
+								<span className="text-[0.8rem] text-[var(--text-muted)]">—</span>
+								<label className="flex items-center gap-1.5">
+									<span className="text-[0.78rem] font-semibold text-[var(--text-muted)]">Hasta</span>
 									<input
 										type="date"
 										value={draftEnd}
+										min={draftStart || undefined}
 										onChange={e => setDraftEnd(e.target.value)}
 										className="rounded-lg border border-[#d8e6dd] px-2.5 py-1.5 text-[0.82rem] text-[var(--text)] bg-white outline-none focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]/20"
 									/>
-								</div>
-							)}
-							<button
-								type="button"
-								className={`inline-flex items-center gap-1.5 rounded-sm px-4 py-1.5 text-[0.82rem] font-semibold transition-all ${loadingActivities ? 'cursor-not-allowed border border-[var(--primary)] bg-[var(--primary)] text-white opacity-60' : 'border border-[var(--primary)] bg-[var(--primary)] text-white hover:bg-[var(--primary-strong)]'}`}
-								onClick={handleGenerateReport}
-								disabled={loadingActivities}
-							>
-								<ChevronRight className="h-3.5 w-3.5" strokeWidth={2.5} />
-								{loadingActivities ? 'Generando...' : 'Generar reporte'}
-							</button>
-						</div>
+								</label>
+							</div>
+						)}
+
+						<button
+							type="button"
+							className={`inline-flex items-center justify-center gap-1.5 rounded-sm px-4 py-2.5 text-[0.82rem] font-semibold transition-all w-full sm:w-auto sm:ml-auto sm:mt-0 ${loadingActivities ? 'cursor-not-allowed border border-[var(--primary)] bg-[var(--primary)] text-white opacity-60' : 'border border-[var(--primary)] bg-[var(--primary)] text-white hover:bg-[var(--primary-strong)]'}`}
+							onClick={handleGenerateReport}
+							disabled={loadingActivities}
+						>
+							<ChevronRight className="h-3.5 w-3.5" strokeWidth={2.5} />
+							{loadingActivities ? 'Generando...' : 'Generar reporte'}
+						</button>
 					</div>
 
 					{reportError && (
@@ -541,7 +568,7 @@ export default function AdminReports() {
 				{hasGeneratedReport ? (
 					<>
 						{/* ── KPI CARDS ── */}
-						<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+						<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
 							{kpiCards.map(({ label, value, icon: Icon, sub }) => (
 								<article key={label} className="rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] px-5 py-4 shadow-sm">
 									<div className="flex items-start justify-between gap-2">
@@ -557,7 +584,7 @@ export default function AdminReports() {
 						</div>
 
 						{/* ── EXTRA STATS GRID ── */}
-						<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+						<div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
 							{extraCards.map(({ label, value, icon: Icon }) => (
 							<article key={label} className="rounded-lg border border-[#d8e6dd] bg-white px-4 py-3.5 shadow-sm">
 									<div className="flex items-center gap-2 mb-2">

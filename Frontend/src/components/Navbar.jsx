@@ -19,12 +19,8 @@ function decodeToken(token) {
 	try {
 		const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
 		const decoded = atob(base64);
-		try {
-			return JSON.parse(decoded);
-		} catch (_inner) {
-			const utf8 = decodeURIComponent(Array.from(decoded, c => "%" + c.charCodeAt(0).toString(16).padStart(2, "0")).join(""));
-			return JSON.parse(utf8);
-		}
+		const utf8 = decodeURIComponent(Array.from(decoded, c => "%" + c.charCodeAt(0).toString(16).padStart(2, "0")).join(""));
+		return JSON.parse(utf8);
 	} catch (error) {
 		return null;
 	}
@@ -162,6 +158,7 @@ export default function Navbar() {
 		let mounted = true;
 
 		loadNotifications();
+		refreshUnreadCount();
 
 		return () => {
 			mounted = false;
@@ -489,7 +486,7 @@ export default function Navbar() {
 									<span className="grid h-8 w-8 place-items-center rounded-full bg-[#eef8f2] text-[var(--primary-strong)]">
 										<UserRound aria-hidden="true" focusable="false" className="h-4 w-4" strokeWidth={2} />
 									</span>
-									<span className="grid min-w-0 text-left">
+									<span className="grid min-w-0 max-w-[16rem] overflow-hidden text-left">
 										<span className="truncate text-[0.86rem] font-semibold text-[#2f463a]">{fullName}</span>
 										{user?.mail && <span className="truncate text-[0.74rem] font-normal text-[#7a8881]">{user.mail}</span>}
 									</span>
@@ -677,9 +674,9 @@ export default function Navbar() {
 
 					{isAuthenticated && (
 						<div className="flex items-center gap-2 max-[1120px]:gap-1.5">
-							<div className="hidden min-[861px]:flex items-center gap-2 rounded-sm bg-white px-2.5 py-2 text-[0.88rem] font-semibold leading-none text-[#6d7b75]">
-								<UserRound aria-hidden="true" focusable="false" className="h-5 w-5 text-[#2e4c3d]" strokeWidth={1.5} />
-								<span className="max-w-[12rem] min-w-0 overflow-hidden">
+							<div className="hidden min-[861px]:flex max-w-[14rem] items-center gap-2 rounded-sm bg-white px-2.5 py-2 text-[0.88rem] font-semibold leading-none text-[#6d7b75]">
+								<UserRound aria-hidden="true" focusable="false" className="h-5 w-5 shrink-0 text-[#2e4c3d]" strokeWidth={1.5} />
+								<span className="min-w-0 overflow-hidden">
 									<span className="block truncate">{fullName}</span>
 									{user?.mail && <span className="block truncate text-[0.72rem] font-normal text-[#7f8b85]">{user.mail}</span>}
 								</span>

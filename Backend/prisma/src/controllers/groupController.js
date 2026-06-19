@@ -163,11 +163,17 @@ async function addUserToGroup(req, res) {
     // Verificar que el usuario a agregar existe
     const usuarioAAgregar = await prisma.usuario.findUnique({
       where: { id_usuario: idNuevoUsuario },
-      select: { id_usuario: true, nombre: true, apellido: true, mail: true }
+      select: { id_usuario: true, nombre: true, apellido: true, mail: true, rol: true }
     });
 
     if (!usuarioAAgregar) {
       return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    // Solo admin puede agregar a otro admin; participantes solo agregan participantes
+    const esAdmin = req.user?.rol === "admin";
+    if (!esAdmin && usuarioAAgregar.rol !== "participante") {
+      return res.status(403).json({ message: "No puedes agregar administradores al grupo" });
     }
 
     // Verificar que no sea el líder del grupo
@@ -579,12 +585,16 @@ async function searchUsersToInvite(req, res) {
       ...grupo.participantes_grupo.map(p => p.id_usuario)
     ];
 
+    // Si quien busca no es admin, solo mostrar participantes
+    const esAdmin = req.user?.rol === "admin";
+
     // Buscar usuarios no en el grupo
     const usuarios = await prisma.usuario.findMany({
       where: {
         AND: [
           { estado: true },
           { id_usuario: { notIn: idsYaEnGrupo } },
+          ...(esAdmin ? [] : [{ rol: "participante" }]),
           buscar ? {
             OR: [
               { nombre: { contains: buscar, mode: "insensitive" } },

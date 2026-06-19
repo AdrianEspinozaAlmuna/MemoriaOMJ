@@ -1896,6 +1896,27 @@ async function createActivityMessage(req, res) {
   }
 }
 
+async function getActivityRatings(req, res) {
+  try {
+    const ratings = await prisma.actividad_participantes.findMany({
+      where: {
+        valoracion: { not: null },
+        actividad: { estado: "finalizada" }
+      },
+      select: { valoracion: true }
+    });
+
+    const total = ratings.length;
+    const sum = ratings.reduce((acc, r) => acc + r.valoracion, 0);
+    const average = total > 0 ? (sum / total).toFixed(1) : null;
+
+    return res.json({ average: average ? Number(average) : null, count: total });
+  } catch (error) {
+    console.error("[ratings] getActivityRatings failed:", error);
+    return res.status(500).json({ message: "Error obteniendo valoraciones", detail: error.message });
+  }
+}
+
 module.exports = {
   listActivities,
   listAdminActivities,
@@ -1911,6 +1932,7 @@ module.exports = {
   requestActivityEdit,
   cancelActivity,
   createActivityMessage,
+  getActivityRatings,
 
   __testables: {
     parseLocalDateString,

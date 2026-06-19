@@ -14,12 +14,8 @@ function decodeToken(token) {
 	try {
 		const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
 		const decoded = atob(base64);
-		try {
-			return JSON.parse(decoded);
-		} catch (_inner) {
-			const utf8 = decodeURIComponent(Array.from(decoded, c => "%" + c.charCodeAt(0).toString(16).padStart(2, "0")).join(""));
-			return JSON.parse(utf8);
-		}
+		const utf8 = decodeURIComponent(Array.from(decoded, c => "%" + c.charCodeAt(0).toString(16).padStart(2, "0")).join(""));
+		return JSON.parse(utf8);
 	} catch (error) {
 		return null;
 	}
@@ -374,7 +370,7 @@ export default function AdminLayout() {
 									<UserRound aria-hidden="true" focusable="false" className="h-4 w-4" strokeWidth={2} />
 								)}
 							</span>
-							<span className={`grid min-w-0 ${sidebarCollapsed ? "min-[981px]:hidden" : ""}`}>
+							<span className={`grid min-w-0 max-w-[14rem] overflow-hidden ${sidebarCollapsed ? "min-[981px]:hidden" : ""}`}>
 								<span className="truncate">{displayName}</span>
 								{displayEmail && <span className="truncate text-[0.74rem] font-normal text-[#7a8881]">{displayEmail}</span>}
 							</span>

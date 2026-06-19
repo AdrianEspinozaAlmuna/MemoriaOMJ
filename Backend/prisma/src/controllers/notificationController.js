@@ -124,7 +124,7 @@ async function listMyNotifications(req, res) {
     const notifications = await prisma.notificaciones.findMany({
       where: {
         ...(unreadOnly ? { leida: false } : {}),
-        OR: [{ id_receptor: idUsuario }, { id_receptor: null }]
+        id_receptor: idUsuario
       },
       include: {
         emisor: {
@@ -174,15 +174,7 @@ async function listAdminNotifications(req, res) {
   }
 
   try {
-    const adminIds = await prisma.usuario.findMany({
-      where: {
-        rol: "admin",
-        estado: true
-      },
-      select: { id_usuario: true }
-    }).then(rows => rows.map(row => row.id_usuario).filter(id => Number.isInteger(Number(id)) && Number(id) > 0));
-
-    const where = {};
+    const where = { id_receptor: idUsuario };
     if (unreadOnly) {
       where.leida = false;
     }
@@ -192,11 +184,6 @@ async function listAdminNotifications(req, res) {
     if (Number.isInteger(idActividad)) {
       where.id_actividad = idActividad;
     }
-    where.OR = [
-      { id_receptor: idUsuario },
-      { id_receptor: null },
-      ...(adminIds.length > 0 ? [{ id_receptor: { in: adminIds } }] : [])
-    ];
 
     const notifications = await prisma.notificaciones.findMany({
       where,
@@ -239,31 +226,16 @@ async function listAdminNotifications(req, res) {
 
 async function countUnreadNotifications(req, res) {
   const idUsuario = getUserIdFromToken(req.user || {});
-  const isAdmin = String(req.user?.rol || "").toLowerCase() === "admin";
 
   if (!idUsuario) {
     return res.status(403).json({ message: "No se pudo identificar el usuario autenticado" });
   }
 
   try {
-    const adminIds = isAdmin
-      ? await prisma.usuario.findMany({
-          where: {
-            rol: "admin",
-            estado: true
-          },
-          select: { id_usuario: true }
-        }).then(rows => rows.map(row => row.id_usuario).filter(id => Number.isInteger(Number(id)) && Number(id) > 0))
-      : [];
-
     const unreadCount = await prisma.notificaciones.count({
       where: {
         leida: false,
-        OR: [
-          { id_receptor: idUsuario },
-          { id_receptor: null },
-          ...(adminIds.length > 0 ? [{ id_receptor: { in: adminIds } }] : [])
-        ]
+        id_receptor: idUsuario
       }
     });
 

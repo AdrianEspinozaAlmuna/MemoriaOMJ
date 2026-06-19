@@ -298,7 +298,7 @@ export default function Calendar({ activities, viewMode, monthDate, onActivityCl
   return (
     <>
       <section className="overflow-x-auto rounded-2xl border border-[#cfded5] bg-white p-4 max-[640px]:p-3">
-      <div className="mb-3 grid grid-cols-7 gap-1.5 rounded-xl border border-[#d6e5dc] bg-white px-2 py-2 max-[640px]:gap-1 max-[640px]:px-1.5 max-[640px]:py-1.5">
+      <div className="mb-3 grid min-w-[640px] grid-cols-7 gap-1.5 rounded-xl border border-[#d6e5dc] bg-white px-2 py-2 max-[640px]:min-w-[560px] max-[640px]:gap-1 max-[640px]:px-1.5 max-[640px]:py-1.5">
         {weekDays.map(day => (
           <span key={day} className="text-center text-[0.73rem] font-bold uppercase tracking-[0.08em] text-[#4f6f5f] max-[640px]:text-[0.66rem]">
             {day}
@@ -436,7 +436,7 @@ export default function Calendar({ activities, viewMode, monthDate, onActivityCl
                     Por sala
                   </button>
                 </div>
-                {createActivityPath && selectedDay ? (
+                {createActivityPath && selectedDay && new Date(new Date().toDateString()) <= new Date(selectedDay.toDateString()) ? (
                   <Link
                     to={`${createActivityPath}?date=${formatDateKey(selectedDay)}`}
                     onClick={closeDayModal}

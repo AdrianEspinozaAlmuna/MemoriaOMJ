@@ -16,7 +16,7 @@ const quickActions = [
   },
   {
     label: "Crea algo nuevo",
-    subtitle: "Quieres iniciar una actividad? Haz la propuesta ahora y espera su aprobación.",
+    subtitle: "¿Quieres iniciar una actividad? Haz la propuesta ahora y espera su aprobación.",
     cta: "Proponer una actividad",
     to: "/user/crear-actividad",
     icon: "plus"
