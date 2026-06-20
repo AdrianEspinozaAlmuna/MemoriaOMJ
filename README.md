@@ -6,6 +6,7 @@ Plataforma OMJ para gestion de actividades juveniles, con arquitectura separada 
 
 - Backend: API REST, autenticacion, Prisma ORM.
 - Frontend: interfaz React, rutas y soporte PWA.
+- Tests: pruebas unitarias, caja negra e integracion.
 
 ## Requisitos
 
@@ -24,6 +25,11 @@ Instala dependencias por separado en cada proyecto.
 2. Frontend
 
 	cd Frontend
+	npm install
+
+3. Tests
+
+	cd tests
 	npm install
 
 ## Comandos de desarrollo
@@ -69,6 +75,22 @@ Comandos disponibles:
 	npm run prisma:generate
 	npm run prisma:migrate
 	npm run prisma:seed
+
+## Testing
+
+El proyecto cuenta con 3 niveles de pruebas automatizadas.
+
+### Comandos
+
+```bash
+npm test                  # unitarias (Vitest)
+npm run test:ordered      # unitarias ordenadas por iteracion
+npm run test:blackbox     # caja negra (Jest + Supertest)
+npm run test:integration  # integracion (Jest + Supertest)
+npm run test:e2e          # caja negra + integracion juntos
+```
+
+Ver `tests/README.md` para documentacion detallada.
 
 ## PWA: como se actualiza
 

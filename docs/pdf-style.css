@@ -1,0 +1,23 @@
+@page { size: A4; margin: 2.5cm 2cm; }
+body { font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; font-size: 11pt; line-height: 1.6; color: #2d3f35; background: #ffffff; }
+h1 { color: #1f6e45; font-size: 20pt; border-bottom: 2px solid #cde0d3; padding-bottom: 6px; margin-top: 36px; }
+h2 { color: #1f6e45; font-size: 15pt; margin-top: 28px; }
+h3 { color: #2d5a48; font-size: 12pt; margin-top: 20px; }
+h4 { color: #3a5f4b; font-size: 11pt; margin-top: 15px; }
+table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 10pt; }
+th { background-color: #1f6e45; color: white; padding: 8px 10px; text-align: left; }
+td { padding: 6px 10px; border-bottom: 1px solid #d8e6dd; }
+tr:nth-child(even) { background-color: #f8fbf9; }
+code { background-color: #f2f7f4; padding: 2px 6px; border-radius: 3px; font-size: 10pt; color: #1a4a34; }
+pre { background: #fafcfa; border-left: 3px solid #cde0d3; padding: 10px 14px; border-radius: 4px; font-size: 9.5pt; }
+blockquote { border-left: 4px solid #d4a017; background: #ffffff; padding: 8px 14px; margin: 15px 0; border-radius: 4px; }
+.cover-page { text-align: center; padding-top: 120px; page-break-after: always; }
+.cover-page h1 { font-size: 28pt; border: none; margin-bottom: 8px; }
+.cover-page .subtitle { font-size: 16pt; color: #5a7d68; margin-bottom: 40px; }
+.cover-page .meta { font-size: 11pt; color: #7a9585; margin-top: 60px; }
+.toc { page-break-after: always; }
+.page-break { page-break-before: always; }
+.tag { display: inline-block; padding: 1px 8px; border-radius: 3px; font-size: 9pt; font-weight: 600; margin-right: 3px; }
+.tag-admin { background: #f0e6e6; color: #7a3030; }
+.tag-encargado { background: #f0ede0; color: #7a6a20; }
+.tag-participante { background: #e6f0ea; color: #1a5a3a; }

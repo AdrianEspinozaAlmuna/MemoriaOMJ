@@ -129,18 +129,21 @@ function emitNotificationCreated(notification, options = {}) {
     ? options.targetUserIds.map(value => Number(value)).filter(value => Number.isInteger(value) && value > 0)
     : [];
 
+  if (targetUserIds.length > 0) {
+    for (const targetUserId of targetUserIds) {
+      ioInstance.to(getUserRoomName(targetUserId)).emit("notification:new", notification);
+    }
+    return;
+  }
+
   if (options.broadcastAdmins) {
     ioInstance.to(getAdminRoomName()).emit("notification:new", notification);
     return;
   }
 
-  if (options.broadcast || targetUserIds.length === 0) {
+  if (options.broadcast) {
     ioInstance.emit("notification:new", notification);
     return;
-  }
-
-  for (const targetUserId of targetUserIds) {
-    ioInstance.to(getUserRoomName(targetUserId)).emit("notification:new", notification);
   }
 }
 

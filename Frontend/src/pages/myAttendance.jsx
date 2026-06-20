@@ -306,7 +306,7 @@ export default function MyAttendance() {
   const pagedHistory = filteredHistory.slice(historyStartIndex, historyEndIndex);
 
   return (
-    <section className="max-w-7xl mx-auto px-4 py-6 space-y-7">
+    <section className="animate-[revealUp_0.7s_ease_both] max-w-7xl mx-auto px-4 py-6 space-y-7">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
         <p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Panel de usuario</p>

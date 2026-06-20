@@ -20,15 +20,12 @@ function parseUserId(value) {
 }
 
 function emitNotificationBatch(notifications = [], batchOptions = {}) {
-  if (batchOptions.broadcastAdmins && notifications.length > 0) {
-    for (const notification of notifications) {
-      emitNotificationCreated(notification, { broadcastAdmins: true });
-    }
-    return;
-  }
   for (const notification of notifications) {
     const targetUserId = Number(notification?.id_receptor ?? notification?.id_usuario);
-    const options = Number.isInteger(targetUserId) && targetUserId > 0 ? { targetUserIds: [targetUserId] } : { broadcast: true };
+    const options = { broadcastAdmins: Boolean(batchOptions.broadcastAdmins) };
+    if (Number.isInteger(targetUserId) && targetUserId > 0) {
+      options.targetUserIds = [targetUserId];
+    }
     emitNotificationCreated(notification, options);
   }
 }

@@ -193,7 +193,7 @@ function UserGroups() {
   });
 
   return (
-    <section className="max-w-7xl mx-auto px-4 py-6 space-y-8">
+    <section className="animate-[revealUp_0.7s_ease_both] max-w-7xl mx-auto px-4 py-6 space-y-8">
       <header>
         <p className="m-0 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">Panel de usuario</p>
         <h1 className="mt-2 mb-0 text-[clamp(1.8rem,2.5vw,2.3rem)] font-bold text-[var(--text)]">Mis Grupos</h1>

@@ -384,7 +384,7 @@ export default function CreateActivity() {
 
   if (isEditMode && loadingEditActivity) {
     return (
-      <section className="max-w-7xl mx-auto px-4 py-6 space-y-8">
+<section className="animate-[revealUp_0.7s_ease_both] max-w-7xl mx-auto px-4 py-6 space-y-8">
         <article className="rounded-xl border border-[#d8e6dd] bg-[var(--panel-bg)] p-6 shadow-sm">
           <p className="m-0 text-[0.92rem] font-semibold text-[var(--text)]">Cargando actividad para edición</p>
           <p className="mt-2 text-[0.88rem] text-[var(--text-muted)]">{isAdminRoute ? "Cargando datos de la actividad..." : "Estamos preparando los datos actuales para que puedas enviar cambios a revisión."}</p>
