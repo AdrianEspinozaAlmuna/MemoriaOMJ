@@ -29,7 +29,7 @@ tests/
     iteracion-5/             # PU-11 a PU-12: estados UI, grupos
     iteracion-6/             # PU-13 a PU-14: horarios, reportes
   blackbox/
-    pcn01.test.js a pcn09.test.js   # 9 pruebas de caja negra
+    pcn01.test.js a pcn13.test.js   # 13 pruebas de caja negra
   integration/
     pi01.test.js a pi06.test.js     # 6 pruebas de integracion
 ```
@@ -56,7 +56,7 @@ npm run test:it5          # iteracion 5 — grupos + estados
 npm run test:it6          # iteracion 6 — reportes
 
 # Caja negra (Jest + Supertest) — requieren BD
-npm run test:blackbox     # PCN-01 a PCN-09
+npm run test:blackbox     # PCN-01 a PCN-13
 
 # Integracion (Jest + Supertest) — requieren BD
 npm run test:integration  # PI-01 a PI-06
@@ -111,7 +111,7 @@ npm run test:e2e          # caja negra + integracion
 | PU-13 | `activityTime.test.js` | `timeStringToDate`, `toTimeLabel` | 5 casos |
 | PU-14 | `reports.test.js` | `computeAttendanceRate` | 100%, 50%, 0%, vacio |
 
-## Pruebas de caja negra (PCN-01 a PCN-09)
+## Pruebas de caja negra (PCN-01 a PCN-13)
 
 | Codigo | Endpoint | Escenario | Resultado |
 |--------|----------|-----------|-----------|
@@ -124,6 +124,10 @@ npm run test:e2e          # caja negra + integracion
 | PCN-07 | `PATCH /api/activities/:id/request-edit` | Actividad finalizada | `400` |
 | PCN-08 | `DELETE /api/groups/:id/members` | Miembro elimina a otro | `403` |
 | PCN-09 | `PATCH /api/activities/:id/request-edit` | Reducir cupo bajo inscritos | `400` |
+| PCN-10 | `POST /api/users`, `PATCH /api/users/:id` | Crear, editar y desactivar usuarios | `201` / `200` |
+| PCN-11 | `POST /api/users/login` | Login con usuario deshabilitado | `403` |
+| PCN-12 | `GET /api/activities`, `GET /api/activities/admin` | Consulta de actividades según estado y rol | `200` |
+| PCN-13 | `POST /api/groups`, `DELETE /api/groups/:id/members` | Gestión de grupos y permisos de líder | `201` / `403` |
 
 ## Pruebas de integracion (PI-01 a PI-06)
 
