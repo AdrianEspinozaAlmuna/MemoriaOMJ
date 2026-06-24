@@ -65,6 +65,10 @@ async function createNotificationRecord(db = prisma, payload = {}) {
   if (!idReceptorValid && !idEmisorValid) {
     return null;
   }
+  // id_emisor es NOT NULL en la tabla, si no es válido no podemos insertar
+  if (!idEmisorValid) {
+    return null;
+  }
 
   const titulo = normalizeNotificationText(payload.titulo);
   if (!titulo) {
@@ -147,7 +151,7 @@ async function createNotificationRecord(db = prisma, payload = {}) {
 
 async function createNotificationsForUsers(db = prisma, idEmisor, userIds = [], payload = {}) {
   const recipients = uniqueIntegerIds(userIds);
-  if (!Number.isInteger(Number(idEmisor)) || recipients.length === 0) {
+  if (idEmisor == null || !Number.isInteger(Number(idEmisor)) || Number(idEmisor) <= 0 || recipients.length === 0) {
     return [];
   }
 

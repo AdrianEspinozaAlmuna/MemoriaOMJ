@@ -1768,11 +1768,15 @@ async function cancelActivity(req, res) {
     });
 
     const cancelador = isAdmin ? adminName : "El encargado";
-    await notifyActivityParticipants(prisma, idUsuario, idActividad, {
-      titulo: "Actividad cancelada",
-      descripcion: `La actividad fue cancelada por ${cancelador}.`,
-      tipo: "actividad"
-    }, { includeOwner: true });
+    try {
+      await notifyActivityParticipants(prisma, idUsuario, idActividad, {
+        titulo: "Actividad cancelada",
+        descripcion: `La actividad fue cancelada por ${cancelador}.`,
+        tipo: "actividad"
+      }, { includeOwner: true });
+    } catch (notifError) {
+      console.error("[cancelActivity] participantsNotification failed:", notifError);
+    }
 
     try {
       const adminNotifications = await notifyAdminUsers(prisma, idUsuario, {

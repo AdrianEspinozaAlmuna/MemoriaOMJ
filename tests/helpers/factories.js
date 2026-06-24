@@ -115,26 +115,39 @@ async function createMessage(activityId, userId, text) {
 }
 
 async function cleanupDatabase() {
-  const tablenames = [
-    "actividad_mensaje",
-    "actividad_participantes",
-    "actividad_grupo",
-    "participantes_grupo",
-    "notificaciones",
-    "actividad",
-    "grupo",
-    "fcm_token",
-    "usuario",
-    "salas",
-    "tipo_actividad",
-  ];
-  for (const name of tablenames) {
-    try {
-      await prisma.$executeRawUnsafe(`DELETE FROM "${name}"`);
-    } catch {
-      // algunas tablas pueden no existir aún
-    }
-  }
+  try {
+    await prisma.actividad_mensaje.deleteMany();
+  } catch { /* ok */ }
+  try {
+    await prisma.actividad_participantes.deleteMany();
+  } catch { /* ok */ }
+  try {
+    await prisma.actividad_grupo.deleteMany();
+  } catch { /* ok */ }
+  try {
+    await prisma.participantes_grupo.deleteMany();
+  } catch { /* ok */ }
+  try {
+    await prisma.notificaciones.deleteMany();
+  } catch { /* ok */ }
+  try {
+    await prisma.fcm_token.deleteMany();
+  } catch { /* ok */ }
+  try {
+    await prisma.actividad.deleteMany();
+  } catch { /* ok */ }
+  try {
+    await prisma.grupo.deleteMany();
+  } catch { /* ok */ }
+  try {
+    await prisma.usuario.deleteMany();
+  } catch { /* ok */ }
+  try {
+    await prisma.salas.deleteMany();
+  } catch { /* ok */ }
+  try {
+    await prisma.tipo_actividad.deleteMany();
+  } catch { /* ok */ }
 }
 
 async function closePrisma() {
