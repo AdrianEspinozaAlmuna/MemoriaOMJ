@@ -102,22 +102,25 @@ async function uploadActivityImage(req, res) {
   const imagen_url = String(req.body?.imagen_url || "").trim();
   const descripcion = String(req.body?.descripcion || "").trim() || null;
 
-  if (!imagen_url) return res.status(400).json({ message: "URL de imagen requerida" });
   if (!tipo_nombre && !tipo_id) return res.status(400).json({ message: "Nombre de tipo o id requerido" });
 
   try {
     let tipo;
 
     if (tipo_id && Number.isInteger(tipo_id) && tipo_id > 0) {
+      const data = {};
+      if (tipo_nombre) data.nombre = tipo_nombre;
+      if (imagen_url) data.imagen_url = imagen_url;
+      data.descripcion = descripcion;
+
       tipo = await prisma.tipo_actividad.update({
         where: { id_tipo: tipo_id },
-        data: {
-          nombre: tipo_nombre || undefined,
-          imagen_url,
-          descripcion
-        }
+        data
       });
     } else {
+      if (!imagen_url) return res.status(400).json({ message: "URL de imagen requerida para nuevo tipo" });
+      if (!tipo_nombre) return res.status(400).json({ message: "Nombre requerido para nuevo tipo" });
+
       tipo = await prisma.tipo_actividad.upsert({
         where: { nombre: tipo_nombre },
         update: { imagen_url, descripcion },
