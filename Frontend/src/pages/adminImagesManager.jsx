@@ -174,7 +174,7 @@ export default function AdminImagesManager() {
   };
 
   const handleSubmit = async () => {
-    const nombre = form.nombre.trim().toLowerCase();
+    const nombre = form.nombre.trim();
     const descripcion = form.descripcion.trim();
 
     if (!nombre) {

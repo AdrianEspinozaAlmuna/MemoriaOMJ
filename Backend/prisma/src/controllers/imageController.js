@@ -18,17 +18,17 @@ async function ensureDefaultTypes(req) {
   const base = getPublicBaseUrl(req);
   const defaults = [
     {
-      nombre: "baile",
+      nombre: "Baile",
       descripcion: "Actividades de baile y expresion corporal.",
       imagen_url: `${base}/uploads/tipos-actividad/baile.svg`
     },
     {
-      nombre: "charla",
+      nombre: "Charla",
       descripcion: "Charlas, conferencias y encuentros formativos.",
       imagen_url: `${base}/uploads/tipos-actividad/charla.svg`
     },
     {
-      nombre: "deporte",
+      nombre: "Deporte",
       descripcion: "Actividades deportivas y recreativas.",
       imagen_url: `${base}/uploads/tipos-actividad/deporte.svg`
     }
