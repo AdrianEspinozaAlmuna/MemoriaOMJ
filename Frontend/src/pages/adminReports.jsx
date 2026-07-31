@@ -454,6 +454,34 @@ export default function AdminReports() {
 		{ label: "Promedio por categoría", value: avgCategoryActivities,        icon: Layers }
 	];
 
+	// ── Etiqueta de rango seleccionado ──
+	function formatShortDate(d) {
+		if (!d) return "";
+		const day = String(d.getDate()).padStart(2, "0");
+		const month = String(d.getMonth() + 1).padStart(2, "0");
+		return `${day}/${month}/${d.getFullYear()}`;
+	}
+
+	const rangeDisplayLabel = useMemo(() => {
+		const now = new Date();
+
+		if (draftRange === "week") {
+			const day = now.getDay();
+			const diffToMonday = day === 0 ? 6 : day - 1;
+			const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - diffToMonday);
+			const sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6);
+			return `desde ${formatShortDate(monday)} hasta ${formatShortDate(sunday)}`;
+		}
+
+		if (draftRange === "month") {
+			const month = new Intl.DateTimeFormat("es-CL", { month: "long", year: "numeric" }).format(now);
+			return month.charAt(0).toUpperCase() + month.slice(1);
+		}
+
+		// En personalizado no se muestra etiqueta: los inputs "Desde/Hasta" ya lo indican
+		return "";
+	}, [draftRange, draftStart, draftEnd]);
+
 	// ── Status distribution (Aprobadas / Pendientes / Rechazadas)
 	const statusSplit = useMemo(() => {
 		if (!reportReady) {
@@ -566,6 +594,13 @@ export default function AdminReports() {
 						</button>
 					</div>
 
+					{rangeDisplayLabel && (
+						<p className="m-0 px-1 text-[0.82rem] font-medium text-[var(--text-muted)]">
+							<CalendarDays className="mr-1 inline h-3.5 w-3.5 align-[-2px] text-[var(--primary)]" strokeWidth={2} />
+							Período seleccionado: <strong className="font-semibold text-[var(--text)]">{rangeDisplayLabel}</strong>
+						</p>
+					)}
+
 					{reportError && (
 						<p className="m-0 rounded-sm border border-[#f0c6c6] bg-[#fff5f5] px-3 py-2 text-[0.8rem] font-medium text-[#a73f3f]">
 							{reportError}
@@ -592,7 +627,7 @@ export default function AdminReports() {
 						</div>
 
 						{/* ── EXTRA STATS GRID ── */}
-						<div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+						<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
 							{extraCards.map(({ label, value, icon: Icon }) => (
 							<article key={label} className="rounded-lg border border-[#d8e6dd] bg-white px-4 py-3.5 shadow-sm">
 									<div className="flex items-center gap-2 mb-2">
