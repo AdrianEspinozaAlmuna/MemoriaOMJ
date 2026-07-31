@@ -330,13 +330,18 @@ export default function AdminReports() {
 		const { range, start: cs, end: ce } = activeFilters;
 
 		if (range === "week") {
-			start = new Date(now);
-			const day = start.getDay();
-			const diff = start.getDate() - (day === 0 ? 6 : day - 1);
-			start.setDate(diff);
-			start.setHours(0, 0, 0, 0);
+			// Lunes de la semana actual (lunes→0, domingo→6)
+			const day = now.getDay();
+			const diffToMonday = day === 0 ? 6 : day - 1;
+			start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - diffToMonday, 0, 0, 0);
+			// Domingo de la semana actual = lunes + 6 días
+			end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 6, 23, 59, 59);
 		}
-		else if (range === "month")  { start = new Date(now.getFullYear(), now.getMonth(), 1); }
+		else if (range === "month") {
+			// Primer y último día del mes actual
+			start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
+			end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+		}
 		else if (range === "custom") { start = cs ? new Date(cs) : new Date(0); end = ce ? new Date(ce) : end; if (ce) end.setHours(23,59,59,999); }
 		else                         { start = new Date(0); }
 
@@ -430,20 +435,23 @@ export default function AdminReports() {
 	const safeTablePage = Math.min(tablePage, totalTablePages);
 	const paginatedTableRows = tableRows.slice((safeTablePage - 1) * tablePageSize, safeTablePage * tablePageSize);
 
+	// Promedio de actividades por categoría
+	const avgCategoryActivities = categoryData.length > 0
+		? (totalActivities / categoryData.length).toFixed(1)
+		: "0";
+
 	const kpiCards = [
-		{ label: "Actividades",      value: `${totalActivities}`,   icon: Activity,    sub: "aprobadas en el período" },
-		{ label: "Inscritos",        value: `${avgFinalizedEnrolled}`, icon: Users,    sub: `promedio por actividad finalizada · cap. total ${totalCapacity}` },
-		{ label: "Ocupación media",  value: `${avgOccupancy}%`,      icon: TrendingUp,  sub: `${percentHighOccupancy}% con ≥80%` },
-		{ label: "Valoración media", value: avgRating ? `${avgRating} / 5` : "—", icon: Star, sub: ratingCount > 0 ? `${ratingCount} reseña${ratingCount !== 1 ? "s" : ""}` : "sin datos" }
+		{ label: "Actividades totales", value: `${totalActivities}`, icon: Activity, sub: "aprobadas en el período" },
+		{ label: "Inscritos promedio",  value: `${avgEnrolled}`,      icon: Users,    sub: "promedio por actividad" },
+		{ label: "Ocupación media",     value: `${avgOccupancy}%`,    icon: TrendingUp, sub: `${percentHighOccupancy}% con ≥80%` },
+		{ label: "Valoración media",    value: avgRating ? `${avgRating} / 5` : "—", icon: Star, sub: ratingCount > 0 ? `${ratingCount} reseña${ratingCount !== 1 ? "s" : ""}` : "sin datos" }
 	];
 
 	const extraCards = [
-		{ label: "Promedio inscritos / act.", value: avgEnrolled,    icon: Users },
-		{ label: "Duración promedio",         value: formatDuration(avgDuration), icon: Clock },
-		{ label: "Encargados únicos",         value: uniqueManagers, icon: BookOpen },
-		{ label: "Salas utilizadas",          value: uniqueRooms,    icon: MapPin },
-		{ label: "Alta ocupación (≥80%)",     value: `${percentHighOccupancy}%`, icon: ArrowUpRight },
-		{ label: "Categorías activas",        value: categoryData.length, icon: Layers }
+		{ label: "Duración promedio",      value: formatDuration(avgDuration), icon: Clock },
+		{ label: "Encargados totales",     value: uniqueManagers,               icon: BookOpen },
+		{ label: "Alta ocupación (≥80%)",  value: `${percentHighOccupancy}%`,   icon: ArrowUpRight },
+		{ label: "Promedio por categoría", value: avgCategoryActivities,        icon: Layers }
 	];
 
 	// ── Status distribution (Aprobadas / Pendientes / Rechazadas)
