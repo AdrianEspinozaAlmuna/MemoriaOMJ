@@ -463,9 +463,11 @@ export default function AdminReports() {
 	}
 
 	const rangeDisplayLabel = useMemo(() => {
+		if (!reportReady) return "";
 		const now = new Date();
+		const { range } = activeFilters;
 
-		if (draftRange === "week") {
+		if (range === "week") {
 			const day = now.getDay();
 			const diffToMonday = day === 0 ? 6 : day - 1;
 			const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - diffToMonday);
@@ -473,14 +475,14 @@ export default function AdminReports() {
 			return `desde ${formatShortDate(monday)} hasta ${formatShortDate(sunday)}`;
 		}
 
-		if (draftRange === "month") {
+		if (range === "month") {
 			const month = new Intl.DateTimeFormat("es-CL", { month: "long", year: "numeric" }).format(now);
 			return month.charAt(0).toUpperCase() + month.slice(1);
 		}
 
 		// En personalizado no se muestra etiqueta: los inputs "Desde/Hasta" ya lo indican
 		return "";
-	}, [draftRange, draftStart, draftEnd]);
+	}, [activeFilters, reportReady]);
 
 	// ── Status distribution (Aprobadas / Pendientes / Rechazadas)
 	const statusSplit = useMemo(() => {
